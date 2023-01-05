@@ -1,6 +1,7 @@
 project:
-  type: book
-
+  type: website
+  output-dir: docs
+  
 book:
   title: "Estimating the heat energy use of residential buildings"
   subtitle: "A case study in the Canton of Basel-Landschaft"

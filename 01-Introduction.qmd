@@ -1,0 +1,77 @@
+---
+bibliography: references.bib
+---
+
+```{=html}
+<!--
+This is for including Chapter 1.  Notice that it's also good practice to name your chunk.  This will help you debug potential issues as you knit.  The chunk above is called intro and the one below is called chapter1.  Feel free to change the name of the Rmd file as you wish, but don't forget to change it here from chap1.Rmd.
+-->
+```
+```{=html}
+<!--
+The {#rmd-basics} text after the chapter declaration will allow us to link throughout the document back to the beginning of Chapter 1.  These labels will automatically be generated (if not specified) by changing the spaces to hyphens and capital letters to lowercase.  Look for the reference to this label at the beginning of Chapter 2.
+-->
+```
+# Introduction {#introduction}
+
+## General Background {#background}
+
+\[#TODO\]
+
+-   Global background
+
+-   National background Switzerland
+
+## Energy policy in the Canton of Basel-Landschaft {#cantonal-energy-planning}
+
+In 2021, the cantonal government of Basel-Landschaft signed the Climate Charter of the Northwestern Intergovernmental Conference together with the governments of the cantons of Aargau, Basel-Stadt, Jura and Solothurn. In the Charter, the five cantons agree on the net zero target by 2050[^01-introduction-1]. Thus, the energy supply of the participating cantons should be switched to 100% renewable energy sources by no later than 2050 [@nordwestschweizerregierungskonferenz2021].
+
+[^01-introduction-1]: As defined by [@2050ind], the net zero target means that "*from 2050 Switzerland aims to emit no more greenhouse gases into the atmosphere than can be captured and stored in natural and technological sinks ('net zero emissions').*"
+
+The current legally valid version of the cantonal energy law defines in [§ 2 (1-4)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) the following goals [@landratdeskantonsbasel-landschaft]:
+
+1.  The end energy consumption (german: Endenergieverbrauch) in the canton, excluding mobility, should be reduced by 40% by 2050 compared to 2000 (6,500 GWh).
+2.  The share of renewable energies in total energy consumption (excluding mobility) should be increased to at least 40% by 2030.
+3.  In the building sector, the heating demand for **new buildings** should be reduced to an average of 20 kilowatt hours (kWh) per square meter of energy reference area per year by 2030.
+4.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.
+
+In 2022, the cantonal council published a new version of the energy planning report, in which the above targets were reviewed for compatibility with the net zero target. The report states that goal 1 and 3 are not compatible with the net zero target [@regierungsratdeskantonsbasel-landschaft2022]. As a result of this finding, the cantonal government submitted a proposal on behalf of the Landrat in which the two goals are changed as follows [@regierungsratdeskantonsbasel-landschaft]:
+
+1.  The end energy consumption in the canton, excluding mobility, should be reduced by **70%** by 2050 compared to 2000 (6,500 GWh).
+2.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.
+
+### Cantonal energy law
+
+### Cantonal energy planning
+
+With the total revision of the cantonal energy law in 2016, the new [§ 3](https://bl.clex.ch/app/de/texts_of_law/490/art/3) on energy planning of the canton was introduced. This § 3 obliges the cantonal government to create an energy plan on the basis of the federal requirements and frameworks and to report the results to the cantonal council. Furthermore, according to [§ 2 (6)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) of the cantonal energy law, the government council must also report periodically on the effectiveness of the (previous) measures.
+
+As integral part of the energy planning, the canton delivers a energy statistics since 1990. Until 2010, the statistics was mainly based on a top-down approach. Since 2010, a bottom-up approach has been introduced.
+
+### Cantonal energy system
+
+In 2020, the gross energy consumption of the canton was about 7600 gigawatt hours, which corresponds to a reduction of 4.4% compared to 2018 [@statistischesamtdeskantonsbasel-landschaft2022]. The following figure \@ref(fig:energieflussdiagramm) provides an overview of the cantonal energy system.
+
+```{r energieflussdiagramm, fig.cap="Energieflussdiagramm", out.width="0.2\\linewidth", fig.align="center"}
+#> knitr::include_graphics(path = "figure/energieflussdiagramm_2020.png")
+```
+
+## Problem definition {#problem-definition}
+
+As mentioned in @cantonal-energy-planning, the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 1990[^01-introduction-2]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations <!--# to be verified -->.
+
+[^01-introduction-2]: The tables and illustrations of the cantonal energy statistics are available at: https://www.statistik.bl.ch/web_portal/8.
+
+Since 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt @statistischesamtdeskantonsbasel-stadt2022 . The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) <!--# Add footnote about difference between federal RBD and cantonal RBD -->. The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).
+
+Shortcomings of the current method:
+
+-   Influence of retrofitting is unknown and can not be quantified
+
+-   Socio-economic factors and behaviour of inhabitants is not considered explicitly
+
+-   
+
+## Research questions & goals {#Research-Questions-Goals}
+
+On the basis of the considerations in Chapter [Background](#background) and Chapter , we will here formulate the research questions and also define the goals of the project from a practical perspective.

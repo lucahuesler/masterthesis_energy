@@ -1,0 +1,67 @@
+---
+bibliography: references.bib
+---
+
+# Theoretical background {#theoretical-background}
+
+<!-- Required to number equations in HTML files -->
+
+```{=html}
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  TeX: { equationNumbers: { autoNumber: "AMS" } }
+});
+</script>
+```
+## Building energy estimation methods {#energy-estimation-methods}
+
+Building energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector [@yu2022]. On a global level, the models can be divided into two sub-categories([@deb2021; @bourdeau2019];[@yu2022]):
+
+1.  Top-down approaches
+2.  Bottom-up approaches
+
+In the following, the two approaches will be presented. However the emphasis will be on bottom-up approaches, since we consider bottom-up approaches more relevant in the context of this thesis.
+
+### Top-down approaches {#top-down-approaches}
+
+Top-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. [@eymann2014] use a top down approach to estimate energy us on cantonal level derived from the national energy statistics of Switzerland.
+
+### Bottom-up approaches {#bottom-up-approaches}
+
+In earlier stages of building energy modelling, the research focused mainly on physics-based or white-box models, where the models tries to simulate the energy use of a building by the use of physical conditions and parameters. As indicate by the name of *white-box models*, these models are usually very good in terms of explainability [@yu2022].
+
+With the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called *black-box models* became more and more popular.
+
+In the following, we will discuss the advantages and disadvantages of the three model types and provide examples for each of them. Further, we will relate it to our use case as presented in the [problem definition](#problem-definition)
+
+### White-box models {#white-box-models}
+
+Advantages:
+
+-   interpretability
+
+-   high accuracy
+
+-   universality
+
+-   no requirement for historical data
+
+Disadvantages:
+
+-   Need for detailed building information
+
+-   Occupant behaviour is unknown
+
+-   randomness of the weather is difficult integrate
+
+### Black-box models
+
+Typically, there are three groups of independent variables:
+
+1.  Socio-economic parameters (e.g. occupant behaviour)
+2.  Weather parameters
+3.  Building parameters
+
+Among the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN).
+
+### Grey-box models {#grey-box-models}

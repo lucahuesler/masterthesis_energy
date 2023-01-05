@@ -1,0 +1,137 @@
+# Results {#results}
+
+## Exploratory Analysis {#exploratory-analysis}
+
+```{r load-libraries, include=FALSE}
+library(tidyverse)
+library(tidymodels)
+```
+
+```{r load-data, include=FALSE}
+#> Load data
+energy_raw <- read_delim("data/hslu_grunddaten_energiestatistik_20221026.csv", delim = ";", show_col_types = FALSE)
+gwr_building <-  read_delim("data/gwr_gebaeude_20221027.csv", delim = ";", show_col_types = FALSE)
+gwr_building_heights <-  read_delim("data/gwr_building_heights.csv", delim = ";", show_col_types = FALSE)
+gwr_dwelling <- read_delim("data/gwr_wohnung_20221027.csv", delim = ";", show_col_types = FALSE)
+```
+
+```{r filter-data, include=FALSE}
+#> Filter
+energy_clean <- energy_raw %>%
+  left_join(gwr_building_heights, by = "egid", suffix = c("_energy", "_gwr")) %>%
+  filter(verbrauch_erhoben_mwh > 1,
+         heizkoeffizient_erhoben > 20,
+         genh1_energy == 7520,
+         gkat == 1020)
+```
+
+```{r histogram, echo = FALSE}
+hist_plot <- energy_clean %>%
+  ggplot(aes(x = verbrauch_erhoben_mwh)) +
+  geom_histogram(bins = 50, col= "white") 
+
+hist_plot
+```
+
+As the histogram is right-skewed (a few houses with a high energy use), it makes sense to log-transform.
+
+```{r histogram-log, echo = FALSE}
+hist_plot_log <- hist_plot +
+  scale_x_log10()
+
+hist_plot_log
+```
+
+```{r}
+correlations <- energy_clean %>%
+  select(where(is.numeric)) %>%
+  correlations()
+```
+
+```{r}
+energy_clean_log <- energy_clean %>%
+  mutate(verbrauch_erhoben_mwh_log = log(verbrauch_erhoben_mwh))
+```
+
+## Per community
+
+```{r}
+community_plot <- energy_clean %>%
+  ggplot(aes(x = meters_above_sealevel, y = verbrauch_erhoben_mwh)) +
+  geom_point() +
+  facet_grid(rows = vars(ggdenr))
+
+community_plot
+```
+
+# Train/test split
+
+```{r}
+
+#> Set the random number stream using `set.seed()` so that the results can be 
+#> reproduced later. 
+set.seed(501)
+
+#> Save the split information for an 80/20 split of the data
+energy_split <- initial_split(energy_clean_log, prop = 0.80, strata = verbrauch_erhoben_mwh)
+energy_split
+
+
+#> Creating train and test set
+energy_train <- training(energy_split)
+energy_test  <-  testing(energy_split)
+
+dim(energy_train)
+
+#> Resampling train set
+set.seed(123)
+folds <- vfold_cv(energy_train, v = 5, strata = verbrauch_erhoben_mwh)
+folds
+```
+
+# Model fitting
+
+```{r}
+
+lm_model <- 
+  linear_reg() %>% 
+  set_engine("lm")
+
+lm_form_fit <- 
+  lm_model %>% 
+  fit(verbrauch_erhoben_mwh_log ~ bruttogeschossflaeche + gkode + gkodn + erhebungsjahr, data = energy_clean_log)
+
+lm_form_fit
+
+
+```
+
+```{r}
+tidy(lm_form_fit)
+```
+
+```{r}
+prediction <- predict(lm_form_fit, energy_test)
+
+test_res <- bind_cols(prediction, energy_test %>% select(egid, gbez, verbrauch_erhoben_mwh_log))
+```
+
+```{r}
+ggplot(test_res, aes(x = verbrauch_erhoben_mwh_log, y = .pred)) + 
+  #> Create a diagonal line:
+  geom_abline(lty = 2) + 
+  geom_point(alpha = 0.5) + 
+  labs(y = "Predicted Energy use (log10)", x = "Measured energy use (log10)") +
+  #> Scale and size the x- and y-axis uniformly:
+  coord_obs_pred()
+```
+
+```{r}
+ggplot(energy_clean, aes(x = log(verbrauch_erhoben_mwh), y = log(verbrauch_geschaetzt_mwh))) + 
+  #> Create a diagonal line:
+  geom_abline(lty = 2) + 
+  geom_point(alpha = 0.5) + 
+  labs(y = "Predicted Energy use (log10)", x = "Measured energy use (log10)") +
+  #> Scale and size the x- and y-axis uniformly:
+  coord_obs_pred()
+```

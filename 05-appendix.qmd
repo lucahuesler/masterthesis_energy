@@ -1,0 +1,22 @@
+# Appendix
+
+## Retrofit analysis
+
+```{r}
+#| echo: true
+library(tidyverse)
+
+retrofit_m01 <- read_delim("data/sanierungen_typ_M01.csv", delim = ",", show_col_types = FALSE)
+
+cleaning_retrofit <- function(df){
+  df %>%
+    rename_all(~ gsub(" ", "_", .))
+}
+
+
+retrofit_m01_clean <- cleaning_retrofit(retrofit_m01)
+```
+
+
+## Details on model comparison
+

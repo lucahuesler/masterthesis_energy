@@ -1,0 +1,135 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "",
+    "text": "Preliminary Content"
+  },
+  {
+    "objectID": "index.html#acknowledgements",
+    "href": "index.html#acknowledgements",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Acknowledgements",
+    "text": "Acknowledgements\nI want to thank a few people."
+  },
+  {
+    "objectID": "index.html#preface",
+    "href": "index.html#preface",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Preface",
+    "text": "Preface\nThis is an example of a thesis setup to use the reed thesis document class (for LaTeX) and the R bookdown package, in general."
+  },
+  {
+    "objectID": "index.html#dedication",
+    "href": "index.html#dedication",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Dedication",
+    "text": "Dedication\nYou can have a dedication here if you wish."
+  },
+  {
+    "objectID": "index.html#abstract",
+    "href": "index.html#abstract",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Abstract",
+    "text": "Abstract\nThe preface pretty much says it all.\nSecond paragraph of abstract starts here."
+  },
+  {
+    "objectID": "01-Introduction.html#cantonal-energy-planning",
+    "href": "01-Introduction.html#cantonal-energy-planning",
+    "title": "2  Introduction",
+    "section": "2.2 Energy policy in the Canton of Basel-Landschaft",
+    "text": "2.2 Energy policy in the Canton of Basel-Landschaft\nIn 2021, the cantonal government of Basel-Landschaft signed the Climate Charter of the Northwestern Intergovernmental Conference together with the governments of the cantons of Aargau, Basel-Stadt, Jura and Solothurn. In the Charter, the five cantons agree on the net zero target by 20501. Thus, the energy supply of the participating cantons should be switched to 100% renewable energy sources by no later than 2050 (Nordwestschweizer Regierungskonferenz, 2021).\nThe current legally valid version of the cantonal energy law defines in § 2 (1-4) the following goals (Landrat des Kantons Basel-Landschaft, n.d.):\n\nThe end energy consumption (german: Endenergieverbrauch) in the canton, excluding mobility, should be reduced by 40% by 2050 compared to 2000 (6,500 GWh).\nThe share of renewable energies in total energy consumption (excluding mobility) should be increased to at least 40% by 2030.\nIn the building sector, the heating demand for new buildings should be reduced to an average of 20 kilowatt hours (kWh) per square meter of energy reference area per year by 2030.\nIn the building sector, the non-renewable heating demand for existing buildings should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.\n\nIn 2022, the cantonal council published a new version of the energy planning report, in which the above targets were reviewed for compatibility with the net zero target. The report states that goal 1 and 3 are not compatible with the net zero target (Regierungsrat des Kantons Basel-Landschaft, 2022). As a result of this finding, the cantonal government submitted a proposal on behalf of the Landrat in which the two goals are changed as follows (Regierungsrat des Kantons Basel-Landschaft, n.d.):\n\nThe end energy consumption in the canton, excluding mobility, should be reduced by 70% by 2050 compared to 2000 (6,500 GWh).\nIn the building sector, the non-renewable heating demand for existing buildings should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.\n\n\n2.2.1 Cantonal energy law\n\n\n2.2.2 Cantonal energy planning\nWith the total revision of the cantonal energy law in 2016, the new § 3 on energy planning of the canton was introduced. This § 3 obliges the cantonal government to create an energy plan on the basis of the federal requirements and frameworks and to report the results to the cantonal council. Furthermore, according to § 2 (6) of the cantonal energy law, the government council must also report periodically on the effectiveness of the (previous) measures.\nAs integral part of the energy planning, the canton delivers a energy statistics since 1990. Until 2010, the statistics was mainly based on a top-down approach. Since 2010, a bottom-up approach has been introduced.\n\n\n2.2.3 Cantonal energy system\nIn 2020, the gross energy consumption of the canton was about 7600 gigawatt hours, which corresponds to a reduction of 4.4% compared to 2018 (Statistisches Amt des Kantons Basel-Landschaft, 2022). The following figure @ref(fig:energieflussdiagramm) provides an overview of the cantonal energy system.\n\n#> knitr::include_graphics(path = \"figure/energieflussdiagramm_2020.png\")"
+  },
+  {
+    "objectID": "01-Introduction.html#problem-definition",
+    "href": "01-Introduction.html#problem-definition",
+    "title": "2  Introduction",
+    "section": "2.3 Problem definition",
+    "text": "2.3 Problem definition\nAs mentioned in (cantonal-energy-planning?), the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 19902. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations .\nSince 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt Statistisches Amt des Kantons Basel-Stadt (2022) . The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) . The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).\nShortcomings of the current method:\n\nInfluence of retrofitting is unknown and can not be quantified\nSocio-economic factors and behaviour of inhabitants is not considered explicitly"
+  },
+  {
+    "objectID": "01-Introduction.html#Research-Questions-Goals",
+    "href": "01-Introduction.html#Research-Questions-Goals",
+    "title": "2  Introduction",
+    "section": "2.4 Research questions & goals",
+    "text": "2.4 Research questions & goals\nOn the basis of the considerations in Chapter Background and Chapter , we will here formulate the research questions and also define the goals of the project from a practical perspective.\n\n\n\n\n2050 indicative target. (n.d.). Retrieved from https://www.bafu.admin.ch/bafu/en/home/topics/climate/info-specialists/emission-reduction/reduction-targets/2050-target.html\n\n\nLandrat des Kantons Basel-Landschaft. (n.d.). Energiegesetz (EnG BL). Retrieved from https://bl.clex.ch/app/de/texts_of_law/490/art/2\n\n\nNordwestschweizer Regierungskonferenz. (2021). Klima-Charta der Nordwestschweizer Regierungskonferenz (p. 5). Retrieved from https://www.baselland.ch/politik-und-behorden/direktionen/bau-und-umweltschutzdirektion/umweltschutz-energie/klima-1/klima-charta-der-nordwestschweizer-regierungskonferenz\n\n\nRegierungsrat des Kantons Basel-Landschaft. (n.d.). Vorlage an den Landrat: Änderung des kantonalen Energiegesetzes und des zugehörigen Dekrets aufgrund des Energieplanungsberichts 2022 (p. 47). Retrieved from https://baselland.talus.ch/de/dokumente/geschaeft/0c4e9a4dc0c84cf783377aa2b4e46bcc-332\n\n\nRegierungsrat des Kantons Basel-Landschaft. (2022). Bericht zum Stand der Energiepolitik des Kantons Basel-Landschaft im Jahr 2022 (p. 49).\n\n\nStatistisches Amt des Kantons Basel-Landschaft. (2022, June 29). Webartikel: Energiestatistik 2020. Retrieved from https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/publikationen/energie/webartikel_vom_29-06-2022_energiestatistik_2020\n\n\nStatistisches Amt des Kantons Basel-Stadt. (2022). Methodenbericht - Energiestatistik Basel-Stadt. (p. 12). Basel. Retrieved from https://www.statistik.bs.ch/dam/jcr:51d6273d-0c4c-40f9-9941-beb834331e45/Methodikbericht-Energiestatistik.pdf"
+  },
+  {
+    "objectID": "02-TheoreticalBackground.html#energy-estimation-methods",
+    "href": "02-TheoreticalBackground.html#energy-estimation-methods",
+    "title": "3  Theoretical background",
+    "section": "3.1 Building energy estimation methods",
+    "text": "3.1 Building energy estimation methods\nBuilding energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector (Yu, Chang, & Dong, 2022). On a global level, the models can be divided into two sub-categories((Bourdeau, Zhai, Nefzaoui, Guo, & Chatellier, 2019; Deb & Schlueter, 2021);(Yu et al., 2022)):\n\nTop-down approaches\nBottom-up approaches\n\nIn the following, the two approaches will be presented. However the emphasis will be on bottom-up approaches, since we consider bottom-up approaches more relevant in the context of this thesis.\n\n3.1.1 Top-down approaches\nTop-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. (Eymann, Rohrer, & Stucki, 2014) use a top down approach to estimate energy us on cantonal level derived from the national energy statistics of Switzerland.\n\n\n3.1.2 Bottom-up approaches\nIn earlier stages of building energy modelling, the research focused mainly on physics-based or white-box models, where the models tries to simulate the energy use of a building by the use of physical conditions and parameters. As indicate by the name of white-box models, these models are usually very good in terms of explainability (Yu et al., 2022).\nWith the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called black-box models became more and more popular.\nIn the following, we will discuss the advantages and disadvantages of the three model types and provide examples for each of them. Further, we will relate it to our use case as presented in the problem definition\n\n\n3.1.3 White-box models\nAdvantages:\n\ninterpretability\nhigh accuracy\nuniversality\nno requirement for historical data\n\nDisadvantages:\n\nNeed for detailed building information\nOccupant behaviour is unknown\nrandomness of the weather is difficult integrate\n\n\n\n3.1.4 Black-box models\nTypically, there are three groups of independent variables:\n\nSocio-economic parameters (e.g. occupant behaviour)\nWeather parameters\nBuilding parameters\n\nAmong the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN).\n\n\n3.1.5 Grey-box models\n\n\n\n\nBourdeau, M., Zhai, X. qiang, Nefzaoui, E., Guo, X., & Chatellier, P. (2019). Modeling and forecasting building energy consumption: A review of data-driven techniques. Sustainable Cities and Society, 48, 101533. http://doi.org/10.1016/j.scs.2019.101533\n\n\nDeb, C., & Schlueter, A. (2021). Review of data-driven energy modelling techniques for building retrofit. Renewable and Sustainable Energy Reviews, 144, 110990. http://doi.org/10.1016/j.rser.2021.110990\n\n\nEymann, L., Rohrer, J., & Stucki, M. (2014). Energieverbrauch der Schweizer Kantone : Endenergieverbrauch und Mittelabfluss durch den Energie-Import. http://doi.org/10.21256/zhaw-124\n\n\nYu, J., Chang, W.-S., & Dong, Y. (2022). Building Energy Prediction Models and Related Uncertainties: A Review. Buildings, 12(8), 1284. http://doi.org/10.3390/buildings12081284"
+  },
+  {
+    "objectID": "03-Methodology.html#data-understanding-exploration",
+    "href": "03-Methodology.html#data-understanding-exploration",
+    "title": "4  Methodology",
+    "section": "4.1 Data unterstanding and exploration",
+    "text": "4.1 Data unterstanding and exploration"
+  },
+  {
+    "objectID": "03-Methodology.html#data-preprocessing",
+    "href": "03-Methodology.html#data-preprocessing",
+    "title": "4  Methodology",
+    "section": "4.2 Data preprocessing",
+    "text": "4.2 Data preprocessing"
+  },
+  {
+    "objectID": "03-Methodology.html#evaluation-metrics",
+    "href": "03-Methodology.html#evaluation-metrics",
+    "title": "4  Methodology",
+    "section": "4.3 Evalauation metrics",
+    "text": "4.3 Evalauation metrics"
+  },
+  {
+    "objectID": "04-Results.html",
+    "href": "04-Results.html",
+    "title": "5  Results",
+    "section": "",
+    "text": "6 Train/test split"
+  },
+  {
+    "objectID": "04-Results.html#exploratory-analysis",
+    "href": "04-Results.html#exploratory-analysis",
+    "title": "5  Results",
+    "section": "5.1 Exploratory Analysis",
+    "text": "5.1 Exploratory Analysis\n\n\n\n\n\nAs the histogram is right-skewed (a few houses with a high energy use), it makes sense to log-transform.\n\n\n\n\n\n\ncorrelations <- energy_clean %>%\n  select(where(is.numeric)) %>%\n  correlations()\n#> Warning in stats::cor(x, use = use, method = method): the standard deviation is\n#> zero\n\n\nenergy_clean_log <- energy_clean %>%\n  mutate(verbrauch_erhoben_mwh_log = log(verbrauch_erhoben_mwh))"
+  },
+  {
+    "objectID": "04-Results.html#per-community",
+    "href": "04-Results.html#per-community",
+    "title": "5  Results",
+    "section": "5.2 Per community",
+    "text": "5.2 Per community\n\ncommunity_plot <- energy_clean %>%\n  ggplot(aes(x = meters_above_sealevel, y = verbrauch_erhoben_mwh)) +\n  geom_point() +\n  facet_grid(rows = vars(ggdenr))\n\ncommunity_plot"
+  },
+  {
+    "objectID": "05-appendix.html",
+    "href": "05-appendix.html",
+    "title": "6  (APPENDIX) Appendix",
+    "section": "",
+    "text": "7 The First Appendix\n\nThis first appendix includes all of the R chunks of code that were hidden throughout the document (using the include = FALSE chunk tag) to help with readibility and/or setup.\nIn the main Rmd file\n\n\n\nIn Chapter @ref(ref-labels):\n\n\n\n\n\n8 The Second Appendix, for Fun"
+  },
+  {
+    "objectID": "05-appendix.html#retrofit-analysis",
+    "href": "05-appendix.html#retrofit-analysis",
+    "title": "6  Appendix",
+    "section": "6.1 Retrofit analysis",
+    "text": "6.1 Retrofit analysis\n\n\n\n# asdfasdff"
+  },
+  {
+    "objectID": "05-appendix.html#details-on-model-comparison",
+    "href": "05-appendix.html#details-on-model-comparison",
+    "title": "6  Appendix",
+    "section": "6.2 Details on model comparison",
+    "text": "6.2 Details on model comparison"
+  },
+  {
+    "objectID": "01-Introduction.html#background",
+    "href": "01-Introduction.html#background",
+    "title": "2  Introduction",
+    "section": "2.1 General Background",
+    "text": "2.1 General Background\n[#TODO]\n\nGlobal background\nNational background Switzerland"
+  }
+]

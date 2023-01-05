@@ -1,0 +1,15 @@
+# Preliminary Content {.unnumbered}
+
+## Acknowledgements {.unnumbered}
+
+I want to thank a few people.
+
+## Preface {.unnumbered}
+
+This is an example of a thesis setup to use the reed thesis document class (for LaTeX) and the R bookdown package, in general.
+
+## Dedication {.unnumbered}
+
+You can have a dedication here if you wish.
+
+`r if(!knitr:::is_latex_output()) '## Abstract {-}'`

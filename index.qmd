@@ -72,38 +72,19 @@ If you'd like to include a comment that won't be produced in your resulting file
 If you receive a duplicate label error after knitting, make sure to delete the index.Rmd file and then knit again.
 -->
 ```
-```{r include_packages, include=FALSE}
-if (!require(remotes)) {
-  if (params$`Install needed packages for {thesisdown}`) {
-    install.packages("remotes", repos = "https://cran.rstudio.com")
-  } else {
-    stop(
-      paste('You need to run install.packages("remotes")",
-            "first in the Console.')
-    )
-  }
-}
-if (!require(thesisdown)) {
-  if (params$`Install needed packages for {thesisdown}`) {
-    remotes::install_github("ismayc/thesisdown")
-  } else {
-    stop(
-      paste(
-        "You need to run",
-        'remotes::install_github("ismayc/thesisdown")',
-        "first in the Console."
-      )
-    )
-  }
-}
-library(thesisdown)
 
-options(width = 70)
+
+
+
+```{r}
+#| include: false
+
+renv::install("ismayc/thesisdown")
+renv::install("tidyverse")
+
+renv::install()
 ```
 
-```{r ```{r include_packages, include=FALSE}
-
-```
 
 ```{=html}
 <!--

@@ -56,8 +56,6 @@ This is a development version (work in progress...).
 :::
 
 
-![hslu-logo](./figures/hochschule-luzern-logo-vector.svg){fig-align="right"}
-
 ```{=html}
 <!--
 Above is the YAML (YAML Ain't Markup Language) header that includes a lot of 
@@ -81,8 +79,6 @@ If you receive a duplicate label error after knitting, make sure to delete the i
 
 renv::install("ismayc/thesisdown")
 renv::install("tidyverse")
-
-renv::install()
 ```
 
 

@@ -40,8 +40,6 @@ In 2022, the cantonal council published a new version of the energy planning rep
 1.  The end energy consumption in the canton, excluding mobility, should be reduced by **70%** by 2050 compared to 2000 (6,500 GWh).
 2.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.
 
-### Cantonal energy law
-
 ### Cantonal energy planning
 
 With the total revision of the cantonal energy law in 2016, the new [§ 3](https://bl.clex.ch/app/de/texts_of_law/490/art/3) on energy planning of the canton was introduced. This § 3 obliges the cantonal government to create an energy plan on the basis of the federal requirements and frameworks and to report the results to the cantonal council. Furthermore, according to [§ 2 (6)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) of the cantonal energy law, the government council must also report periodically on the effectiveness of the (previous) measures.
@@ -64,14 +62,38 @@ As mentioned in @cantonal-energy-planning, the Canton of Basel-Landschaft conduc
 
 Since 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt @statistischesamtdeskantonsbasel-stadt2022 . The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) <!--# Add footnote about difference between federal RBD and cantonal RBD -->. The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).
 
+The measured gas consumption represents the total annual amount of energy in kWh that the energy provider (Industrielle Werke Basel, IWB) delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows\_
+
+$$HEC = Gas_{Total}*e_{HS} + Solar_{Total} - f_{DHW}*N_{I} \\ 
+ where $$ {#eq-hec}
+
+```{=tex}
+\begin{flalign}
+where
+Gas_{Total} = Total \ gas \ consumption \ in \ kWh « as  \ measured  \ by  \ IWB, \\
+Solar_{Total} = Estimated \ solar \ production \ in \ kWh \\ 
+f_{DHW} = Constant \ estimated \ factor \ of \ DWH \ per \ person \ and \ year \ (850 kWh)\\
+N_{I} = Number \ of \ inhabitants\\
+\end{flalign}
+```
 Shortcomings of the current method:
 
 -   Influence of retrofitting is unknown and can not be quantified
 
 -   Socio-economic factors and behaviour of inhabitants is not considered explicitly
 
--   
+-   Randomness of weather is difficult to integrate
 
 ## Research questions & goals {#Research-Questions-Goals}
 
 On the basis of the considerations in Chapter [Background](#background) and Chapter , we will here formulate the research questions and also define the goals of the project from a practical perspective.
+
+Main research question:
+
+1.  Can other models deliver predictions of HEC with higher accuracy than the current method?
+
+Sub-questions:
+
+1.  What features in our input data are most important for the prediction of HEC?
+2.  Can we achieve a higher accuracy of the prediction if we include retrofit features in the model?
+3.  Can we achieve a higher accuracy of the prediction if we include socio-economic features in the model?

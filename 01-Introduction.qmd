@@ -54,7 +54,7 @@ In 2020, the gross energy consumption of the canton was about 7600 gigawatt hour
 #> knitr::include_graphics(path = "figure/energieflussdiagramm_2020.png")
 ```
 
-## Problem definition {#problem-definition}
+## Problem definition {#sec-problem-definition}
 
 As mentioned in @cantonal-energy-planning, the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 1990[^01-introduction-2]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations <!--# to be verified -->.
 

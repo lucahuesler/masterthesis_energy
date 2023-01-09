@@ -6,6 +6,7 @@
 
 library(tidyverse)
 library(tidymodels)
+library(skimr)
 ```
 
 ## Preprocessing {#preprocessing}
@@ -21,6 +22,7 @@ energy_raw <- read_delim("data/hslu_grunddaten_energiestatistik_20221026.csv", d
 gwr_building <-  read_delim("data/gwr_gebaeude_20221027.csv", delim = ";", show_col_types = FALSE)
 gwr_building_heights <-  read_delim("data/gwr_building_heights.csv", delim = ";", show_col_types = FALSE)
 gwr_dwelling <- read_delim("data/gwr_wohnung_20221027.csv", delim = ";", show_col_types = FALSE)
+gwr_entrance <- read_delim("data/gwr_eingang_20230109.csv", delim = "\t", show_col_types = FALSE)
 
 #> retrofit data
 retrofit_m01 <- read_delim("data/sanierungen_typ_M01.csv", delim = ",", show_col_types = FALSE)
@@ -32,13 +34,136 @@ retrofit_geb <- read_delim("data/sanierungen_typ_GEB.csv", delim = ",", show_col
 retrofit_ezb <- read_delim("data/sanierungen_typ_EZB.csv", delim = ",", show_col_types = FALSE)
 ```
 
+### Data matching
+
+```{r}
+#| label: match-gwr-entrance
+#| include: false
+
+#> match building_heights
+energy_matched <- energy_raw %>%
+  left_join(gwr_building_heights, by = "egid", suffix = c("_energy", "_gwr"))
+
+
+#> match entrance information
+gwr_entrance <- gwr_entrance %>%
+  rename_all(tolower)
+
+energy_matched <- energy_matched %>%
+  inner_join(gwr_entrance, by = "egid") %>%
+  select(!c(edid, egaid, esid, strnamk, strindx, strsp, stroffiziel, dkode, dkodn, doffadr, dexpdat))
+
+```
+
+### Conversion
+
+```{r}
+#| label: conversion-kwh 
+#| include: false
+
+#> convert kwh to mwh everywhere
+
+energy_matched <- energy_matched %>%
+  mutate(produktion_soko_mwh = if_else(!is.na(produktion_soko_kwh),produktion_soko_kwh/1000,0),
+         verbrauch_warmwasser_mwh = verbrauch_warmwasser_kwh/1000)
+```
+
+### Definition of data types
+```{r}
+#| label: clean-data-types
+#| include: false
+
+#> Set datatypes explicitly
+
+energy_matched <- energy_matched %>%
+  mutate_at(vars(erhebungsjahr, genh1_energy, genw1_energy, energienutzung_anlage, ggdenr, gbaup, gbaum, gksce, gwaerzh1, genh1_gwr, gwaersceh1, gwaerzw1, genw1_gwr, genw1_gwr, gwaerscew1, k_gsknu, k_gskqu, k_gska, k_gphvoqu, k_idwv, k_wvhz, gkat, gklas, gstat, gvolnorm, gvolsce), factor) %>%
+  mutate_at(vars(egid, anzahl_bewohner, baujahr_anlage, gbauj, gabbj, gastw, gazzi, k_ganzwhg, k_egid_hz), as.integer) %>%
+  mutate_at(vars(verbrauch_erhoben_mwh, verbrauch_geschaetzt_mwh, heizkoeffizient_erhoben, heizkoeffizient_geschaetzt, wirkungsgrad_anlage, bruttogeschossflaeche, produktion_soko_kwh, k_gskfl, k_gphvokw, garea, gvol, gebf, meters_above_sealevel, produktion_soko_mwh, verbrauch_warmwasser_mwh), as.double) %>%
+  mutate_at(vars(k_gsoko, k_gphvo), as.logical) %>%
+  mutate_at(vars(gbez), as.character) %>%
+  mutate_at(vars(gwaerdath1, gwaerdatw1), as.Date)
+```
+
+### Renaming
+For easier use in the further analysis, we convert the column names to english and use namings that are easy to understand.
+
+```{r}
+#| label: rename-columns
+#| include: false
+
+#> rename columns to english
+
+energy_matched <- energy_matched %>%
+  rename(
+    egid = egid,
+    survey_year = erhebungsjahr,
+    energy_source_heat_1 = genh1_energy,
+    energy_source_water_1 = genw1_energy,
+    energy_consumed_measured_mwh = verbrauch_erhoben_mwh,
+    energy_consumed_estimated_mwh = verbrauch_geschaetzt_mwh,
+    num_residents = anzahl_bewohner,
+    heating_coefficient_measured = heizkoeffizient_erhoben,
+    heating_coefficient_estimated = heizkoeffizient_geschaetzt,
+    gross_floor_area = bruttogeschossflaeche,
+    year_of_installation = baujahr_anlage,
+    efficiency_of_installation = wirkungsgrad_anlage,
+    energy_usage_of_installation = energienutzung_anlage,
+    energy_consumed_hot_water_kwh = verbrauch_warmwasser_kwh,
+    energy_consumed_hot_water_mwh = verbrauch_warmwasser_mwh,
+    energy_production_solar_kwh = produktion_soko_kwh,
+    energy_production_solar_mwh = produktion_soko_mwh,
+    solar_system = k_gsoko,
+    solar_system_area_m2 = k_gskfl,
+    k_gska = k_gska,
+    solar_system_usage = k_gsknu,
+    solar_system_source = k_gskqu,
+    photovoltaic_system = k_gphvo,
+    photovoltaic_system_power_kw = k_gphvokw,
+    photovoltaic_system_source = k_gphvoqu,
+    district_heating_id = k_idwv,
+    district_heating_role = k_wvhz,
+    heated_by_egid = k_egid_hz,
+    house_number = gebnr,
+    municipality_code = ggdenr,
+    building_name = gbez,
+    building_category = gkat,
+    building_class = gklas,
+    building_status = gstat,
+    construction_year = gbauj,
+    construction_type = gbaup,
+    construction_month = gbaum,
+    demolition_year = gabbj,
+    building_area_m2 = garea,
+    building_volume_m3 = gvol,
+    building_volume_norm = gvolnorm,
+    building_volume_source = gvolsce,
+    energy_reference_area = gebf,
+    coordinate_e = gkode,
+    coordinate_n = gkodn,
+    coordinate_system_source = gksce,
+    num_floors = gastw,
+    num_separate_living_space = gazzi,
+    num_dwellings = k_ganzwhg,
+    energy_installation_1_gwr = gwaerzh1,
+    energy_source_heat_1_gwr = genh1_gwr,
+    energy_heat_1_date = gwaerdath1,
+    energy_heat_1_source = gwaersceh1,
+    energy_water_installation_1_gwr = gwaerzw1,
+    entrance_number = deinr,
+    entrance_streetname = strname,
+    entrance_postal_code = dplz4,
+    entrance_postal_code_add = dplzz)
+```
+
+
+### Data matching & filtering
 
 In order to prepare the data for modelling, we apply the following filters:
 
 -   Only residential buildings (`gkat = 1020`)
 -   Only buildings with a measured gas consumption of more than 1 MWh (exclude buildings that use gas only for cooking)
--   Only buildings with a HEPI \> $20 \ kWh/m²$
-- Only buildings where the gas is used for HEC or for DWH+HEC. As this information is absent for many buildings, we also include `NA` values here.
+-   Only buildings with a HEPI \> $20 \ kWh/m²$ or HEPI $<300 \ kWh/m²$
+-   Only buildings where the gas is used for HEC or for DWH+HEC. As this information is absent for many buildings, we also include `NA` values here.
 
 ```{r}
 #| label: filter-data
@@ -46,19 +171,36 @@ In order to prepare the data for modelling, we apply the following filters:
 
 #> Filter to relevant buildings for modelling
 
-energy_clean <- energy_raw %>%
-  left_join(gwr_building_heights, by = "egid", suffix = c("_energy", "_gwr")) %>%
-  filter(verbrauch_erhoben_mwh > 1,
-         gkat == 1020,
-         energienutzung_anlage %in% c("Raumwärme", "Raumwärme + Warmwasser", NA)
+energy_filtered <- energy_matched %>%
+  filter(energy_consumed_measured_mwh > 1,
+         building_category == 1020,
+         energy_usage_of_installation %in% c("Raumwärme", "Raumwärme + Warmwasser", NA)
          )
 ```
 
+By applying the above filters, we obtain a dataset of about `r nrow(energy_clean)` observations. As the dataset contains measured gas consumption for the years 2016, 2018 and 2020, one building can be present three times. 
+
+```{r}
+energy_clean %>%
+  select(egid, survey_year, energy_consumed_measured_mwh) %>%
+  group_by(survey_year) %>%
+  summarize(Total_measured_gas_consumption = sum(energy_consumed_measured_mwh, na.rm = TRUE)) %>%
+  ggplot(aes(x = survey_year, y = Total_measured_gas_consumption)) +
+  geom_col() +
+  xlab("Survey year") +
+  ylab("Total measured gas consumption (MWh)")
+
+```
+
+
+
+
+
+### Retrofit data
 
 ```{r}
 #| label: rename-retrofit-data
 #| include: false
-
 
 dfs_to_translate <- list(retrofit_bl01, retrofit_bl20, retrofit_ea, retrofit_ec, retrofit_ezb, retrofit_geb, retrofit_m01)
 
@@ -99,7 +241,7 @@ translated_cols <- c(
       "property_zip" = "Liegenschaft\nPLZ",
       "property_city" = "Liegenschaft\nOrt",
       "property_political_municipality" = "Liegenschaft\nPolitische Gemeinde",
-      "property_national_building_identifier" = "Liegenschaft\neidgenössischer Gebäudeidentifikator",
+      "egid" = "Liegenschaft\neidgenössischer Gebäudeidentifikator",
       "property_parcel_number" = "Liegenschaft\nParzellen-Nr.",
       "param_project_code" = "Projekt- und Massnahmedaten (Eingabeparameter)\nProjektcode",
       "param_geak" = "Projekt- und Massnahmedaten (Eingabeparameter)\nGEAK",
@@ -177,114 +319,74 @@ colnames_translated <- sapply(dfs_translated, colnames) %>%
 
 ```
 
-
 ```{r}
-#| label: conversion-kwh 
+#| label: match-retrofit-data 
 #| include: false
 
-#> convert kwh to mwh everywhere
+#> Merge the data frames into one
+retrofit_dfs <- list(retrofit_bl01_clean, retrofit_bl20_clean, retrofit_ea_clean, retrofit_ec_clean, retrofit_ezb_clean, retrofit_geb_clean, retrofit_m01_clean)
 
-energy_clean <- energy_clean %>%
-  mutate(produktion_soko_mwh = if_else(!is.na(produktion_soko_kwh),produktion_soko_kwh/1000,0),
-         verbrauch_warmwasser_mwh = verbrauch_warmwasser_kwh/1000)
+coerce_columns <- function(df, columns) {
+df[columns] <- lapply(df[columns], as.character)
+df
+}
+
+retrofit_all <- map_df(retrofit_dfs, coerce_columns, c("egid", "property_parcel_number")) %>%
+  bind_rows()
+
+#> sometimes mulitple egid separated by "|", so we split the column at /
+retrofit_all_clean <- retrofit_all %>%
+  mutate(egid = str_trim(egid)) %>%
+  separate_rows(egid, sep = ("/")) %>%
+  separate_rows(egid, sep = ("&")) %>%
+  mutate(egid = as.integer(egid))
+
+
+#> adding missing egid
+retrofit_all_clean <- left_join(retrofit_all_clean, gwr_entrance, by = c("property_street" = "strname", "property_number" = "deinr", "property_zip" = "dplz4"), suffix = c('.retrofit', '.gwr')) %>%
+  rename(egid = egid.gwr)
+
+retrofit_all_match <- retrofit_all_clean %>%
+  select(egid, admin_id, admin_project_type, admin_payment_year, property_address, property_street, property_number, property_zip, property_parcel_number) 
+
+
+energy_clean_retrofit <- energy_clean %>%
+  left_join(retrofit_all_match, by = "egid")
 ```
 
+### Cleaning
 
-```{r}
-#| label: clean-data-types
-#| include: false
 
-#> Set datatypes explicitly
 
-energy_clean <- energy_clean %>%
-  mutate_at(vars(erhebungsjahr, genh1_energy, genw1_energy, wirkungsgrad_anlage, energienutzung_anlage, ggdenr, gbaup, gbaum, gksce, gwaerzh1, genh1_gwr, gwaersceh1, gwaerzw1, genw1_gwr, genw1_gwr, gwaerscew1, k_gsknu, k_gskqu, k_gska, k_gphvoqu, k_idwv, k_wvhz, gkat, gklas, gstat, gvolnorm, gvolsce), factor) %>%
-  mutate_at(vars(egid, anzahl_bewohner, baujahr_anlage, gbauj, gabbj, gastw, gazzi, k_ganzwhg, k_egid_hz), as.integer) %>%
-  mutate_at(vars(verbrauch_erhoben_mwh, verbrauch_geschaetzt_mwh, heizkoeffizient_erhoben, heizkoeffizient_geschaetzt, bruttogeschossflaeche, produktion_soko_kwh, k_gskfl, k_gphvokw, garea, gvol, gebf, meters_above_sealevel, produktion_soko_mwh, verbrauch_warmwasser_mwh), as.double) %>%
-  mutate_at(vars(k_gsoko, k_gphvo), as.logical) %>%
-  mutate_at(vars(gbez), as.character) %>%
-  mutate_at(vars(gwaerdath1, gwaerdatw1), as.Date)
-```
-
-```{r}
-#| label: rename-columns
-#| include: false
-
-#> rename columns to english
-
-df <- df %>%
-  rename(
-    id = egid,
-    survey_year = erhebungsjahr,
-    energy_source_heat_1 = genh1_energy,
-    energy_source_water_1 = genw1_energy,
-    energy_consumed_measured_mwh = verbrauch_erhoben_mwh,
-    energy_consumed_estimated_mwh = verbrauch_geschaetzt_mwh,
-    num_residents = anzahl_bewohner,
-    heating_coefficient_measured = heizkoeffizient_erhoben,
-    heating_coefficient_estimated = heizkoeffizient_geschaetzt,
-    gross_floor_area = bruttogeschossflaeche,
-    year_of_installation = baujahr_anlage,
-    efficiency_of_installation = wirkungsgrad_anlage,
-    energy_usage_of_installation = energienutzung_anlage,
-    energy_consumed_hot_water_kwh = verbrauch_warmwasser_kwh,
-    energy_production_solar = produktion_soko_kwh,
-    solar_system = k_gsoko,
-    solar_system_area_m2 = k_gskfl,
-    k_gska = k_gska,
-    solar_system_usage = k_gsknu,
-    solar_system_source = k_gskqu,
-    photovoltaic_system = k_gphvo,
-    photovoltaic_system_power_kw = k_gphvokw,
-    photovoltaic_system_source = k_gphvoqu,
-    district_heating_id = k_idwv,
-    district_heating_role = k_wvhz,
-    heated_by_egid = k_egid_hz,
-    house_number = gebnr,
-    municipality_code = ggdenr,
-    building_name = gbez,
-    building_category = gkat,
-    building_class = gklas,
-    building_status = gstat,
-    construction_year = gbauj,
-    construction_type = gbaup,
-    construction_month = gbaum,
-    demolition_year = gabbj,
-    building_area_m2 = garea,
-    building_volume_m3 = gvol,
-    building_volume_norm = gvolnorm,
-    building_volume_source = gvolsce,
-    energy_reference_area = gebf,
-    coordinate_e = gkode,
-    coordinate_n = gkodn,
-    coordinate_system_source = gksce,
-    num_floors = gastw,
-    num_separate_living_space = gazzi,
-    num_dwellings = k_ganzwhg,
-    energy_heat_1_gwr = gwaerzh1,
-    energy_heat_1_gwr = genh1_gwr,
-    energy_heat_1_date = gwaerdath1,
-    energy_heat_1_source = gwaersceh1,
-    energy_water_1_year = gwaerzw1)
-```
-
+### Calculation HEC and HEPI
 
 To calculate the HEC for each building, we use the @eq-hec introduced in Chapter @sec-problem-definition. Based on the HEC, we can also calculate HEPI.
 
 ```{r}
 energy_clean_model <- energy_clean %>%
-  mutate(hec = (verbrauch_erhoben_mwh*wirkungsgrad_anlage)+(produktion_soko_mwh) - (verbrauch_warmwasser_mwh),
-         hepi = hec/bruttogeschossflaeche) %>%
+  mutate(hec = (energy_consumed_measured_mwh*efficiency_of_installation) + (energy_production_solar_mwh) - (energy_consumed_hot_water_mwh),
+         hepi = hec/gross_floor_area) %>%
   filter(hec > 0)
-  
 
+sum(energy_clean_model$hec, na.rm = T)
+sum(energy_clean_model$energy_consumed_measured_mwh, na.rm = T)
 
-sum(energy_clean$hec, na.rm = T)
-sum(energy_clean$verbrauch_erhoben_mwh, na.rm = T)
-
-hec_check <- energy_clean %>%
-  select(egid, verbrauch_erhoben_mwh, energienutzung_anlage, hec,wirkungsgrad_anlage ,produktion_soko_mwh, verbrauch_warmwasser_mwh, verbrauch_geschaetzt_mwh, heizkoeffizient_erhoben, heizkoeffizient_geschaetzt)
+hec_check <- energy_clean_model %>%
+  select(egid, energy_consumed_measured_mwh, energy_usage_of_installation, hec, efficiency_of_installation ,energy_production_solar_mwh,
+         energy_consumed_hot_water_mwh, energy_consumed_estimated_mwh, heating_coefficient_measured, heating_coefficient_estimated)
 ```
 
+## Exploratory Analysis {#exploratory-analysis}
+
+To gain a first overview of the data that we use for modelling, we here present the summary statistics and plots.
+
+### Summary statistics
+
+```{r}
+skim(energy_clean)
+```
+
+### Density and boxplots
 
 ```{r}
 #| label: summary-stats
@@ -293,19 +395,51 @@ hec_check <- energy_clean %>%
 #> Filter to relevant buildings for modelling
 
 summary_table <- energy_clean %>%
-  group_by(ggdenr, energienutzung_anlage) %>%
+  group_by(dplzname, building_class) %>%
   summarise(n = n()) %>%
-  pivot_wider(names_from = ggdenr,
+  pivot_wider(names_from = building_class, 
               values_from = n)
 
 summary_table
 ```
 
-## Exploratory Analysis {#exploratory-analysis}
+```{r}
+#| label: boxplot-municipalityv
+#| include: false
+
+#> basic function
+plot_boxplot <- function(df, y_axis) {
+  y_axis <- sym(y_axis)
+  df %>%
+    mutate(class = fct_reorder(dplzname, !!y_axis, .fun='median')) %>%
+    ggplot( aes(x=reorder(dplzname, !!y_axis), y=!!y_axis, fill=dplzname)) + 
+      geom_boxplot() +
+      xlab("class") +
+      theme(legend.position="none") +
+      xlab("") + 
+      coord_flip()
+}
+#> Creating boxplots for different input variables
+boxplot_construction_year <- plot_boxplot(energy_clean, "construction_year")
+boxplot_building_area_m2 <- plot_boxplot(energy_clean, "building_area_m2")
+boxplot_num_residents <- plot_boxplot(energy_clean, "num_residents")
+
+boxplot_year_of_installation <- energy_clean %>%
+  filter(year_of_installation > 1900) %>%
+  plot_boxplot(., "year_of_installation")
+
+```
+
+```{r}
+boxplot_construction_year
+boxplot_building_area_m2
+boxplot_num_residents
+boxplot_year_of_installation
+```
 
 ```{r histogram, echo = FALSE}
 hist_plot <- energy_clean %>%
-  ggplot(aes(x = verbrauch_erhoben_mwh)) +
+  ggplot(aes(x = energy_consumed_measured_mwh)) +
   geom_histogram(bins = 50, col= "white") 
 
 hist_plot
@@ -328,16 +462,16 @@ correlations <- energy_clean %>%
 
 ```{r}
 energy_clean_log <- energy_clean %>%
-  mutate(verbrauch_erhoben_mwh_log = log(verbrauch_erhoben_mwh))
+  mutate(energy_consumed_measured_mwh_log = log(energy_consumed_measured_mwh))
 ```
 
 ## Per community
 
 ```{r}
 community_plot <- energy_clean %>%
-  ggplot(aes(x = meters_above_sealevel, y = verbrauch_erhoben_mwh)) +
+  ggplot(aes(x = meters_above_sealevel, y = energy_consumed_measured_mwh)) +
   geom_point() +
-  facet_grid(rows = vars(ggdenr))
+  facet_grid(rows = vars(municipality_code))
 
 community_plot
 ```
@@ -353,7 +487,7 @@ Train/test split
 set.seed(501)
 
 #> Save the split information for an 80/20 split of the data
-energy_split <- initial_split(energy_clean_log, prop = 0.80, strata = verbrauch_erhoben_mwh)
+energy_split <- initial_split(energy_clean_log, prop = 0.80, strata = energy_consumed_measured_mwh)
 energy_split
 
 
@@ -365,7 +499,7 @@ dim(energy_train)
 
 #> Resampling train set
 set.seed(123)
-folds <- vfold_cv(energy_train, v = 5, strata = verbrauch_erhoben_mwh)
+folds <- vfold_cv(energy_train, v = 5, strata = energy_consumed_measured_mwh)
 folds
 ```
 
@@ -379,7 +513,7 @@ lm_model <-
 
 lm_form_fit <- 
   lm_model %>% 
-  fit(verbrauch_erhoben_mwh_log ~ bruttogeschossflaeche + gkode + gkodn + erhebungsjahr, data = energy_clean_log)
+  fit(energy_consumed_measured_mwh_log ~ gross_floor_area + coordinate_e + coordinate_n + survey_year, data = energy_clean_log)
 
 lm_form_fit
 
@@ -393,11 +527,11 @@ tidy(lm_form_fit)
 ```{r}
 prediction <- predict(lm_form_fit, energy_test)
 
-test_res <- bind_cols(prediction, energy_test %>% select(egid, gbez, verbrauch_erhoben_mwh_log))
+test_res <- bind_cols(prediction, energy_test %>% select(egid, building_name, energy_consumed_measured_mwh_log))
 ```
 
 ```{r}
-ggplot(test_res, aes(x = verbrauch_erhoben_mwh_log, y = .pred)) + 
+ggplot(test_res, aes(x = energy_consumed_measured_mwh_log, y = .pred)) + 
   #> Create a diagonal line:
   geom_abline(lty = 2) + 
   geom_point(alpha = 0.5) + 
@@ -407,7 +541,7 @@ ggplot(test_res, aes(x = verbrauch_erhoben_mwh_log, y = .pred)) +
 ```
 
 ```{r}
-ggplot(energy_clean, aes(x = log(verbrauch_erhoben_mwh), y = log(verbrauch_geschaetzt_mwh))) + 
+ggplot(energy_clean_log, aes(x = log(energy_consumed_measured_mwh_log), y = log(energy_consumed_estimated_mwh))) + 
   #> Create a diagonal line:
   geom_abline(lty = 2) + 
   geom_point(alpha = 0.5) + 

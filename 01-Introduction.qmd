@@ -64,18 +64,26 @@ Since 2010, the estimation is based on a new method that has been developed toge
 
 The measured gas consumption represents the total annual amount of energy in kWh that the energy provider (Industrielle Werke Basel, IWB) delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows\_
 
-$$HEC = Gas_{Total}*e_{HS} + Solar_{Total} - f_{DHW}*N_{I} \\ 
- where $$ {#eq-hec}
+$$HEC = Gas_{Total}*e_{HS} + Solar_{Total} - f_{DHW}*N_{I}$$ {#eq-hec}
 
 ```{=tex}
-\begin{flalign}
+
 where
 Gas_{Total} = Total \ gas \ consumption \ in \ kWh « as  \ measured  \ by  \ IWB, \\
 Solar_{Total} = Estimated \ solar \ production \ in \ kWh \\ 
 f_{DHW} = Constant \ estimated \ factor \ of \ DWH \ per \ person \ and \ year \ (850 kWh)\\
 N_{I} = Number \ of \ inhabitants\\
-\end{flalign}
 ```
+where:
+
+-   Gas~Total~ = Total gas consumption in kWh as measured by provider (IWB)
+
+-   Solar~Total~ = Estimated solar production in kWh
+
+-   f~DHW~ = Constant estimated factor of DWH per person and year (850 kWh)
+
+-   N~I~ = Number of inhabitants
+
 Shortcomings of the current method:
 
 -   Influence of retrofitting is unknown and can not be quantified
@@ -90,10 +98,23 @@ On the basis of the considerations in Chapter [Background](#background) and Chap
 
 Main research question:
 
-1.  Can other models deliver predictions of HEC with higher accuracy than the current method?
+**Are there approaches (models) that can achieve higher accuracy than the current method to predict heat energy consumption (HEC) of residential buildings?**
+
+Approaches to be considered:
+
+-   MLR
+
+-   SVR
+
+-   RFR
+
+-   ANN
+
+-   AutoML
 
 Sub-questions:
 
 1.  What features in our input data are most important for the prediction of HEC?
-2.  Can we achieve a higher accuracy of the prediction if we include retrofit features in the model?
-3.  Can we achieve a higher accuracy of the prediction if we include socio-economic features in the model?
+2.  Can we improve the predictions through feature engineering (e.g. imputation of missing values)?
+3.  Can we achieve a higher accuracy of the prediction if we include retrofit features in the model?
+4.  Can we achieve a higher accuracy of the prediction if we include socio-economic features in the model? (if data available)

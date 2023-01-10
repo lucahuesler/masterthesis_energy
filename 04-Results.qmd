@@ -429,10 +429,15 @@ retrofit_plot <- energy_clean_08 %>%
   filter(year_completion > 2016,
          year_completion < 2019) %>%
   arrange(desc(egid)) %>%
-  select(egid, survey_year, year_completion, energy_consumed_measured_mwh, heating_coefficient_measured, hepi, hec) 
+  distinct(egid, survey_year, energy_consumed_measured_mwh) %>%
+  pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
 
-
-
+retrofit_plot %>%
+  ggplot((aes(energy_consumed_measured_mwh_2020, energy_consumed_measured_mwh_2016))) +
+           geom_point() +
+  xlim(0,200) +
+  ylim(0,200) +
+  geom_abline(intercept = 0, slope = 1)
 ```
 
 

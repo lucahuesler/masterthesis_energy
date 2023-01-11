@@ -10,7 +10,7 @@ library(skimr)
 library(plotly)
 ```
 
-## Preprocessing {#preprocessing}
+## Cleaning {#cleaning}
 
 ```{r}
 #| label: load-data
@@ -443,6 +443,13 @@ retrofit_plot %>%
 
 ### Cleaning
 
+```{r}
+#| label: final-cleaning 
+#| include: true
+
+
+```
+
 
 ## Exploratory Analysis {#exploratory-analysis}
 
@@ -476,7 +483,7 @@ summary_table
 ```
 
 ```{r}
-#| label: boxplot-municipalityv
+#| label: boxplot-municipality
 #| include: false
 
 #> basic function
@@ -545,16 +552,26 @@ energy_clean_log <- energy_clean_07 %>%
 
 ## Modelling
 
-Train/test split
+### Train/test split
 
 ```{r}
+#| label: train-test-split
+#| include: false
 
+#> select variables for modelling
+df_energy_modelling <- energy_clean_retrofit %>%
+  select(hepi, survey_year, num_residents, gross_floor_area, year_of_installation, efficiency_of_installation, energy_usage_of_installation, solar_system, solar_system_area_m2, solar_system_usage, solar_system_area_m2, photovoltaic_system, photovoltaic_system_power_kw, district_heating_role, heated_by_egid, municipality_code, building_category, building_class, construction_year, building_area_m2, energy_reference_area, coordinate_e, coordinate_n, num_floors, num_separate_living_space, num_dwellings, meters_above_sealevel, energy_production_solar_mwh, energy_consumed_hot_water_mwh, admin_project_type)
+
+
+df_energy_modelling_test <- df_energy_modelling %>%
+  select(hepi, survey_year, num_residents, gross_floor_area, year_of_installation, num_dwellings, energy_consumed_hot_water_mwh, energy_production_solar_mwh)
+         
 #> Set the random number stream using `set.seed()` so that the results can be 
 #> reproduced later. 
 set.seed(501)
 
 #> Save the split information for an 80/20 split of the data
-energy_split <- initial_split(energy_clean_log, prop = 0.80, strata = energy_consumed_measured_mwh)
+energy_split <- initial_split(df_energy_modelling_test, prop = 0.80, strata = hepi)
 energy_split
 
 
@@ -563,28 +580,72 @@ energy_train <- training(energy_split)
 energy_test  <-  testing(energy_split)
 
 dim(energy_train)
-
-#> Resampling train set
-set.seed(123)
-folds <- vfold_cv(energy_train, v = 5, strata = energy_consumed_measured_mwh)
-folds
 ```
+
+### Preprocessing
+
+In the preprocessing, we apply the following:
+
+- Remove multicollinearity: Predictor variables that have a correlation above +/- 0.8 will me removed
+- Normalize numeric variables
+- Log-transform numeric variables
+- Create dummy variables from all nominal variables
+
+```{r}
+#| label: preprocessing-recipe
+#| include: false
+
+
+# Specify a recipe object
+energy_recipe_1 <- recipe(hepi ~ .,
+                          data = energy_train) %>% 
+  # Remove correlated variables
+  step_corr(all_numeric_predictors(), threshold = 0.9) %>%
+  # Imput mean for num_residents
+  step_impute_mean(all_numeric()) %>%
+  # Log-transform
+  step_log(all_numeric(), base = 10) %>%
+  # Normalize numeric predictors
+  step_normalize(all_numeric()) %>% 
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal())
+
+
+# Train the recipe
+energy_recipe_1_prep <- energy_recipe_1 %>% 
+  prep(training = energy_train) 
+
+# Transform training data
+energy_training_prep <- energy_recipe_1_prep %>% 
+  bake(new_data = NULL)
+
+# Transform test data
+energy_test_prep <- energy_recipe_1_prep %>% 
+  bake(new_data = energy_test)
+
+energy_test_prep
+
+
+```
+
 
 ### Multiple linear regression
 
 ```{r}
+#| label: lm-fit
+#| include: false
 
+#> create model
 lm_model <- 
   linear_reg() %>% 
   set_engine("lm")
 
+#> fit model on training data
 lm_form_fit <- 
   lm_model %>% 
-  fit(hec ~ gross_floor_area + survey_year, data = energy_clean_log)
+  fit(hepi ~ ., data = energy_training_prep)
 
 lm_form_fit
-
-
 ```
 
 ```{r}
@@ -592,23 +653,38 @@ tidy(lm_form_fit)
 ```
 
 ```{r}
-prediction <- predict(lm_form_fit, energy_test)
+prediction <- lm_form_fit %>%
+  predict(energy_test)
 
-test_res <- bind_cols(prediction, energy_test %>% select(egid, building_name, hec))
+
+test_res <- energy_test %>%
+  select(egid, hec) %>%
+  bind_cols(prediction)
+
+test_res
 ```
+
+```{r}
+test_res %>%
+  rmse(hec, .pred)
+
+test_res %>%
+  rsq(hec, .pred)
+```
+
 
 ```{r}
 ggplot(test_res, aes(x = hec, y = .pred)) + 
   #> Create a diagonal line:
   geom_abline(lty = 2) + 
   geom_point(alpha = 0.5) + 
-  labs(y = "Predicted Energy use (log10)", x = "Measured energy use (log10)") +
+  labs(y = "Predicted HEC", x = "Measured HEC") +
   #> Scale and size the x- and y-axis uniformly:
   coord_obs_pred()
 ```
 
 ```{r}
-ggplot(energy_clean_log, aes(x = log(hec), y = log(energy_consumed_estimated_mwh))) + 
+ggplot(test_res, aes(x = log(hec), y = log(.pred))) + 
   #> Create a diagonal line:
   geom_abline(lty = 2) + 
   geom_point(alpha = 0.5) + 
@@ -616,3 +692,9 @@ ggplot(energy_clean_log, aes(x = log(hec), y = log(energy_consumed_estimated_mwh
   #> Scale and size the x- and y-axis uniformly:
   coord_obs_pred()
 ```
+
+
+### ANN
+
+### Auto ML
+

@@ -17,6 +17,145 @@ cleaning_retrofit <- function(df){
 retrofit_m01_clean <- cleaning_retrofit(retrofit_m01)
 ```
 
-
 ## Details on model comparison
+
+## Classification of energy source
+
+```{r}
+library(tidymodels)
+
+classification_energy_source_df <- energy_clean_06 %>%
+  inner_join(gwr_building, by = "egid") %>%
+  select(egid, energy_source_heat_1, gkat, gklas, gbauj, coordinate_e, coordinate_n, district_heating_role, gross_floor_area, num_dwellings, num_floors) %>%
+  filter(!is.na(energy_source_heat_1))
+```
+
+
+```{r}
+# Create data split object
+classification_energy_source_split <- initial_split(classification_energy_source_df, prop = 0.75,
+                     strata = energy_source_heat_1)
+
+# Create the training data
+energy_source_training <- classification_energy_source_split %>% 
+  training()
+
+# Create the test data
+energy_source_test <- classification_energy_source_split %>% 
+  testing()
+
+# Check the number of rows
+nrow(energy_source_training)
+nrow(energy_source_test)
+```
+
+```{r}
+# Specify a logistic regression model
+logistic_model <- multinom_reg() %>% 
+  # Set the engine
+  set_engine('nnet') %>% 
+  # Set the mode
+  set_mode('classification')
+
+# Fit to training data
+logistic_fit <- logistic_model %>% 
+  fit(energy_source_heat_1 ~ gkat  + gklas + gbauj + coordinate_e + coordinate_n,
+      data = energy_source_training)
+
+# Print model fit object
+logistic_fit
+```
+
+```{r}
+# Predict outcome categories
+class_preds <- predict(logistic_fit, new_data = energy_source_test,
+                       type = 'class')
+
+# Obtain estimated probabilities for each outcome value
+prob_preds <- predict(logistic_fit, new_data = energy_source_test, 
+                      type = 'prob')
+
+# Combine test set results
+energy_source_results <- energy_source_test %>% 
+  select(energy_source_heat_1) %>% 
+  bind_cols(class_preds, prob_preds)
+
+# View results tibble
+energy_source_results
+```
+
+```{r}
+# Create a custom metric function
+energy_source_metrics <- metric_set(accuracy, sens, spec)
+
+# Calculate metrics using model results tibble
+energy_source_metrics(energy_source_results, truth = energy_source_heat_1,
+                estimate = .pred_class)
+
+
+
+conf_mat(energy_source_results, truth = energy_source_heat_1, estimate = .pred_class)
+```
+
+```{r}
+# Create a confusion matrix
+conf_mat(energy_source_results,
+         truth = energy_source_heat_1,
+         estimate = .pred_class) %>% 
+  # Create a heat map
+  autoplot(type = 'heatmap')
+
+# Create a confusion matrix
+conf_mat(energy_source_results,
+         truth = energy_source_heat_1,
+         estimate = .pred_class) %>% 
+  # Create a mosaic plot
+  autoplot(type = 'mosaic')
+```
+
+```{r}
+# Calculate metrics across thresholds
+threshold_df <- energy_source_results %>% 
+  roc_curve(truth = energy_source_heat_1, .pred_7500:.pred_7599)
+
+# View results
+threshold_df
+
+# Plot ROC curve
+threshold_df %>% 
+  autoplot()
+
+# Calculate ROC AUC
+roc_auc(energy_source_results,
+    truth = energy_source_heat_1, 
+    .pred_7500:.pred_7599)
+```
+```{r}
+# Train model with last_fit()
+energy_source_last_fit <- logistic_model %>% 
+  last_fit(energy_source_heat_1 ~ gkat  + gklas + gbauj + coordinate_e + coordinate_n,
+           split = classification_energy_source_split)
+
+# View test set metrics
+energy_source_last_fit %>% 
+  collect_metrics()
+
+# Collect predictions
+last_fit_results <- energy_source_last_fit %>% 
+  collect_predictions()
+
+# View results
+last_fit_results
+
+# Custom metrics function
+last_fit_metrics <- metric_set(accuracy, sens,
+                               spec, roc_auc)
+
+# Calculate metrics
+last_fit_metrics(last_fit_results,
+                 truth = energy_source_heat_1,
+                 estimate = .pred_class,
+                 .pred_7500:.pred_7599)
+```
+
 

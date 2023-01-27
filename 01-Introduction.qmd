@@ -60,45 +60,91 @@ As mentioned in @cantonal-energy-planning, the Canton of Basel-Landschaft conduc
 
 [^01-introduction-2]: The tables and illustrations of the cantonal energy statistics are available at: https://www.statistik.bl.ch/web_portal/8.
 
-Since 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt @statistischesamtdeskantonsbasel-stadt2022 . The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) <!--# Add footnote about difference between federal RBD and cantonal RBD -->. The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).
+Since 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt [@statistischesamtdeskantonsbasel-stadt2022]. The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) <!--# Add footnote about difference between federal RBD and cantonal RBD -->. The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).
 
-The measured gas consumption represents the total annual amount of energy in kWh that the energy provider (Industrielle Werke Basel, IWB) delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows\_
+The measured gas consumption represents the total annual amount of energy in kWh that the energy provider (Industrielle Werke Basel, IWB) delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows:
 
-$$HEC = Gas_{Total}*e_{HS} + Solar_{Total} - f_{DHW}*N_{I}$$ {#eq-hec}
+$$HEC = Gas_{m}*e + Solar_{Total} - c_{DHW}*N_{I}$$ {#eq-hec}
 
-```{=tex}
-
-where
-Gas_{Total} = Total \ gas \ consumption \ in \ kWh « as  \ measured  \ by  \ IWB, \\
-Solar_{Total} = Estimated \ solar \ production \ in \ kWh \\ 
-f_{DHW} = Constant \ estimated \ factor \ of \ DWH \ per \ person \ and \ year \ (850 kWh)\\
-N_{I} = Number \ of \ inhabitants\\
-```
 where:
 
--   Gas~Total~ = Total gas consumption in kWh as measured by provider (IWB)
+-   Gas~m~ = Total gas consumption in kWh as measured by provider (IWB)
 
--   Solar~Total~ = Estimated solar production in kWh
+-   Solar~e~ = Estimated solar production in kWh
 
--   f~DHW~ = Constant estimated factor of DWH per person and year (850 kWh)
+-   c~DHW~ = Constant estimated factor of DWH per person and year (850 kWh)
 
 -   N~I~ = Number of inhabitants
 
-Shortcomings of the current method:
+By adjusting the measured gas consumption with @eq-hec, the amount of useful energy (german: Nutzenergie( is obtained. Based on this, the heating energy consumption per square meter of area (HEPI):
 
--   Influence of retrofitting is unknown and can not be quantified
+$$
+\begin{align}
+HEPI = \frac{HEC}{ERA}
+&= \frac{HEC}{GFA*n_{floors}}
+\end{align}
+$$ {#eq-hepi}
 
--   Socio-economic factors and behaviour of inhabitants is not considered explicitly
+where:
 
--   Randomness of weather is difficult to integrate
+-   HEC = Heat energy consumption in kWh/year
+
+-   ERA = Energy reference area in square meters
+
+-   GFA = Gross floor area
+
+-   n~floors~ = Number of floors
+
+As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate average HEPI each building category (single-family house, multi-family house) and period of construction. The following figure shows the average HEPI for construction period for single-family houses.
+
+<!--# add HEPI figure -->
+
+The current methodology presents a clear and transparent approach for estimating the HEC of the building sector. It offers a precise estimation that can produce satisfactory results at the cantonal level. However at the level of individual buildings, the estimation error may be substantial.
+
+The current method has several shortcomings that limit its accuracy and applicability:
+
+1.  **Averaging the HEPI per construction period**: The HEPI for a specific building may not necessarily be representative of the typical HEPI value for buildings of the same construction period. This could introduce inaccuracies in the estimation of HEC of an individual building.
+2.  **Differences between municipalities:** The current method does not consider potential differences between municipalities that could influence the HEPI. However, it is possible that some municipalities have significantly different factors influencing their HEC, such as different building structures or different energy consumption patterns.
+3.  **Retrofitting is not taken into account**: One major limitation is the lack of information on the influence of retrofitting on energy consumption. Without this information, it is not possible to quantify the effect of retrofitting on energy consumption and make accurate predictions.
+4.  **Socio-economic factors are not considered**: Similar to retrofitting, socio-economic factors and the behavior of inhabitants are not considered explicitly in the current method. Currently, only the number of inhabitants registered per 31 december of the respective year are taken into account in order to estimate the DHW consumption. However, the behaviour and inhabitants as well vacancies of a building can have a substantial influence on HEC.
+5.  **Randomness of weather:** In the current method, patterns is also a challenge to integrate in the current method, which can result in variability in the estimated energy consumption. These limitations highlight the need for further research and development to improve the accuracy and applicability of the current method.
+
+Since detailed energy data at the level of individual buildings is becoming increasingly important for energy planning at municipal or neighborhood level, it seems crucial to provide accurate and precise estimations.
 
 ## Research questions & goals {#Research-Questions-Goals}
 
-On the basis of the considerations in Chapter [Background](#background) and Chapter , we will here formulate the research questions and also define the goals of the project from a practical perspective.
+On the basis of the considerations in @sec-problem-definition , we will here formulate the research questions and also define the goals of the project from a practical perspective.
 
-Main research question:
+The goal of the present master thesis is to explore and evaluate different state-of-the-art machine learning models for estimating the HEC of residential buildings. Thereby, we seek to present alternative approaches to the current method as outlined in @sec-problem-definition, that can potentially deliver more precise estimations of the HEC and address the above mentioned shortcomings.
 
-**Are there approaches (models) that can achieve higher accuracy than the current method to predict heat energy consumption (HEC) of residential buildings?**
+Thus, we here formulate the following main research question:
+
+-   **Which model or set of models can achieve the highest accuracy in estimating the HEC of heat energy consumption (HEC) of residential buildings?**
+
+``` {#list-research-question .latex}
+\begin{itemize}
+    \item RQ1: Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?
+    \item RQ2: What features of the are most important for the prediction of HEC in the final model?
+\end{itemize}
+```
+
+By emphasizing on RQ1, we formulate the following sub questions:
+
+``` latex
+\begin{itemize}
+    \item RQ1.1: Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings compared to the current approach?
+    \item RQ1.2: Can we improve the predictions through feature engineering (e.g. imputation of missing values)?
+\end{itemize}
+```
+
+By emphasizing on RQ2, we are specifically interested in features of the input data that are not yet considered in the current approach. Thus, we here formulate the following sub questions:
+
+``` latex
+\begin{itemize}
+    \item RQ2.1: What importance can be attributed to retrofit features in the final model?
+    \item RQ2.2: What importance can be attributed to socio-economic features in the model? (if data available)
+\end{itemize}
+```
 
 Approaches to be considered:
 
@@ -111,10 +157,3 @@ Approaches to be considered:
 -   ANN
 
 -   AutoML
-
-Sub-questions:
-
-1.  What features in our input data are most important for the prediction of HEC?
-2.  Can we improve the predictions through feature engineering (e.g. imputation of missing values)?
-3.  Can we achieve a higher accuracy of the prediction if we include retrofit features in the model?
-4.  Can we achieve a higher accuracy of the prediction if we include socio-economic features in the model? (if data available)

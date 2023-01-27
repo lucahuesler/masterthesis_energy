@@ -24,9 +24,12 @@ retrofit_m01_clean <- cleaning_retrofit(retrofit_m01)
 ```{r}
 library(tidymodels)
 
-classification_energy_source_df <- energy_clean_06 %>%
+energy_classification_energy_source <- read_rds("data/energy_classification_energy_source.rds")
+gwr_building <-  read_delim("data/gwr_gebaeude_20221027.csv", delim = ";", show_col_types = FALSE)
+
+classification_energy_source_df <- energy_classification_energy_source %>%
   inner_join(gwr_building, by = "egid") %>%
-  select(egid, energy_source_heat_1, gkat, gklas, gbauj, coordinate_e, coordinate_n, district_heating_role, gross_floor_area, num_dwellings, num_floors) %>%
+  select(egid, energy_source_heat_1, gkat, gklas, gbauj, coordinate_e, coordinate_n, district_heating_role, gross_floor_area_m2, num_dwellings, num_floors) %>%
   filter(!is.na(energy_source_heat_1))
 ```
 

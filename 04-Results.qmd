@@ -28,58 +28,110 @@ To gain a first overview of the data that we use for modelling, we here present 
 
 ### Summary statistics
 
-As outlined in @sec-data-preprocessing, we applied several filters to the initial raw data. Thus, the final dataset for modelling contains `r nrow(energy_modelling)` observations (buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the datasate three times at maximum. Table ... shows the distribution across the years:
+As outlined in @sec-data-preprocessing, we applied several filters to the initial raw data. Thus, the final dataset for modelling contains `r nrow(energy_modelling)` observations (buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-obs-per-year shows that the number of gas-heated buildings is slightly decreasing between 2016 and 2020. Also, we observe a decrease of the mean HEPI and the total HEC between 2016 and 2020.
 
 ```{r}
-#| label: table-per-year
-#| include: false
+#| label: tbl-obs-per-year
 #| tbl-cap: "Number of buildings per survey year."
+#| tbl-cap-location: bottom
 
 obs_per_year <- energy_modelling |>
   dplyr::group_by(survey_year) |>
-  dplyr::summarise(n = n()) |>
-  gt() |>
-  tab_header(
-    title = "S&P 500")
+  dplyr::rename("Survey Year" = survey_year) |>
+  dplyr::summarise(Count = n(),
+                   "Mean HEPI (kWh/m2/year)" = mean(hepi),
+                   "Sum HEC (GWh/year)" = sum(hec)/1000) |>
+  knitr::kable(booktabs = TRUE, digits = 1)
 
-knitr::kable(obs_per_year, caption = "Number of buildings per survey year.")
-
+obs_per_year
 ```
 
 
 
 ```{r}
+#| label: tbl-obs-per-year-municipality
+#| tbl-cap: "Mean HEPI and sum HEC per survey year and municipality."
+#| tbl-cap-location: bottom
 
-summary_stats <- energy_modelling %>% skim()
+obs_per_year_municipality <- energy_modelling |>
+  dplyr::group_by(survey_year, entrance_municipality_name) |>
+  dplyr::rename("Survey Year" = survey_year,
+                "Municipality" = entrance_municipality_name) |>
+  dplyr::summarise(Count = n(),
+                   "Mean HEPI (kWh/m2/year)" = mean(hepi),
+                   "Sum HEC (GWh/year)" = sum(hec)/1000) |>
+  dplyr::arrange(desc("Mean HEPI (kWh/m2/year)")) |>
+  knitr::kable(booktabs = TRUE, digits = 1)
 
-energy_modelling %>%
-  select(survey_year, 
-         energy_usage_of_installation, 
-         solar_system, 
-         solar_system_usage, 
-         building_category, 
-         building_class, 
-         energy_consumed_measured_mwh, 
-         num_residents, 
-         heating_coefficient_measured, 
-         gross_floor_area_m2, 
-         heated_area_m2, 
-         year_of_installation, 
-         efficiency_of_installation, 
-         construction_year, 
-         heated_by_egid, 
-         hec, 
-         hepi) %>%
-  skim() %>%
-  dplyr::select(skim_type, skim_variable, n_missing, complete_rate, numeric.mean)
-
+obs_per_year_municipality
 ```
+
+
+```{r}
+#| label: tbl-summary-stats
+#| tbl-cap: "Summary statistics of modelling input data."
+#| tbl-cap-location: bottom
+
+summary_stats_numeric <- energy_modelling %>%
+  skim() %>%
+  yank("numeric")
+
+summary_stats_numeric
+```
+
+### Retrofitting
+
+```{r}
+#| label: tbl-retrofit
+#| tbl-cap: "Mean HEPI of retrofitted versus non-retrofitted."
+#| tbl-cap-location: bottom
+
+retrofit_mean_hepi <- energy_modelling %>%
+  dplyr::group_by(survey_year, building_class, retrofitted) %>%
+  dplyr::summarise("Mean HEPI" = mean(hepi))
+
+retrofit_mean_hepi
+```
+
+```{r}
+#| label: fig-retrofitting-investment-costs
+#| fig-cap: "Correlation between retrofit investment costs and HEPI"
+
+retrofit_investment_plot <- energy_modelling %>%
+  filter(!is.na(retrofit_investment_costs)) %>%
+  ggplot((aes(retrofit_investment_costs, hepi))) +
+           geom_point() +
+  facet_grid(vars(building_class))
+
+retrofit_investment_plot
+```
+
+
+```{r}
+#| label: fig-retrofitting
+#| fig-cap: "Construction year per municipality"
+
+retrofit_plot <- energy_modelling %>%
+  filter(retrofitted == TRUE) %>%
+  arrange(desc(egid)) %>%
+  distinct(egid, survey_year, energy_consumed_measured_mwh) %>%
+  pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
+
+retrofit_plot %>%
+  ggplot((aes(energy_consumed_measured_mwh_2018, energy_consumed_measured_mwh_2016))) +
+           geom_point() +
+  xlim(0,200) +
+  ylim(0,200) +
+  geom_abline(intercept = 0, slope = 1)
+```
+
 
 ### Density and boxplots
 
 ```{r}
-#| label: summary-stats
-#| include: false
+#| label: tbl-summary-municipality
+#| tbl-cap: "Summary statistics per municipality"
+#| tbl-cap-location: bottom
 
 #> Filter to relevant buildings for modelling
 
@@ -122,13 +174,22 @@ boxplot_year_of_installation <- energy_modelling %>%
 ```
 
 ```{r}
+#| label: fig-municipality-hepi
+#| fig-cap: "HEPI per municipality"
+#| include: false
 
 ggplotly(boxplot_hepi)
-ggplotly(boxplot_construction_year) 
-ggplotly(boxplot_year_of_installation)
-ggplotly(boxplot_building_area_m2)
-ggplotly(boxplot_num_residents)
+
 ```
+
+```{r}
+#| label: fig-municipality-construction-year
+#| fig-cap: "Construction year per municipality"
+
+ggplotly(boxplot_construction_year) 
+
+```
+
 
 ### Ridgeline plots
 
@@ -148,6 +209,8 @@ energy_modelling %>%
   labs(title = 'HEPI per municipality') +
   xlim(0,300)
 ```
+
+
 
 ## Modelling
 
@@ -294,6 +357,7 @@ dt_test_results <-
 
 collect_metrics(dt_test_results)
 ```
+
 
 ```{r}
 dt_test_results %>% 

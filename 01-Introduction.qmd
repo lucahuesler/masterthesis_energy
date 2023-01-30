@@ -117,9 +117,7 @@ On the basis of the considerations in @sec-problem-definition , we will here for
 
 The goal of the present master thesis is to explore and evaluate different state-of-the-art machine learning models for estimating the HEC of residential buildings. Thereby, we seek to present alternative approaches to the current method as outlined in @sec-problem-definition, that can potentially deliver more precise estimations of the HEC and address the above mentioned shortcomings.
 
-Thus, we here formulate the following main research question:
-
--   **Which model or set of models can achieve the highest accuracy in estimating the HEC of heat energy consumption (HEC) of residential buildings?**
+Thus, we here formulate the following two main research questions:
 
 ``` {#list-research-question .latex}
 \begin{itemize}

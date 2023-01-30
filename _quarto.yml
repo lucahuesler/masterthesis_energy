@@ -1,23 +1,25 @@
 project:
   type: book
   
-  
 book:
   title: "Estimating the heat energy use of residential buildings"
   subtitle: "A case study in the Canton of Basel-Landschaft"
   author: Luca Hüsler
   submitted: 2023
   date: "today"
-  downloads: ["pdf"]
   chapters:
     - index.qmd
+    - abstract.qmd
+    - declaration.qmd
+    - acknowledgements.qmd
     - 01-Introduction.qmd
     - 02-TheoreticalBackground.qmd
     - 03-Methodology.qmd
     - 04-Results.qmd
-    - 05-appendix.qmd
     - 99-references.qmd
-
+  appendices:
+    - 05-appendix.qmd
+  references: references.qmd
 
 bibliography: references.bib
 csl: csl/apa.csl
@@ -40,3 +42,8 @@ knitr:
     R.options:
       knitr.graphics.auto_pdf: true
 
+execute:
+  eval: true
+  echo: false
+  include: true
+  

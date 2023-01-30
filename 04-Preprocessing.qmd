@@ -1,4 +1,3 @@
-
 ```{r}
 #| label: load-libs
 #| include: false
@@ -45,7 +44,6 @@ stat_pop_2018 <- read_delim("data/statpop_hektar_2018/STATPOP2018.csv", delim = 
 stat_pop_2020 <- read_delim("data/statpop_hektar_2020/ag-b-00.03-vz2020statpop/STATPOP2020.csv", delim = ";", show_col_types = FALSE)
 ```
 
-
 ```{r}
 #| label: remove-duplicates
 #| include: false
@@ -55,7 +53,6 @@ energy_raw <- energy_raw %>% distinct(egid,erhebungsjahr, .keep_all = TRUE)
 
 energy_raw %>% group_by(erhebungsjahr) %>% summarize(count = n())
 ```
-
 
 ```{r}
 #| label: create-geom-attributes
@@ -73,7 +70,6 @@ stat_pop_2016 <- stat_pop_2016 %>%
 
 
 ```
-
 
 ### Data matching
 
@@ -100,7 +96,6 @@ energy_clean_02 <- energy_clean_01 %>%
 #> match statpop data
 
 ```
-
 
 ```{r}
 #| label: match-heating-degree-days
@@ -134,6 +129,7 @@ energy_clean_04 <- energy_clean_03 %>%
 ```
 
 ### Definition of data types
+
 ```{r}
 #| label: clean-data-types
 #| include: false
@@ -150,6 +146,7 @@ energy_clean_05 <- energy_clean_04 %>%
 ```
 
 ### Renaming
+
 For easier use in the further analysis, we convert the column names to english and use namings that are easy to understand.
 
 ```{r}
@@ -251,12 +248,15 @@ energy_clean_07 %>%
   select(egid, survey_year,heating_coefficient_measured, efficiency_of_installation, energy_production_solar_mwh, energy_consumed_hot_water_mwh, energy_consumed_measured_mwh, num_residents)
 ```
 
+
+
+
 ### Data filtering
 
 In order to prepare the data for modelling, we apply the following filters:
 
 -   Only residential buildings (`gkat = 1020`)
--   Only buildings with a HEPI > 20 kWh/m² or HEPI <300 kWh/m²
+-   Only buildings with a HEPI \> 20 kWh/m² or HEPI \<300 kWh/m²
 -   Only buildings where the gas is used for HEC or for DWH+HEC. As this information is absent for many buildings, we also include `NA` values here.
 
 ```{r}
@@ -292,7 +292,7 @@ plausi_plot <- ggplot(energy_clean_08, aes(label=egid)) +
 ggplotly(plausi_plot)
 ```
 
-By applying the above filters, we obtain a dataset of about `r nrow(energy_clean_07)` observations. As the dataset contains measured gas consumption for the years 2016, 2018 and 2020, one building can be present three times. 
+By applying the above filters, we obtain a dataset of about `r nrow(energy_clean_07)` observations. As the dataset contains measured gas consumption for the years 2016, 2018 and 2020, one building can be present three times.
 
 ```{r}
 #| label: plot-energy-measured
@@ -321,10 +321,6 @@ energy_clean_08 %>%
 
 
 ```
-
-
-
-
 
 ### Retrofit data
 
@@ -506,7 +502,6 @@ retrofit_all_clean <- retrofit_all_clean %>%
 table(retrofit_all_clean$year_completion, useNA = "ifany")
 ```
 
-
 ```{r}
 #| label: add-retrofit 
 #| include: false
@@ -519,34 +514,50 @@ retrofit_all_match <- retrofit_all_clean %>%
   arrange(year_completion) %>%
   distinct(egid, .keep_all = TRUE)
 
+#> match with energy df
+
 energy_clean_09 <- energy_clean_08 %>%
-  left_join(retrofit_all_match, by = "egid")
+  left_join(retrofit_all_match, by = "egid") %>%
+  #> create new variable "retrofitted" based on survey_year and year_completion: Buildings only count as retrofitted if the year of completion is before the survey year
+  mutate(retrofitted = case_when(survey_year == 2016 & year_completion < 2016 ~ TRUE,
+                                 survey_year == 2018 & year_completion < 2018 ~ TRUE,
+                                 survey_year == 2020 & year_completion < 2020 ~ TRUE,
+                                 TRUE ~ FALSE)) %>%
+  #> set retrofit variables to NA if building is not tagged as retrofitted
+  mutate(admin_id = if_else(retrofitted == TRUE, admin_id, NA_character_), 
+         admin_project_type = if_else(retrofitted == TRUE, admin_project_type, NA_character_), 
+         admin_project_name = if_else(retrofitted == TRUE, admin_project_name, NA_character_), 
+         param_investment_costs = if_else(retrofitted == TRUE, param_investment_costs, NA_real_),
+         year_completion = if_else(retrofitted == TRUE, year_completion, NA_integer_)) %>%
+  rename(retrofit_id = admin_id, 
+         retrofit_project_type = admin_project_type, 
+         retrofit_project_name = admin_project_name, 
+         retrofit_investment_costs = param_investment_costs, 
+         retrofit_year_completion = year_completion)
+
+
+energy_clean_09 %>%
+  group_by(survey_year, retrofitted, retrofit_year_completion) %>%
+  dplyr::summarise(n = n())
 ```
 
 
+### Cleaning binary variables
+
 ```{r}
-#| label: plot-retrofit-data 
-#| include: true
+energy_clean_10 <- energy_clean_09 %>%
+  mutate(solar_system = if_else(is.na(solar_system), FALSE, TRUE),
+         photovoltaic_system = if_else(is.na(photovoltaic_system), FALSE, TRUE))
 
-retrofit_plot <- energy_clean_09 %>%
-  filter(year_completion > 2016,
-         year_completion < 2019) %>%
-  arrange(desc(egid)) %>%
-  distinct(egid, survey_year, energy_consumed_measured_mwh) %>%
-  pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
 
-retrofit_plot %>%
-  ggplot((aes(energy_consumed_measured_mwh_2020, energy_consumed_measured_mwh_2016))) +
-           geom_point() +
-  xlim(0,200) +
-  ylim(0,200) +
-  geom_abline(intercept = 0, slope = 1)
+table(energy_clean_10$solar_system)
+table(energy_clean_10$photovoltaic_system)
 ```
 
 
 ## Save data
+
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean_09, "data/energy_modelling.rds")
+write_rds(energy_clean10, "data/energy_modelling.rds")
 ```
-

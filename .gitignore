@@ -4,6 +4,7 @@
 .Ruserdata
 .Rprofile
 .Renviron
+*.log
 
 gpt_q_and_a.qmd
 /.quarto/
@@ -11,3 +12,4 @@ gpt_q_and_a.qmd
 .DS_Store
 
 /data
+  

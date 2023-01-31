@@ -1,0 +1,8 @@
+title: HSLU Format Template
+author: Luca Hüsler
+version: 0.1.0
+contributes:
+  formats:
+    pdf:
+      template: hslu.tex
+      pdf-engine: pdflatex

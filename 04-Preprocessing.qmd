@@ -193,7 +193,7 @@ energy_clean_06 <- energy_clean_05 %>%
     building_class = gklas,
     building_status = gstat,
     construction_year = gbauj,
-    construction_type = gbaup,
+    construction_period = gbaup,
     construction_month = gbaum,
     demolition_year = gabbj,
     building_area_m2 = garea,
@@ -247,9 +247,6 @@ energy_clean_07 %>%
   filter(is.na(heating_coefficient_measured) & !is.na(energy_consumed_measured_mwh) & building_category == 1020) %>%
   select(egid, survey_year,heating_coefficient_measured, efficiency_of_installation, energy_production_solar_mwh, energy_consumed_hot_water_mwh, energy_consumed_measured_mwh, num_residents)
 ```
-
-
-
 
 ### Data filtering
 
@@ -541,7 +538,6 @@ energy_clean_09 %>%
   dplyr::summarise(n = n())
 ```
 
-
 ### Cleaning binary variables
 
 ```{r}
@@ -554,10 +550,48 @@ table(energy_clean_10$solar_system)
 table(energy_clean_10$photovoltaic_system)
 ```
 
+### Handling NA's
+
+```{r}
+energy_clean_11 <- energy_clean_10 |>
+  mutate(retrofit_investment_costs = if_else(is.na(retrofit_investment_costs), 0, retrofit_investment_costs),
+         photovoltaic_system_power_kw = if_else(is.na(photovoltaic_system_power_kw), 0, photovoltaic_system_power_kw),
+         solar_system_usage = fct_explicit_na(solar_system_usage),
+         solar_system_area_m2 = if_else(is.na(solar_system_area_m2), 0, solar_system_area_m2))
+
+summary(energy_clean_11$retrofit_investment_costs)
+summary(energy_clean_11$photovoltaic_system_power_kw)
+summary(energy_clean_11$solar_system_usage)
+summary(energy_clean_11$solar_system_area_m2)
+```
+
+## Drop unused levels
+
+```{r}
+# remove unused levels
+energy_clean_12 <- energy_clean_11 |>
+  mutate(energy_usage_of_installation = droplevels(energy_usage_of_installation),
+         photovoltaic_system_source = droplevels(photovoltaic_system_source),
+         municipality_code = droplevels(municipality_code),
+         building_category = droplevels(building_category),
+         building_class = droplevels(building_class))
+
+# check for unused levels
+unused_levels <- lapply(energy_clean_12, function(x) {
+    if(is.factor(x)){
+      levels(x)[!levels(x) %in% x]
+    }
+})
+
+unused_levels <- Filter(function(x) length(x) > 0, unused_levels)
+
+unused_levels
+
+```
 
 ## Save data
 
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean10, "data/energy_modelling.rds")
+write_rds(energy_clean_12, "data/energy_modelling.rds")
 ```

@@ -46,8 +46,6 @@ obs_per_year <- energy_modelling |>
 obs_per_year
 ```
 
-
-
 ```{r}
 #| label: tbl-obs-per-year-municipality
 #| tbl-cap: "Mean HEPI and sum HEC per survey year and municipality."
@@ -65,7 +63,6 @@ obs_per_year_municipality <- energy_modelling |>
 
 obs_per_year_municipality
 ```
-
 
 ```{r}
 #| label: tbl-summary-stats
@@ -106,7 +103,6 @@ retrofit_investment_plot <- energy_modelling %>%
 retrofit_investment_plot
 ```
 
-
 ```{r}
 #| label: fig-retrofitting
 #| fig-cap: "Construction year per municipality"
@@ -124,7 +120,6 @@ retrofit_plot %>%
   ylim(0,200) +
   geom_abline(intercept = 0, slope = 1)
 ```
-
 
 ### Density and boxplots
 
@@ -190,7 +185,6 @@ ggplotly(boxplot_construction_year)
 
 ```
 
-
 ### Ridgeline plots
 
 ```{r}
@@ -210,8 +204,6 @@ energy_modelling %>%
   xlim(0,300)
 ```
 
-
-
 ## Modelling
 
 ### Train/test split
@@ -222,11 +214,37 @@ energy_modelling %>%
 
 #> select variables for modelling
 df_energy_modelling <- energy_modelling %>%
-  select(egid, hepi, survey_year, num_residents, gross_floor_area_m2, year_of_installation, efficiency_of_installation, energy_usage_of_installation, solar_system, solar_system_area_m2, solar_system_usage, solar_system_area_m2, photovoltaic_system, photovoltaic_system_power_kw, district_heating_role, heated_by_egid, municipality_code, building_category, building_class, construction_year, building_area_m2, energy_reference_area, coordinate_e, coordinate_n, num_floors, num_separate_living_space, num_dwellings, meters_above_sealevel, energy_production_solar_mwh, energy_consumed_hot_water_mwh)
+  select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents, 
+         num_floors, 
+         building_area_m2, 
+         gross_floor_area_m2, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         solar_system, 
+         solar_system_area_m2, 
+         solar_system_usage, 
+         solar_system_area_m2, 
+         photovoltaic_system, 
+         photovoltaic_system_power_kw, 
+         municipality_code, 
+         building_class, 
+         construction_year, 
+         coordinate_e, 
+         coordinate_n, 
+         num_dwellings, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         retrofit_investment_costs,
+         hdd)
 
-
-df_energy_modelling_test <- df_energy_modelling %>%
-  select(egid, hepi, survey_year, num_residents, gross_floor_area_m2, year_of_installation, num_dwellings, energy_consumed_hot_water_mwh, energy_production_solar_mwh)
          
 #> Set the random number stream using `set.seed()` so that the results can be 
 #> reproduced later. 
@@ -306,7 +324,7 @@ auto_ml_spec <- auto_ml() %>%
 energy_models <- 
    workflow_set(
       preproc = list(simple = energy_base_recipe),
-      models = list(lm = lm_spec, dt = dt_spec),
+      models = list(lm = lm_spec),
       cross = TRUE
    )
 
@@ -319,7 +337,7 @@ energy_models
 #| label: hyperparameter-tuning
 #| include: false
 
-splits <- vfold_cv(energy_train, v = 2, strata = hepi)
+splits <- vfold_cv(energy_train, v = 5, strata = hepi)
 
 set.seed(123)
 energy_models <- 
@@ -347,26 +365,28 @@ best_results <-
    energy_models %>% 
    extract_workflow_set_result("simple_lm") %>% 
    select_best(metric = "rmse")
+
 best_results
 
-dt_test_results <- 
+lm_test_results <- 
    energy_models %>% 
    extract_workflow("simple_lm") %>% 
    finalize_workflow(best_results) %>% 
    last_fit(split = energy_split)
 
-collect_metrics(dt_test_results)
+collect_metrics(lm_test_results)
 ```
 
-
 ```{r}
-dt_test_results %>% 
+lm_test_results_plot <- lm_test_results %>% 
    collect_predictions() %>% 
    ggplot(aes(x = hepi, y = .pred)) + 
    geom_abline(color = "gray50", lty = 2) + 
    geom_point(alpha = 0.5) + 
    coord_obs_pred() + 
    labs(x = "observed", y = "predicted")
+
+ggplotly(lm_test_results_plot)
 ```
 
 ### Multiple linear regression
@@ -385,9 +405,10 @@ lm_model <-
 #> fit model on training data
 lm_form_fit <- 
   lm_model %>% 
-  fit(hepi ~ num_residents, data = energy_training_prep)
+  fit(hepi ~ ., data = energy_train)
 
-lm_form_fit
+
+summary(lm_form_fit$fit)
 ```
 
 ```{r}
@@ -397,16 +418,11 @@ lm_form_fit
 
 
 prediction <- lm_form_fit %>%
-  predict(energy_test_prep)
+  predict(energy_test)
 
 
-test_res <- energy_test_prep %>%
-  select(hepi) %>%
+test_res <- energy_test %>%
   bind_cols(prediction)
-
-test_res <- test_res %>%
-  mutate(hepi = exp(hepi),
-         .pred = exp(.pred))
 ```
 
 ```{r}
@@ -420,7 +436,8 @@ ggplot(test_res, aes(x = hepi, y = .pred)) +
   geom_point(alpha = 0.5) + 
   labs(y = "Predicted HEC", x = "Measured HEC") +
   #> Scale and size the x- and y-axis uniformly:
-  coord_obs_pred()
+  coord_obs_pred() +
+  geom_smooth() 
 ```
 
 ### ANN

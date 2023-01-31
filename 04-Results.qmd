@@ -222,7 +222,7 @@ energy_modelling %>%
 
 #> select variables for modelling
 df_energy_modelling <- energy_modelling %>%
-  select(egid, hepi, survey_year, num_residents, gross_floor_area_m2, year_of_installation, efficiency_of_installation, energy_usage_of_installation, solar_system, solar_system_area_m2, solar_system_usage, solar_system_area_m2, photovoltaic_system, photovoltaic_system_power_kw, district_heating_role, heated_by_egid, municipality_code, building_category, building_class, construction_year, building_area_m2, energy_reference_area, coordinate_e, coordinate_n, num_floors, num_separate_living_space, num_dwellings, meters_above_sealevel, energy_production_solar_mwh, energy_consumed_hot_water_mwh, admin_project_type)
+  select(egid, hepi, survey_year, num_residents, gross_floor_area_m2, year_of_installation, efficiency_of_installation, energy_usage_of_installation, solar_system, solar_system_area_m2, solar_system_usage, solar_system_area_m2, photovoltaic_system, photovoltaic_system_power_kw, district_heating_role, heated_by_egid, municipality_code, building_category, building_class, construction_year, building_area_m2, energy_reference_area, coordinate_e, coordinate_n, num_floors, num_separate_living_space, num_dwellings, meters_above_sealevel, energy_production_solar_mwh, energy_consumed_hot_water_mwh)
 
 
 df_energy_modelling_test <- df_energy_modelling %>%

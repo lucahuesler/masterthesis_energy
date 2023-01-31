@@ -33,7 +33,6 @@ classification_energy_source_df <- energy_classification_energy_source %>%
   filter(!is.na(energy_source_heat_1))
 ```
 
-
 ```{r}
 # Create data split object
 classification_energy_source_split <- initial_split(classification_energy_source_df, prop = 0.75,
@@ -133,6 +132,7 @@ roc_auc(energy_source_results,
     truth = energy_source_heat_1, 
     .pred_7500:.pred_7599)
 ```
+
 ```{r}
 # Train model with last_fit()
 energy_source_last_fit <- logistic_model %>% 
@@ -160,5 +160,3 @@ last_fit_metrics(last_fit_results,
                  estimate = .pred_class,
                  .pred_7500:.pred_7599)
 ```
-
-

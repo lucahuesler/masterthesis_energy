@@ -3,9 +3,10 @@
 .RData
 .Ruserdata
 .Rprofile
+.Renviron
 
+gpt_q_and_a.qmd
 /.quarto/
-.Rdata
 .httr-oauth
 .DS_Store
 

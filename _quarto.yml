@@ -30,8 +30,8 @@ format:
   html:
     theme: cosmo
     title-block-banner: cover.png
-  pdf:
-    documentclass: scrreprt
+  hslu-pdf:
+    keep-tex: false
 
 editor: visual
 

@@ -10,4 +10,18 @@ In order to prepare the data for modelling, we apply the following filters:
 -   Only buildings with a HEPI \> 20 kWh/m² or HEPI \<300 kWh/m²
 -   Only buildings where the gas is used for HEC or for DWH+HEC. As this information is absent for many buildings, we also include `NA` values here.
 
+## Modelling strategy
+
+```{mermaid}
+flowchart LR
+Fig[Figures] --> Lay[Layout<br>Size]
+Tab[HTML Tables]
+Place[Placement] --> places[Margin<br>Tabs<br>Expand/Hide]
+rept[reptools] --> rhf[Report Writing<br>Helper Functions]
+OF[Overall Format] --> ofs[HTML]
+OF --> ltx[LaTeX] --> pdf[pdf]
+OF --> mfd[Multi-Format<br>Reports]
+MD[Metadata<br>Report<br>Annotations] --> mds[Variable Labels<br>and Units]
+```
+
 ## Evalauation metrics {#evaluation-metrics}

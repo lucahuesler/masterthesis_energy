@@ -30,7 +30,7 @@ format:
   html:
     theme: cosmo
     title-block-banner: cover.png
-  hslu-pdf:
+  pdf:
     keep-tex: false
 
 editor: visual

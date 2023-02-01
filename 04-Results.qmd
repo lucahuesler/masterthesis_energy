@@ -8,6 +8,7 @@ In this chapter, the results of our analysis will be presented. In a first step,
 
 library(tidyverse)
 library(tidymodels)
+library(doParallel)
 library(skimr)
 library(plotly)
 library(sf)
@@ -272,22 +273,32 @@ In the preprocessing, we apply the following:
 -   Create dummy variables from all nominal variables
 
 ```{r}
-#| label: preprocessing-recipes
+#| label: preprocessing-recipes-hec
 #| include: false
 
-
-# Specify a recipe object
-energy_base_recipe <- recipe(hepi ~ egid + survey_year + building_class + construction_year,
+# Specify recipe for basic MLR
+lm_base_recipe <- recipe(hec ~ .,
                           data = energy_train) %>% 
-  # remove date from the list of predictors
-  update_role(egid, new_role = "id") %>% 
-  # Log-transform
-  #step_log(all_numeric(), base = 10) %>%
-  # Normalize numeric predictors
-  #step_normalize(all_numeric_predictors()) %>% 
+  # remove egid and hepi from the list of predictors
+  update_role(egid, new_role = "id") %>%
+  update_role(hepi, new_role = "id") %>% 
   # Create dummy variables for nominal predictors
-  step_dummy(all_nominal())
+  step_dummy(all_nominal()) %>%
+  # Remove variables that contain only one value
+  step_zv(all_predictors()) %>%
+  # Impute means for variables with NA
+  step_impute_mean(num_residents) %>%
+  step_impute_mean(year_of_installation)
+
+lm_base_recipe
+
+# Add log-transform
+lm_log_recipe <- lm_base_recipe %>%
+  step_log(all_outcomes())
+
+lm_log_recipe
 ```
+
 
 ### Defining models
 
@@ -295,19 +306,26 @@ energy_base_recipe <- recipe(hepi ~ egid + survey_year + building_class + constr
 #| label: model-definition
 #| include: false
 
+# MLR model
 lm_spec <- 
    linear_reg() %>% 
    set_engine("lm")
 
+# decision tree
 dt_spec <- 
-   decision_tree(cost_complexity = tune(), min_n = tune()) %>% 
+   decision_tree() %>% 
    set_engine("rpart") %>% 
    set_mode("regression")
 
-knn_spec <- 
-   nearest_neighbor(neighbors = tune(), weight_func = tune()) %>% 
-   set_engine("kknn") %>% 
-   set_mode("regression")
+# random forest
+rf_spec <- rand_forest() |>
+  set_engine("ranger") |>
+  set_mode("regression")
+
+# xgboost
+
+# 
+
 
 auto_ml_spec <- auto_ml() %>%
   set_engine("h2o") %>%
@@ -321,66 +339,82 @@ auto_ml_spec <- auto_ml() %>%
 #| label: workflow-definition
 #| include: false
 
-energy_models <- 
+wf_set_basic <- 
    workflow_set(
-      preproc = list(simple = energy_base_recipe),
-      models = list(lm = lm_spec),
+      preproc = list(simple = lm_base_recipe, log = lm_log_recipe),
+      models = list(lm = lm_spec, dt = dt_spec, rf = rf_spec),
       cross = TRUE
    )
 
-energy_models
+wf_set_basic
 ```
 
 ### Training
 
 ```{r}
-#| label: hyperparameter-tuning
+#| label: model-fit-basic
 #| include: false
-
-splits <- vfold_cv(energy_train, v = 5, strata = hepi)
-
 set.seed(123)
-energy_models <- 
-   energy_models %>% 
-   # The first argument is a function name from the {{tune}} package
-   # such as `tune_grid()`, `fit_resamples()`, etc.
-   workflow_map("tune_grid", resamples = splits, grid = 10, 
-                metrics = metric_set(rmse), verbose = TRUE)
+splits <- vfold_cv(energy_train, v = 2, strata = hec)
+
+doParallel::registerDoParallel()
+
+fit_basic <- workflow_map(wf_set_basic,
+                          "fit_resamples", 
+                          resamples = splits,
+                          metrics = metric_set(rmse, mape, mae, rsq),
+                          verbose = TRUE,
+                          seed = 22)
+
+fit_basic
 ```
 
 ### Model evaluation {#sec-model-evaluation}
 
 ```{r}
-autoplot(energy_models)
+#| label: fig-model-benchmarking
+#| fig-cap: "Benchmarking of models"
+autoplot(fit_basic)
 ```
 
 ```{r}
-autoplot(energy_models, select_best = TRUE)
+#| label: fig-model-benchmarking-ranking-rmse
+#| fig-cap: "Benchmarking of models: RMSE ranking"
+
+fit_basic_metrics <- collect_metrics(fit_basic)
+
+workflowsets::rank_results(fit_basic, rank_metric = "mape", select_best = TRUE)
 ```
+
+
+```{r}
+
+```
+
 
 ### Final model {#sec-final-model}
 
 ```{r}
 best_results <- 
-   energy_models %>% 
-   extract_workflow_set_result("simple_lm") %>% 
+   fit_basic %>% 
+   extract_workflow_set_result("log_rf") %>% 
    select_best(metric = "rmse")
 
 best_results
 
-lm_test_results <- 
-   energy_models %>% 
-   extract_workflow("simple_lm") %>% 
+prediction <- 
+   fit_basic %>% 
+   extract_workflow("log_rf") %>% 
    finalize_workflow(best_results) %>% 
    last_fit(split = energy_split)
 
-collect_metrics(lm_test_results)
+collect_metrics(prediction)
 ```
 
 ```{r}
-lm_test_results_plot <- lm_test_results %>% 
+lm_test_results_plot <- prediction %>% 
    collect_predictions() %>% 
-   ggplot(aes(x = hepi, y = .pred)) + 
+   ggplot(aes(x = hec, y = .pred)) + 
    geom_abline(color = "gray50", lty = 2) + 
    geom_point(alpha = 0.5) + 
    coord_obs_pred() + 

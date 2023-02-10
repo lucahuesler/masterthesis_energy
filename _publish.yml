@@ -1,0 +1,4 @@
+- source: 99_presentation.qmd
+  quarto-pub:
+    - id: bc551a28-2d35-4306-812e-201f0c771bf1
+      url: 'https://quartopub.com/sites/lucahuesler/estimating-the-heat-energy-use-of-residential-buildings'

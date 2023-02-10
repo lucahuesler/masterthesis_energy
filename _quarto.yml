@@ -33,7 +33,8 @@ format:
   pdf:
     keep-tex: false
 
-editor: visual
+prefer-html: true
+number-sections: true
 
 knitr:
   opts_chunk: 
@@ -42,9 +43,16 @@ knitr:
     R.options:
       knitr.graphics.auto_pdf: true
 
+# global definition of code chunk execution
 execute:
   eval: true
   echo: false
   include: true
   cache: true
+  warning: false
+  
+  
+# definiing location of figure and table captures
+fig-cap-location: bottom
+tbl-cap-location: bottom
   

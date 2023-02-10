@@ -1,8 +1,24 @@
 # Methodology {#sec-methodology}
 
+In order to address the research questions defined in @sec-research-questions--goals, we first need to define a suitable methodology. From a high-level perspective, a machine learning workflow follows the following steps:
+
+1.  Problem understanding and definition
+2.  Data preparation and cleaning
+3.  Exploratory data analysis (EDA)
+4.  Data preprocessing and feature engineering
+5.  Modelling
+    1.  Model development and training
+
+    2.  Model evaluation
+6.  Model selection and deployment
+
+However, the above steps are usually not carried out in a linear manner. Usually, a first comparison evaluation of models leads to a better understanding of the data and can provide new ideas for more feature engineering steps. @fig-modelling-process provides a overview of a typical modelling process.
+
+![A schematic for the typical modeling process [@silge].](figures/03-fig-modelling-process.png){#fig-modelling-process}
+
 ## Data unterstanding and exploration {#sec-data-unterstanding-and-exploration}
 
-## Data preprocessing {#sec-data-preprocessing}
+## Data preparation {#sec-data-prep}
 
 In order to prepare the data for modelling, we apply the following filters:
 
@@ -10,18 +26,26 @@ In order to prepare the data for modelling, we apply the following filters:
 -   Only buildings with a HEPI \> 20 kWh/m² or HEPI \<300 kWh/m²
 -   Only buildings where the gas is used for HEC or for DWH+HEC. As this information is absent for many buildings, we also include `NA` values here.
 
-## Modelling strategy
+## Modelling {#sec-modelling}
+
+The modelling strategy of the present study is guided by the research questions as defined in @sec-research-questions . In a first step, all the available buildings after applying the filters defined in @sec-data-prep will be used for modelling. After splitting the data into a test and training set, we will train different models on our training data. By focussing on
 
 ```{mermaid}
-flowchart LR
-Fig[Figures] --> Lay[Layout<br>Size]
-Tab[HTML Tables]
-Place[Placement] --> places[Margin<br>Tabs<br>Expand/Hide]
-rept[reptools] --> rhf[Report Writing<br>Helper Functions]
-OF[Overall Format] --> ofs[HTML]
-OF --> ltx[LaTeX] --> pdf[pdf]
-OF --> mfd[Multi-Format<br>Reports]
-MD[Metadata<br>Report<br>Annotations] --> mds[Variable Labels<br>and Units]
+
+graph TD
+    A[Initial data] -->|Preprocessing| B(Test data 20 %)
+    A[Initial data] -->|Preprocessing| C(Training data 80%)
+    C --> D([Variable selection<br>1. All predictors<br>2.Without retrofit<br>3.Without socio-economic])
+    style D text-align:left
+    D --> E[Multiple linear regression]
+    D --> F[fa:fa-tree Random forest]
+    D --> G[Artificial neural network]
+    D --> H[...]
+    E --> I(Model evaluation <br> - Compare metrics <br> - Feature importance) 
+    F --> I 
+    G --> I
+    H --> I 
+    style I text-align:left
 ```
 
-## Evalauation metrics {#evaluation-metrics}
+## Evaluation metrics {#evaluation-metrics}

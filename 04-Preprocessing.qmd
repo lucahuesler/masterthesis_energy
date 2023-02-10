@@ -674,11 +674,19 @@ unused_levels
 
 ```
 
-## 
+## Recalculate results of current method
+
+To make sure that the values of the current method are correct, we recalculate them here, as it could have happened that the the heated area has been updated since the initial calculation.
+
+```{r}
+energy_clean_13 <- energy_clean_12 |>
+  dplyr::mutate(hepi_pred_current_method = heating_coefficient_estimated,
+                hec_pred_current_method = heating_coefficient_estimated*heated_area_m2/1000)
+```
 
 ## Save data
 
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean_12, "data/energy_modelling.rds")
+write_rds(energy_clean_13, "data/energy_modelling.rds")
 ```

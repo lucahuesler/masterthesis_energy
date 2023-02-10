@@ -1,0 +1,550 @@
+---
+title: "Estimating the heat energy use of residential buildings"
+subtitle: "A case study in the Canton of Basel-Landschaft"
+author: Luca Hüsler
+institute: "Lucerne University of Applied Sciences"
+format: 
+   revealjs:
+     logo: figures/hslu-logo.png
+     css: logo.css
+     slide-number: true
+     show-slide-number: all
+     preview-links: auto
+     width: 1280
+     height: 720
+     theme: default
+     
+# global definition of code chunk execution
+execute:
+  eval: true
+  echo: false
+  include: true
+  cache: true
+  warning: false
+  
+---
+
+```{r}
+#| label: load-libs
+#| include: false
+library(tidyverse)
+library(tidymodels)
+library(doParallel)
+library(skimr)
+library(plotly)
+library(sf)
+library(agua)
+library(gt)
+library(kableExtra)
+library(ggridges)
+library(viridis)
+library(hrbrthemes)
+```
+
+```{r}
+#| label: load-data
+#| include: false
+
+energy_modelling <- read_rds("data/energy_modelling.rds")
+
+```
+
+```{r}
+#| label: train-test-split
+#| include: false
+
+#> select variables for modelling
+df_energy_modelling <- energy_modelling |>
+  select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents, 
+         num_floors, 
+         building_area_m2, 
+         gross_floor_area_m2, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         solar_system, 
+         solar_system_area_m2, 
+         solar_system_usage, 
+         solar_system_area_m2, 
+         photovoltaic_system, 
+         photovoltaic_system_power_kw, 
+         municipality_code, 
+         building_class, 
+         construction_year, 
+         coordinate_e, 
+         coordinate_n, 
+         num_dwellings, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         retrofit_investment_costs,
+         hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method)
+
+         
+#> Set the random number stream using `set.seed()` so that the results can be 
+#> reproduced later. 
+set.seed(501)
+
+#> Save the split information for an 80/20 split of the data
+energy_split <- initial_split(df_energy_modelling, 
+                              prop = 0.80, 
+                              strata = hec)
+energy_split
+
+
+#> Creating train and test set
+energy_train <- training(energy_split)
+energy_test  <-  testing(energy_split)
+
+
+#> Creating a validation set (20% of training data)
+set.seed(234)
+energy_validation <- validation_split(energy_train,
+                                      prop = 0.90,
+                                      strata = hec)
+
+dim(energy_train)
+dim(energy_validation)
+
+# creating folds for cross validation
+set.seed(1502)
+energy_folds <- 
+   vfold_cv(energy_train, strata = hec, repeats = 5)
+```
+
+# Problem definition
+
+## Current method
+
+Calculating heat energy consumption (HEC):
+
+$$HEC = Gas_{m}*e + Solar_{Total} - c_{DHW}*N_{I}$$
+
+where:
+
+-   Gas~m~ = Total gas consumption in kWh as measured by provider (IWB)
+
+-   e = Efficiency of installation
+
+-   Solar~e~ = Estimated solar production in kWh
+
+-   c~DHW~ = Constant estimated factor of DWH per person and year (850 kWh)
+
+-   N~I~ = Number of inhabitants
+
+## Current method
+
+Calculating heat energy consumption per square meter and year (HEPI):
+
+$$
+\begin{align}
+HEPI = \frac{HEC}{ERA}
+&= \frac{HEC}{GFA*n_{floors}}
+\end{align}
+$$ where:
+
+-   HEC = Heat energy consumption in kWh/year
+
+-   ERA = Energy reference area in square meters
+
+-   GFA = Gross floor area
+
+-   n~floors~ = Number of floors
+
+## Shortcomings
+
+The current method has several shortcomings that limit its accuracy and applicability:
+
+::: incremental
+1.  **Averaging the HEPI per construction period**: The HEPI for a specific building may not necessarily be representative of the typical HEPI value for buildings of the same construction period. This could introduce inaccuracies in the estimation of HEC of an individual building.
+2.  **Differences between municipalities:** The current method **does not consider potential differences between municipalities** that could influence the HEPI. However, it is possible that some municipalities have significantly different factors influencing their HEC, such as different building structures or different energy consumption patterns.
+:::
+
+## Shortcomings
+
+The current method has several shortcomings that limit its accuracy and applicability:
+
+::: incremental
+3.  **Retrofitting is not taken into account**: One major limitation is the lack of information on the influence of retrofitting on energy consumption. Without this information, it is not possible to quantify the effect of retrofitting on energy consumption.
+
+4.  **Socio-economic factors are not considered**: Similar to retrofitting, socio-economic factors and the behavior of inhabitants are not considered explicitly in the current method. However, the behavior and inhabitants as well vacancies of a building can have a substantial influence on HEC.
+:::
+
+
+
+# Goals & Research questions
+
+## Goals of the thesis
+
+::: incremental
+-   Provide predictions for HEC that are as accurate as possible
+-   Integrate effects of retrofitting in the model
+-   Integrate effects of socio-economic factors in the model
+- Sensitivity analysis: Which factors are most important?
+:::
+
+## Research question 1
+
+::: {style="color:#186A3B"}
+***RQ1:** Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?*
+:::
+
+::: {.fragment .fade-in}
+Sub-questions with regard to RQ1:
+:::
+
+::: {.fragment .fade-in style="color:#229954"}
+***RQ1.1:** Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings **compared to the current approach?***
+:::
+
+::: {.fragment .fade-in style="color:#229954"}
+***RQ1.2:** Can we improve the predictions through feature engineering (imputation of missing values, normalization, transformation, etc.)?*
+:::
+
+## Research question 2
+
+::: {style="color:#21618C"}
+***RQ2:** What features are most important for the prediction of HEC in the final model?*
+:::
+
+::: {.fragment .fade-in}
+Sub-questions with regard to RQ2:
+:::
+
+::: {.fragment .fade-in style="color:#2980B9"}
+***RQ2.1:** What importance can be attributed to retrofit features in the final model?*
+:::
+
+::: {.fragment .fade-in style="color:#2980B9"}
+***RQ2.2:** What importance can be attributed to socio-economic features in the model? (if data available)*
+:::
+
+# Methodology
+
+## Modelling strategy
+
+Step 1: Explore different models on small subset of training data
+
+```{mermaid}
+%%| fig-width: 15
+%%| mermaid-format: png
+graph LR
+
+    A[Initial data] -->|Preprocessing| C(Training data 80%)
+    A[Initial data] -->|Preprocessing| B(Test data 20 %) 
+    C --> D([Variable selection<br>1. All predictors<br>2.Without retrofit<br>3.Without socio-economic])
+    style D text-align:left
+    D --> E[Multiple linear regression]
+    D --> F[Random forest]
+    D --> G[Artificial neural network]
+    D --> H[...other models...  ]
+    E --> I(Model evaluation) 
+    F --> I 
+    G --> I
+    H --> I 
+    style I fill:#2ac470,stroke:#333
+    style A fill:#e06666,stroke:#333
+```
+
+## Modelling strategy
+
+Step 2: Using best model of step 1 to train on subsets
+
+```{mermaid}
+%%| fig-width: 15
+%%| mermaid-format: png
+graph LR
+
+    A[Best model] -->|Preprocessing| C(Training data 80%)
+    C --> |Train on subsets| D([Subsets<br>1. Per municipality<br>2.Per building class<br>3.Per survey year])
+    style D text-align:center
+    D --> E[Multiple linear regression]
+    D --> F[Random forest]
+    D --> G[Artificial neural network]
+    D --> H[...]
+    E --> I(Model evaluation) 
+    F --> I 
+    G --> I
+    H --> I 
+    style I fill:#2ac470,stroke:#333
+    style A fill:#e06666,stroke:#333
+```
+
+## Modelling strategy
+
+Step 3: Using best model of step 2 for predictions
+
+```{mermaid}
+%%| fig-width: 10
+%%| mermaid-format: png
+
+graph LR
+
+    A[Best model  ] -->|apply on| B(Test data  )
+    B --> C(Predictions  )
+    C --> D(Evaluation: <br> Compare with current approach  )
+    C --> E(Sensitivity analysis: <br>What features are most important?  )
+    style A fill:#e06666,stroke:#333
+    style E fill:#2ac470,stroke:#333
+```
+
+# Data preparation
+
+## Data cleaning & matching
+
+::: incremental
+1.  Cleaning energy data
+2.  Matching retrofit data
+3.  Matching STATPOP data of respective year
+:::
+
+## Preprocessing
+
+In order to prepare the data for modelling, we apply the following filters:
+
+-   Only residential buildings (`gkat = 1020`)
+-   Only buildings with a `HEPI > 20 kWh/m²/year` and `HEPI <300 kWh/m²/year`
+-   Only buildings where the gas is used for HEC or for DHW+HEC. As this information is absent for many buildings, we also include `NA` values here.
+
+## Final dataset
+
+After filtering the data, we obtain a final dataset as input for modelling:
+
+```{r}
+#| label: table-obs-per-year
+
+obs_per_year <- energy_modelling |>
+  dplyr::group_by(survey_year) |>
+  dplyr::rename("Survey Year" = survey_year) |>
+  dplyr::summarise(Count = n(),
+                   "Mean HEPI (kWh/m2/year)" = mean(hepi),
+                   "Total HEC (GWh/year)" = sum(hec)/1000) |>
+  kableExtra::kbl() |>
+  kableExtra::kable_styling(bootstrap_options = c("striped","hover", "bordered", "condensed"))
+
+obs_per_year
+```
+
+# First results
+
+## HEPI per municipality
+
+::: {.panel-tabset}
+
+### Single-family houses
+
+```{r}
+#| label: figure-hepi-municipality-sfh
+
+energy_modelling |>
+  filter(building_class == 1110) |>
+  ggplot(aes(x = hepi, y = entrance_municipality_name, fill = after_stat(x))) +
+  geom_density_ridges_gradient(scale = 5, rel_min_height = 0.02) +
+  scale_fill_viridis(name = "HEPI (kWh/m2/year)", option = "C") +
+  xlim(0,300) +
+   theme(axis.title.x=element_blank(),
+         axis.title.y=element_blank())
+```
+
+
+### Multi-family houses
+
+```{r}
+#| label: figure-hepi-municipality-mfh
+
+energy_modelling |>
+  filter(building_class != 1110) |>
+  ggplot(aes(x = hepi, y = entrance_municipality_name, fill = after_stat(x))) +
+  geom_density_ridges_gradient(scale = 5, rel_min_height = 0.02) +
+  scale_fill_viridis(name = "HEPI (kWh/m2/year)", option = "C") +
+  xlim(0,300) +
+   theme(axis.title.x=element_blank(),
+         axis.title.y=element_blank())
+```
+
+:::
+
+## Retrofitting: Overview
+
+```{r}
+#| label: indicators-retrofit
+#| echo: false
+
+#> Calculations of numbers and indicators for easier use as inline code in text.
+
+n_retrofit <- energy_modelling |> filter(retrofitted == TRUE) |> nrow()
+
+n_retrofit_m01 <- energy_modelling |> 
+  filter(retrofitted == TRUE,
+         retrofit_investment_costs > 0) |> 
+  nrow()
+
+perc_retrofit <- round((n_retrofit / nrow(energy_modelling))*100,digits = 2)
+```
+
+- `r n_retrofit` buildings that could be matched with a retrofit measure (= `r perc_retrofit` % of all the buildings in the data that we use for modelling)
+
+- Retrofit data considers retrofit measures that have been financially supported by the cantonal funding programme (Baselbieter Energiepaket) since 2009.
+
+## Retrofitting: Retrofit types per year
+
+```{r}
+#| label: retrofit-year
+
+retrofit_per_year <- energy_modelling |>
+  dplyr::filter(retrofitted == TRUE) |>
+  dplyr::mutate(retrofit_project_name = case_when(
+    grepl("Einzelbauteile", retrofit_project_name) ~ "Sanierung Einzelbauteile",
+    grepl("Energieanalyse", retrofit_project_name) ~ "Energieanalyse",
+    grepl("Energiecoach Gesamt", retrofit_project_name) ~ "Energiecoach Gesamtsanierung",
+    grepl("GEAK", retrofit_project_name) ~ "GEAK Analyse",
+    TRUE ~ retrofit_project_name
+  ))|>
+  ggplot((aes(retrofit_year_completion))) +
+           geom_bar(aes(fill = retrofit_project_name)) +
+  scale_x_continuous(breaks=seq(2009, 2019, 1)) +
+  scale_y_continuous(expand = c(0, 0), limits = c(0, 1000)) +
+  xlab("Year of completion") +
+  ylab("Number of buildings") +
+  scale_fill_discrete(name = "Retrofit type")
+  
+  
+retrofit_per_year
+```
+
+## Retrofitting: HEPI retrofit vs non-retrofit
+
+```{r}
+#| label: table-retrofit-mean-hepi
+
+retrofit_mean_hepi <- energy_modelling |>
+  dplyr::group_by(building_class, retrofitted) |>
+  dplyr::summarise("Mean HEPI (kWh/m2/year)" = mean(hepi)) |>
+  mutate(building_class = factor(building_class, 
+                                  levels = c("1110", "1121", "1122"), 
+                                  labels = c("Building with one apartment", 
+                                             "Building with two apartments", 
+                                             "Building with three or more apartments"))) |>
+  dplyr::rename("Building class" = building_class) |>
+  spread(retrofitted, `Mean HEPI (kWh/m2/year)`) |>
+  rename(`Retrofit` = `TRUE`, `Non-retrofit` = `FALSE`, ) |>
+  mutate(`Difference in %` = 100 * (`Retrofit` - `Non-retrofit`) / `Non-retrofit`) |>
+  knitr::kable(format = "html", digits = 1)
+
+retrofit_mean_hepi
+```
+
+## Retrofitting: Before vs After
+
+::: {.panel-tabset}
+
+### Scatterplot
+
+```{r}
+#| label: figure-retrofitting
+
+retrofit_before_after <- energy_modelling |>
+  filter(retrofitted == TRUE) |>
+  arrange(desc(egid)) |>
+  distinct(egid, survey_year, energy_consumed_measured_mwh) |>
+  pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
+
+retrofit_2016_2018 <- retrofit_before_after |>
+  dplyr::mutate(Direction = if_else(energy_consumed_measured_mwh_2018 < energy_consumed_measured_mwh_2016, "Reduction", "Increase")) |>
+  filter(!is.na(Direction)) 
+
+retrofit_plot <- retrofit_2016_2018 |>
+  ggplot((aes(energy_consumed_measured_mwh_2016, energy_consumed_measured_mwh_2018, color = Direction))) +
+           geom_point() +
+  xlim(0,200) +
+  ylim(0,200) +
+  xlab('HEPI 2016 (kWh/m2*year') +
+  ylab('HEPI 2018 (kWh/m2*year') +
+  theme(legend.position="bottom")
+
+ggplotly(retrofit_plot)
+```
+
+### Data
+
+```{r}
+retrofit_2016_2018 %>%
+  dplyr::group_by(Direction) %>%
+  dplyr::summarize(count = n()) %>%
+  knitr::kable(format = "html", digits = 1)
+```
+:::
+
+
+
+
+## Model results
+
+:::: {.columns}
+
+::: {.column width="40%"}
+Baseline: Current approach
+
+```{r}
+
+
+energy_train_current_method <- energy_train |>
+  dplyr::inner_join(energy_modelling, by = c("egid"), suffix = c("", "_y")) |>
+  dplyr::select(egid, survey_year, hec, hepi, hepi_pred_current_method, hec_pred_current_method, heated_area_m2)
+
+custom_metrics <- metric_set(rmse, mape, mae, rsq)
+
+energy_train_metrics_current_method <- energy_train_current_method |>
+  custom_metrics(hec, hec_pred_current_method)
+
+energy_train_metrics_current_method |>
+  select(.metric, .estimate) |>
+  rename(Metric = .metric, Value = .estimate) |>
+  kable(digits = 2)
+
+```
+:::
+
+::: {.column width="60%"}
+Evaluation of models tried so far:
+
+![](figures/benchmarking.png)
+:::
+
+::::
+
+
+# Next steps
+
+## Run models on subsets of data
+
+Can we achieve a higher accuracy by running the models on more homogenous subsets of the data?
+
+-   Differentiating by survey year (Erhebungsjahr)
+-   Differentiating by building class
+-   Differentiating by municipality
+
+## Integration of socio-economic factors
+
+STATPOP data can deliver information about :
+
+-   Age distribution
+-   Gender distribution
+-   Duration of residence
+-   Ratio of swiss/foreign population
+
+## Adding new variables
+
+Idea that came to my mind: Also consider if building is stand-alone or connected to other buildings.
+
+![](figures/freistehend_angebaut.png){width="300"}
+
+(see also [Olu-Ajayi & al., 2021](https://www.sciencedirect.com/science/article/abs/pii/S235271022101264X))

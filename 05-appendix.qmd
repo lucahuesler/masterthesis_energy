@@ -116,6 +116,9 @@ conf_mat(energy_source_results,
 ```
 
 ```{r}
+#| eval: false
+
+
 # Calculate metrics across thresholds
 threshold_df <- energy_source_results %>% 
   roc_curve(truth = energy_source_heat_1, .pred_7500:.pred_7599)

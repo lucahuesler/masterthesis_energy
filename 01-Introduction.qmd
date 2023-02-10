@@ -12,9 +12,9 @@ This is for including Chapter 1.  Notice that it's also good practice to name yo
 The {#rmd-basics} text after the chapter declaration will allow us to link throughout the document back to the beginning of Chapter 1.  These labels will automatically be generated (if not specified) by changing the spaces to hyphens and capital letters to lowercase.  Look for the reference to this label at the beginning of Chapter 2.
 -->
 ```
-# Introduction {#introduction}
+# Introduction {#sec-introduction}
 
-## General Background {#background}
+## General Background {#sec-general-background}
 
 \[#TODO\]
 
@@ -22,7 +22,7 @@ The {#rmd-basics} text after the chapter declaration will allow us to link throu
 
 -   National background Switzerland
 
-## Energy policy in the Canton of Basel-Landschaft {#cantonal-energy-planning}
+## Energy policy in the Canton of Basel-Landschaft {#sec-energy-policy-in-the-canton-of-basel-landschaft}
 
 In 2021, the cantonal government of Basel-Landschaft signed the Climate Charter of the Northwestern Intergovernmental Conference together with the governments of the cantons of Aargau, Basel-Stadt, Jura and Solothurn. In the Charter, the five cantons agree on the net zero target by 2050[^01-introduction-1]. Thus, the energy supply of the participating cantons should be switched to 100% renewable energy sources by no later than 2050 [@nordwestschweizerregierungskonferenz2021].
 
@@ -40,13 +40,13 @@ In 2022, the cantonal council published a new version of the energy planning rep
 1.  The end energy consumption in the canton, excluding mobility, should be reduced by **70%** by 2050 compared to 2000 (6,500 GWh).
 2.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.
 
-### Cantonal energy planning
+### Cantonal energy planning {#sec-cantonal-energy-planning}
 
 With the total revision of the cantonal energy law in 2016, the new [§ 3](https://bl.clex.ch/app/de/texts_of_law/490/art/3) on energy planning of the canton was introduced. This § 3 obliges the cantonal government to create an energy plan on the basis of the federal requirements and frameworks and to report the results to the cantonal council. Furthermore, according to [§ 2 (6)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) of the cantonal energy law, the government council must also report periodically on the effectiveness of the (previous) measures.
 
 As integral part of the energy planning, the canton delivers a energy statistics since 1990. Until 2010, the statistics was mainly based on a top-down approach. Since 2010, a bottom-up approach has been introduced.
 
-### Cantonal energy system
+### Cantonal energy system {#sec-cantonal-energy-system}
 
 In 2020, the gross energy consumption of the canton was about 7600 gigawatt hours, which corresponds to a reduction of 4.4% compared to 2018 [@statistischesamtdeskantonsbasel-landschaft2022]. The following figure \@ref(fig:energieflussdiagramm) provides an overview of the cantonal energy system.
 
@@ -111,7 +111,7 @@ The current method has several shortcomings that limit its accuracy and applicab
 
 Since detailed energy data at the level of individual buildings is becoming increasingly important for energy planning at municipal or neighborhood level, it seems crucial to provide accurate and precise estimations.
 
-## Research questions & goals {#Research-Questions-Goals}
+## Research questions & goals {#sec-research-questions}
 
 On the basis of the considerations in @sec-problem-definition , we will here formulate the research questions and also define the goals of the project from a practical perspective.
 
@@ -119,7 +119,7 @@ The goal of the present master thesis is to explore and evaluate different state
 
 Thus, we here formulate the following two main research questions:
 
-``` {#list-research-question .latex}
+``` {#research-question .latex}
 \begin{itemize}
     \item RQ1: Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?
     \item RQ2: What features of the are most important for the prediction of HEC in the final model?
@@ -128,7 +128,7 @@ Thus, we here formulate the following two main research questions:
 
 By emphasizing on RQ1, we formulate the following sub questions:
 
-``` latex
+``` {#research-subquestions-rq1 .tex}
 \begin{itemize}
     \item RQ1.1: Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings compared to the current approach?
     \item RQ1.2: Can we improve the predictions through feature engineering (e.g. imputation of missing values)?
@@ -137,21 +137,9 @@ By emphasizing on RQ1, we formulate the following sub questions:
 
 By emphasizing on RQ2, we are specifically interested in features of the input data that are not yet considered in the current approach. Thus, we here formulate the following sub questions:
 
-``` latex
+``` {#research-subquestions-rq2 .latex}
 \begin{itemize}
     \item RQ2.1: What importance can be attributed to retrofit features in the final model?
     \item RQ2.2: What importance can be attributed to socio-economic features in the model? (if data available)
 \end{itemize}
 ```
-
-Approaches to be considered:
-
--   MLR
-
--   SVR
-
--   RFR
-
--   ANN
-
--   AutoML

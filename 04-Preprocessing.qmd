@@ -327,6 +327,10 @@ energy_clean_07 %>%
   select(egid, survey_year,heating_coefficient_measured, efficiency_of_installation, energy_production_solar_mwh, energy_consumed_hot_water_mwh, energy_consumed_measured_mwh, num_residents)
 ```
 
+```{r}
+
+```
+
 ### Data filtering
 
 In order to prepare the data for modelling, we apply the following filters:

@@ -14,6 +14,13 @@ library(plotly)
 library(sf)
 library(agua)
 library(gt)
+library(rules)
+library(baguette)
+library(ggridges)
+library(viridis)
+library(hrbrthemes)
+library(finetune)
+library(ggrepel)
 ```
 
 ```{r}
@@ -29,12 +36,13 @@ To gain a first overview of the data that we use for modelling, we here present 
 
 ### Summary statistics
 
-As outlined in @sec-data-preprocessing, we applied several filters to the initial raw data. Thus, the final dataset for modelling contains `r nrow(energy_modelling)` observations (buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-obs-per-year shows that the number of gas-heated buildings is slightly decreasing between 2016 and 2020. Also, we observe a decrease of the mean HEPI and the total HEC between 2016 and 2020.
+As outlined in @sec-data-prep, we applied several filters to the initial raw data. Thus, the final dataset for modelling contains `r nrow(energy_modelling)` observations (buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-obs-per-year shows that the number of gas-heated buildings is slightly decreasing between 2016 and 2020. Also, we observe a decrease of the mean HEPI and the total HEC between 2016 and 2020.
 
 ```{r}
 #| label: tbl-obs-per-year
 #| tbl-cap: "Number of buildings per survey year."
 #| tbl-cap-location: bottom
+#| warning: false
 
 obs_per_year <- energy_modelling |>
   dplyr::group_by(survey_year) |>
@@ -48,30 +56,13 @@ obs_per_year
 ```
 
 ```{r}
-#| label: tbl-obs-per-year-municipality
-#| tbl-cap: "Mean HEPI and sum HEC per survey year and municipality."
-#| tbl-cap-location: bottom
-
-obs_per_year_municipality <- energy_modelling |>
-  dplyr::group_by(survey_year, entrance_municipality_name) |>
-  dplyr::rename("Survey Year" = survey_year,
-                "Municipality" = entrance_municipality_name) |>
-  dplyr::summarise(Count = n(),
-                   "Mean HEPI (kWh/m2/year)" = mean(hepi),
-                   "Sum HEC (GWh/year)" = sum(hec)/1000) |>
-  dplyr::arrange(desc("Mean HEPI (kWh/m2/year)")) |>
-  knitr::kable(booktabs = TRUE, digits = 1)
-
-obs_per_year_municipality
-```
-
-```{r}
 #| label: tbl-summary-stats
 #| tbl-cap: "Summary statistics of modelling input data."
 #| tbl-cap-location: bottom
+#| eval: false
 
-summary_stats_numeric <- energy_modelling %>%
-  skim() %>%
+summary_stats_numeric <- energy_modelling |>
+  skim() |>
   yank("numeric")
 
 summary_stats_numeric
@@ -80,13 +71,60 @@ summary_stats_numeric
 ### Retrofitting
 
 ```{r}
+#| label: indicators-retrofit
+#| echo: false
+
+#> Calculations of numbers and indicators for easier use as inline code in text.
+
+n_retrofit <- energy_modelling |> filter(retrofitted == TRUE) |> nrow()
+
+n_retrofit_m01 <- energy_modelling |> 
+  filter(retrofitted == TRUE,
+         retrofit_investment_costs > 0) |> 
+  nrow()
+
+perc_retrofit <- round((n_retrofit / nrow(energy_modelling))*100,digits = 2)
+```
+
+In the total dataset, we observe `r n_retrofit` building that could be matched with a retrofit measure. This represents `r perc_retrofit` % of all the buildings in the data that we use for modelling.
+
+The retrofit data considers retrofit measures that have been financially supported by the cantonal Förderprogramm (Baselbieter Energiepaket) since 2009.
+
+```{r}
+#| label: fig-retrofit-year
+#| fig-cap: "Distribution of retrofit year."
+
+retrofit_per_year <- energy_modelling |>
+  dplyr::filter(retrofitted == TRUE) |>
+  ggplot((aes(retrofit_year_completion))) +
+           geom_bar(aes(fill = retrofit_project_name)) +
+  scale_x_continuous(breaks=seq(2009, 2019, 1))
+  
+  
+retrofit_per_year
+```
+
+A first explorative way of analyzing the effect of retrofit measures consists in comparing the mean HEPI of retrofitted building and non-retrofitted buildings. @tbl-retrofit shows the mean HEPI per survey year and building class. For all years and building classes, the mean HEPI of retrofitted buildings is lower. Furthermore, a more important difference in average HEPI between retrofitted and non-retrofitted buildings can be observed for multi-family buildings (buildings with two or more apartments) over the course of all three years. This could potentially indicate that retrofit measures are more effective in terms of energy consumption reduction for multi-family houses in comparison to single-family houses.
+
+```{r}
 #| label: tbl-retrofit
 #| tbl-cap: "Mean HEPI of retrofitted versus non-retrofitted."
 #| tbl-cap-location: bottom
 
-retrofit_mean_hepi <- energy_modelling %>%
-  dplyr::group_by(survey_year, building_class, retrofitted) %>%
-  dplyr::summarise("Mean HEPI" = mean(hepi))
+retrofit_mean_hepi <- energy_modelling |>
+  dplyr::group_by(survey_year, building_class, retrofitted) |>
+  dplyr::rename("Survey Year" = survey_year) |>
+  dplyr::summarise("Mean HEPI (kWh/m2/year)" = mean(hepi)) |>
+  mutate(building_class = factor(building_class, 
+                                  levels = c("1110", "1121", "1122"), 
+                                  labels = c("Building with one apartment", 
+                                             "Building with two apartments", 
+                                             "Building with three or more apartments"))) |>
+  dplyr::rename("Building class" = building_class) |>
+  spread(retrofitted, `Mean HEPI (kWh/m2/year)`) |>
+  rename(`Retrofitted` = `TRUE`, `Not retrofitted` = `FALSE`, ) |>
+  mutate(`Difference in %` = 100 * (`Retrofitted` - `Not retrofitted`) / `Not retrofitted`) |>
+  knitr::kable(booktabs = TRUE, digits = 1) 
 
 retrofit_mean_hepi
 ```
@@ -95,11 +133,10 @@ retrofit_mean_hepi
 #| label: fig-retrofitting-investment-costs
 #| fig-cap: "Correlation between retrofit investment costs and HEPI"
 
-retrofit_investment_plot <- energy_modelling %>%
-  filter(!is.na(retrofit_investment_costs)) %>%
+retrofit_investment_plot <- energy_modelling |>
+  filter(!is.na(retrofit_investment_costs) & retrofit_investment_costs > 0) |>
   ggplot((aes(retrofit_investment_costs, hepi))) +
-           geom_point() +
-  facet_grid(vars(building_class))
+           geom_point()
 
 retrofit_investment_plot
 ```
@@ -108,21 +145,54 @@ retrofit_investment_plot
 #| label: fig-retrofitting
 #| fig-cap: "Construction year per municipality"
 
-retrofit_plot <- energy_modelling %>%
-  filter(retrofitted == TRUE) %>%
-  arrange(desc(egid)) %>%
-  distinct(egid, survey_year, energy_consumed_measured_mwh) %>%
+retrofit_plot <- energy_modelling |>
+  filter(retrofitted == TRUE) |>
+  arrange(desc(egid)) |>
+  distinct(egid, survey_year, retrofit_year_completion, energy_consumed_measured_mwh) |>
   pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
 
-retrofit_plot %>%
+retrofit_plot_2016_2018 <- retrofit_plot |>
   ggplot((aes(energy_consumed_measured_mwh_2018, energy_consumed_measured_mwh_2016))) +
            geom_point() +
   xlim(0,200) +
   ylim(0,200) +
-  geom_abline(intercept = 0, slope = 1)
+  geom_abline(intercept = 0, slope = 1) +
+  labs(title = 'HEPI of buildings retrofitted between 2016 and 2018')
+
+retrofit_plot_2018_2020 <- retrofit_plot |>
+  ggplot((aes(energy_consumed_measured_mwh_2018, energy_consumed_measured_mwh_2020))) +
+           geom_point() +
+  xlim(0,200) +
+  ylim(0,200) +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(title = 'HEPI of buildings retrofitted between 2018 and 2020')
+
+retrofit_plot_2016_2020 <- retrofit_plot |>
+  ggplot((aes(energy_consumed_measured_mwh_2016, energy_consumed_measured_mwh_2020))) +
+           geom_point() +
+  xlim(0,200) +
+  ylim(0,200) +
+  geom_abline(intercept = 0, slope = 1) +
+  labs(title = 'HEPI of buildings retrofitted between 2018 and 2020')
 ```
 
-### Density and boxplots
+```{r}
+retrofit_plot_2016_2018
+retrofit_plot_2018_2020
+retrofit_plot_2016_2020
+```
+
+### Municipalities
+
+```{r}
+#| label: indicators-municipalities
+#| echo: false
+
+#> Calculations of numbers and indicators for easier use as inline code in text.
+n_municipalities <- n_distinct(energy_modelling$municipality_code)
+```
+
+In this section, we will have a closer look at the characteristics of the `r n_municipalities` that are represented in the data. Exploring characteristics and potential differences on the municipal level can sustain the modelling process by providing insights into the distribution and variability of energy consumption patterns among different municipalities.
 
 ```{r}
 #| label: tbl-summary-municipality
@@ -131,9 +201,9 @@ retrofit_plot %>%
 
 #> Filter to relevant buildings for modelling
 
-summary_table <- energy_modelling %>%
-  group_by(entrance_municipality_name, building_class) %>%
-  summarise(n = n()) %>%
+summary_table <- energy_modelling |>
+  group_by(entrance_municipality_name, building_class) |>
+  summarise(n = n()) |>
   pivot_wider(names_from = building_class, 
               values_from = n)
 
@@ -147,8 +217,8 @@ summary_table
 #> basic function
 plot_boxplot <- function(df, y_axis) {
   y_axis <- sym(y_axis)
-  df %>%
-    mutate(class = fct_reorder(entrance_municipality_name, !!y_axis, .fun='median')) %>%
+  df |>
+    mutate(class = fct_reorder(entrance_municipality_name, !!y_axis, .fun='median')) |>
     ggplot( aes(x=reorder(entrance_municipality_name, !!y_axis), y=!!y_axis, fill=entrance_municipality_name)) + 
       geom_boxplot() +
       xlab("class") +
@@ -162,10 +232,6 @@ boxplot_construction_year <- plot_boxplot(energy_modelling, "construction_year")
 boxplot_building_area_m2 <- plot_boxplot(energy_modelling, "building_area_m2")
 boxplot_num_residents <- plot_boxplot(energy_modelling, "num_residents")
 boxplot_hepi <- plot_boxplot(energy_modelling, "hepi")
-
-boxplot_year_of_installation <- energy_modelling %>%
-  filter(year_of_installation > 1900) %>%
-  plot_boxplot(., "year_of_installation")
 
 ```
 
@@ -189,32 +255,29 @@ ggplotly(boxplot_construction_year)
 ### Ridgeline plots
 
 ```{r}
-# library
-library(ggridges)
-library(ggplot2)
-library(viridis)
-library(hrbrthemes)
+#| label: fig-hepi-municipality
+#| fig-cap: "HEPI density plot per municipality"
 
-# Plot
-energy_modelling %>%
-  filter(building_class == 1110) %>%
+energy_modelling |>
+  filter(building_class == 1110) |>
   ggplot(aes(x = hepi, y = entrance_municipality_name, fill = after_stat(x))) +
   geom_density_ridges_gradient(scale = 5, rel_min_height = 0.02) +
-  scale_fill_viridis(name = "HEPI (kWh/m2)", option = "C") +
+  scale_fill_viridis(name = "HEPI (kWh/m2/year)", option = "C") +
   labs(title = 'HEPI per municipality') +
-  xlim(0,300)
+  xlim(0,300) +
+   theme(axis.title.x=element_blank())
 ```
 
 ## Modelling
 
-### Train/test split
+   ### Splitting the data
 
 ```{r}
 #| label: train-test-split
 #| include: false
 
 #> select variables for modelling
-df_energy_modelling <- energy_modelling %>%
+df_energy_modelling <- energy_modelling |>
   select(egid, 
          hepi, 
          hec, 
@@ -244,7 +307,9 @@ df_energy_modelling <- energy_modelling %>%
          energy_consumed_hot_water_mwh,
          retrofitted,
          retrofit_investment_costs,
-         hdd)
+         hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method)
 
          
 #> Set the random number stream using `set.seed()` so that the results can be 
@@ -252,7 +317,9 @@ df_energy_modelling <- energy_modelling %>%
 set.seed(501)
 
 #> Save the split information for an 80/20 split of the data
-energy_split <- initial_split(df_energy_modelling, prop = 0.80, strata = hepi)
+energy_split <- initial_split(df_energy_modelling, 
+                              prop = 0.10, 
+                              strata = hec)
 energy_split
 
 
@@ -260,10 +327,23 @@ energy_split
 energy_train <- training(energy_split)
 energy_test  <-  testing(energy_split)
 
+
+#> Creating a validation set (20% of training data)
+set.seed(234)
+energy_validation <- validation_split(energy_train,
+                                      prop = 0.90,
+                                      strata = hec)
+
 dim(energy_train)
+dim(energy_validation)
+
+# creating folds for cross validation
+set.seed(1502)
+energy_folds <- 
+   vfold_cv(energy_train, strata = hec, repeats = 3)
 ```
 
-### Preprocessing
+### Preprocessing Recipes
 
 In the preprocessing, we apply the following:
 
@@ -271,32 +351,51 @@ In the preprocessing, we apply the following:
 -   Normalize numeric variables
 -   Log-transform numeric variables
 -   Create dummy variables from all nominal variables
-
+   
 ```{r}
-#| label: preprocessing-recipes-hec
+#| label: preprocessing-base-recipe-hec
 #| include: false
 
-# Specify recipe for basic MLR
-lm_base_recipe <- recipe(hec ~ .,
-                          data = energy_train) %>% 
-  # remove egid and hepi from the list of predictors
-  update_role(egid, new_role = "id") %>%
-  update_role(hepi, new_role = "id") %>% 
+# Specify basic recipe (applicable to all models)
+recipe_base_hec <- recipe(hec ~ .,
+                          data = energy_train) |> 
+  # remove variables from predictors that are only used for info or later comparison
+  update_role(egid, hepi, hepi_pred_current_method, hec_pred_current_method, new_role = "id") |>
   # Create dummy variables for nominal predictors
-  step_dummy(all_nominal()) %>%
+  step_dummy(all_nominal()) |>
   # Remove variables that contain only one value
-  step_zv(all_predictors()) %>%
+  step_zv(all_numeric_predictors()) |>
   # Impute means for variables with NA
-  step_impute_mean(num_residents) %>%
+  step_impute_mean(num_residents) |>
   step_impute_mean(year_of_installation)
 
-lm_base_recipe
+recipe_base_hec
+```
 
-# Add log-transform
-lm_log_recipe <- lm_base_recipe %>%
-  step_log(all_outcomes())
+```{r}
+#| label: preprocessing-base-recipe-hec-norm
+#| include: false
 
-lm_log_recipe
+#> Some models (notably neural networks, KNN, and support vector machines) require predictors that have been centered and scaled, so some model workflows will require recipes with these preprocessing steps. For other models, a traditional response surface design model expansion (i.e., quadratic and two-way interactions) is a good idea.
+#> https://www.tmwr.org/workflow-sets.html
+
+recipe_base_hec_norm <- recipe_base_hec |>
+  step_normalize(all_numeric_predictors())
+
+recipe_base_hec_norm
+```
+
+```{r}
+#| label: preprocessing-base-recipe-hec-poly
+#| include: false
+
+# Add polynomials and interaction
+recipe_base_hec_poly <- 
+   recipe_base_hec_norm %>% 
+   step_poly(all_numeric_predictors()) %>% 
+   step_interact(~ all_numeric_predictors():all_numeric_predictors())
+
+recipe_base_hec_poly
 ```
 
 
@@ -307,14 +406,25 @@ lm_log_recipe
 #| include: false
 
 # MLR model
-lm_spec <- 
-   linear_reg() %>% 
+lm_basic_spec <- 
+   linear_reg() |> 
    set_engine("lm")
+
+# MLR glmnet spec
+lm_glmnet_spec <- 
+   linear_reg(penalty = tune(), mixture = tune()) %>% 
+   set_engine("glmnet")
 
 # decision tree
 dt_spec <- 
-   decision_tree() %>% 
-   set_engine("rpart") %>% 
+   decision_tree() |> 
+   set_engine("rpart") |> 
+   set_mode("regression")
+
+# k nearest neighbour
+knn_spec <-
+   nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) %>%
+   set_engine("kknn") %>%
    set_mode("regression")
 
 # random forest
@@ -323,30 +433,244 @@ rf_spec <- rand_forest() |>
   set_mode("regression")
 
 # xgboost
+xgb_spec <- 
+   boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+              min_n = tune(), sample_size = tune(), trees = tune()) %>% 
+   set_engine("xgboost") %>% 
+   set_mode("regression")
 
-# 
+# articifial neural net
+nnet_spec <- 
+   mlp(hidden_units = tune(), penalty = tune(), epochs = tune()) %>% 
+   set_engine("nnet", MaxNWts = 2600) %>% 
+   set_mode("regression")
 
-
-auto_ml_spec <- auto_ml() %>%
-  set_engine("h2o") %>%
+# auto ml
+auto_ml_spec <- auto_ml() |>
+  set_engine("h2o") |>
   set_mode("regression") 
   
 ```
 
-### Define workflows
-
 ```{r}
-#| label: workflow-definition
+#| label: model-definition-tmwr
 #| include: false
 
-wf_set_basic <- 
+#> https://www.tmwr.org/workflow-sets.html#creating-the-workflow-set
+
+# mars_spec <- 
+#    mars(prod_degree = tune()) %>%  #<- use GCV to choose terms
+#    set_engine("earth") %>% 
+#    set_mode("regression")
+# 
+# svm_r_spec <- 
+#    svm_rbf(cost = tune(), rbf_sigma = tune()) %>% 
+#    set_engine("kernlab") %>% 
+#    set_mode("regression")
+# 
+# svm_p_spec <- 
+#    svm_poly(cost = tune(), degree = tune()) %>% 
+#    set_engine("kernlab") %>% 
+#    set_mode("regression")
+# 
+# knn_spec <- 
+#    nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) %>% 
+#    set_engine("kknn") %>% 
+#    set_mode("regression")
+# 
+# cart_spec <- 
+#    decision_tree(cost_complexity = tune(), min_n = tune()) %>% 
+#    set_engine("rpart") %>% 
+#    set_mode("regression")
+# 
+# bag_cart_spec <- 
+#    bag_tree() %>% 
+#    set_engine("rpart", times = 50L) %>% 
+#    set_mode("regression")
+# 
+# rf_spec <- 
+#    rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
+#    set_engine("ranger") %>% 
+#    set_mode("regression")
+# 
+# 
+# 
+# cubist_spec <- 
+#    cubist_rules(committees = tune(), neighbors = tune()) %>% 
+#    set_engine("Cubist") 
+```
+
+### Define workflows
+
+
+#### Workflow for nonlinear models
+```{r}
+#| label: workflow-definition-normalized
+#| include: false
+
+#> this workflow is for nonlinear models that require the predictors to be in the same units
+
+normalized <- 
    workflow_set(
-      preproc = list(simple = lm_base_recipe, log = lm_log_recipe),
-      models = list(lm = lm_spec, dt = dt_spec, rf = rf_spec),
-      cross = TRUE
+      preproc = list(normalized = recipe_base_hec_norm), 
+      models = list(neural_network = nnet_spec#SVM_radial = svm_r_spec, SVM_poly = svm_p_spec, 
+                    #KNN = knn_spec
+                    )
    )
 
-wf_set_basic
+normalized
+```
+#### Workflow with only basic preprocessing
+
+```{r}
+#| label: workflow-definition-basic
+#| include: false
+
+#> this workflow is for models that do not need normalizing
+
+no_pre_proc <- 
+   workflow_set(
+      preproc = list(simple = recipe_base_hec), 
+      models = list(#MARS = mars_spec, CART = cart_spec, CART_bagged = bag_cart_spec,
+                    RF = rf_spec, boosting = xgb_spec, lm_basic = lm_basic_spec #Cubist = cubist_spec
+                    )
+   )
+no_pre_proc
+```
+
+#### Models with non linear terms and interactions
+
+```{r}
+#| label: workflow-definition-with-features
+#| include: false
+
+with_features <- 
+   workflow_set(
+      preproc = list(full_quad = recipe_base_hec_poly), 
+      models = list(lm_glmnet = lm_glmnet_spec, KNN = knn_spec)
+   )
+```
+
+#### Combine all workflows
+
+```{r}
+#| label: combine-workflows
+#| include: false
+all_workflows <- 
+   bind_rows(no_pre_proc, normalized, with_features) %>% 
+   # Make the workflow ID's a little more simple: 
+   mutate(wflow_id = gsub("(simple_)|(normalized_)", "", wflow_id))
+
+all_workflows
+```
+
+
+### Tuning
+
+```{r}
+#| label: hyperparameter-tuning
+#| include: false
+#| eval: false
+
+#> Almost all of the members of all_workflows contain tuning parameters. To evaluate their performance, we can use the standard tuning or resampling functions (e.g., tune_grid() and so on). The workflow_map() function will apply the same function to all of the workflows in the set; the default is tune_grid()
+
+
+grid_ctrl <-
+   control_grid(
+      save_pred = TRUE,
+      parallel_over = "everything",
+      save_workflow = TRUE
+   )
+
+grid_results <-
+   all_workflows %>%
+   workflow_map(
+      seed = 1503,
+      resamples = energy_validation,
+      grid = 25,
+      control = grid_ctrl
+   )
+
+```
+
+```{r}
+#| label: grid-results
+#| include: false
+
+autoplot(
+   grid_results,
+   rank_metric = "rmse",  # <- how to order models
+   metric = "rmse",       # <- which metric to visualize
+   select_best = TRUE     # <- one point per workflow
+) +
+   geom_text(aes(y = mean - 1/2, label = wflow_id), angle = 90, hjust = 1) +
+   #lims(y = c(3.5, 9.5)) +
+   theme(legend.position = "none")
+```
+
+#### Improve effiecency: Racing approach
+```{r}
+#| label: race-results
+#| include: false
+
+race_ctrl <-
+   control_race(
+      save_pred = TRUE,
+      parallel_over = "everything",
+      save_workflow = TRUE
+   )
+
+race_results <-
+   all_workflows %>%
+   workflow_map(
+      "tune_race_anova",
+      seed = 1503,
+      resamples = energy_folds,
+      grid = 25,
+      control = race_ctrl
+   )
+
+race_results
+```
+
+```{r}
+#| label: race-autoplot
+#| include: true
+
+autoplot(
+   race_results,
+   rank_metric = "rmse",  
+   metric = "rmse",       
+   select_best = TRUE    
+) +
+   geom_text(aes(y = mean - 1/2, label = wflow_id), angle = 90, hjust = 1) +
+   lims(y = c(3.0, 9.5)) +
+   theme(legend.position = "none")
+```
+
+#### Compare grid search and race approach
+
+```{r}
+#| label: compare-grid-race
+#| include: true
+matched_results <- 
+   rank_results(race_results, select_best = TRUE) %>% 
+   select(wflow_id, .metric, race = mean, config_race = .config) %>% 
+   inner_join(
+      rank_results(grid_results, select_best = TRUE) %>% 
+         select(wflow_id, .metric, complete = mean, 
+                config_complete = .config, model),
+      by = c("wflow_id", ".metric"),
+   ) %>%  
+   filter(.metric == "rmse")
+
+matched_results %>% 
+   ggplot(aes(x = complete, y = race)) + 
+   geom_abline(lty = 3) + 
+   geom_point() + 
+   geom_text_repel(aes(label = model)) +
+   coord_obs_pred() + 
+   labs(x = "Complete Grid RMSE", y = "Racing RMSE") 
 ```
 
 ### Training
@@ -354,14 +678,13 @@ wf_set_basic
 ```{r}
 #| label: model-fit-basic
 #| include: false
-set.seed(123)
-splits <- vfold_cv(energy_train, v = 2, strata = hec)
+
 
 doParallel::registerDoParallel()
 
 fit_basic <- workflow_map(wf_set_basic,
                           "fit_resamples", 
-                          resamples = splits,
+                          resamples = energy_folds,
                           metrics = metric_set(rmse, mape, mae, rsq),
                           verbose = TRUE,
                           seed = 22)
@@ -372,8 +695,41 @@ fit_basic
 ### Model evaluation {#sec-model-evaluation}
 
 ```{r}
+#| label: metrics-current-approach
+#| include: false
+
+energy_train_current_method <- energy_train |>
+  dplyr::inner_join(energy_modelling, by = c("egid"), suffix = c("", "_y")) |>
+  dplyr::select(egid, survey_year, hec, hepi, hepi_pred_current_method, hec_pred_current_method, heated_area_m2)
+
+custom_metrics <- metric_set(rmse, mape, mae, rsq)
+
+energy_train_metrics_current_method <- energy_train_current_method |>
+  custom_metrics(hec, hec_pred_current_method)
+
+energy_train_metrics_current_method
+
+
+results_train_hec_current_method <- energy_train |> 
+   ggplot(aes(x = hec, y = hec_pred_current_method)) + 
+   geom_abline(color = "gray50", lty = 2) + 
+   geom_point(alpha = 0.5) + 
+   coord_obs_pred() + 
+   labs(x = "Observed HEC", y = "Predicted HEC")
+
+results_train_hec_current_method
+```
+
+```{r}
+fit_basic
+```
+
+
+```{r}
 #| label: fig-model-benchmarking
 #| fig-cap: "Benchmarking of models"
+fit_basic |>
+   rena
 autoplot(fit_basic)
 ```
 
@@ -384,35 +740,33 @@ autoplot(fit_basic)
 fit_basic_metrics <- collect_metrics(fit_basic)
 
 workflowsets::rank_results(fit_basic, rank_metric = "mape", select_best = TRUE)
-```
 
+fit_basic_metrics
+```
 
 ```{r}
-
+autoplot(fit_basic)
 ```
-
 
 ### Final model {#sec-final-model}
 
 ```{r}
 best_results <- 
    fit_basic %>% 
-   extract_workflow_set_result("log_rf") %>% 
+   extract_workflow_set_result("simple_lm") %>% 
    select_best(metric = "rmse")
-
 best_results
 
-prediction <- 
-   fit_basic %>% 
-   extract_workflow("log_rf") %>% 
-   finalize_workflow(best_results) %>% 
-   last_fit(split = energy_split)
 
-collect_metrics(prediction)
+test_results <- 
+   fit_basic %>% 
+   extract_workflow("simple_lm") %>% 
+   finalize_workflow(best_results) %>% 
+   last_fit(split = testing_data)
 ```
 
 ```{r}
-lm_test_results_plot <- prediction %>% 
+test_results %>% 
    collect_predictions() %>% 
    ggplot(aes(x = hec, y = .pred)) + 
    geom_abline(color = "gray50", lty = 2) + 
@@ -420,60 +774,6 @@ lm_test_results_plot <- prediction %>%
    coord_obs_pred() + 
    labs(x = "observed", y = "predicted")
 
-ggplotly(lm_test_results_plot)
+ggplotly(test_results)
 ```
 
-### Multiple linear regression
-
-```{r}
-#| label: lm-fit
-#| include: false
-#| eval: false
-
-
-#> create model
-lm_model <- 
-  linear_reg() %>% 
-  set_engine("lm")
-
-#> fit model on training data
-lm_form_fit <- 
-  lm_model %>% 
-  fit(hepi ~ ., data = energy_train)
-
-
-summary(lm_form_fit$fit)
-```
-
-```{r}
-#| label: lm-pred
-#| include: false
-#| eval: false
-
-
-prediction <- lm_form_fit %>%
-  predict(energy_test)
-
-
-test_res <- energy_test %>%
-  bind_cols(prediction)
-```
-
-```{r}
-#| label: lm-plot
-#| include: false
-#| eval: false
-
-ggplot(test_res, aes(x = hepi, y = .pred)) + 
-  #> Create a diagonal line:
-  geom_abline(lty = 2) + 
-  geom_point(alpha = 0.5) + 
-  labs(y = "Predicted HEC", x = "Measured HEC") +
-  #> Scale and size the x- and y-axis uniformly:
-  coord_obs_pred() +
-  geom_smooth() 
-```
-
-### ANN
-
-### Auto ML

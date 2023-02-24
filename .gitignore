@@ -12,6 +12,7 @@ gpt_q_and_a.qmd
 .httr-oauth
 .DS_Store
 
+/_book/
 /data
 /index_cache/
 /01-Introduction_cache/

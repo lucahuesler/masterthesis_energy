@@ -41,6 +41,9 @@ retrofit_ec <- read_delim("data/sanierungen_typ_EC.csv", delim = ",", show_col_t
 retrofit_geb <- read_delim("data/sanierungen_typ_GEB.csv", delim = ",", show_col_types = FALSE)
 retrofit_ezb <- read_delim("data/sanierungen_typ_EZB.csv", delim = ",", show_col_types = FALSE)
 
+# Population quarterly STA  BL
+pop_quarterly_stabl <- read_delim("data/population_quarterly_stabl.csv", delim = ";", show_col_types = FALSE)
+
 # STATPOP data
 stat_pop_2016 <- read_delim("data/statpop_hektar_2016/STATPOP2016.csv", delim = ",", show_col_types = FALSE)
 stat_pop_2018 <- read_delim("data/statpop_hektar_2018/STATPOP2018.csv", delim = ",", show_col_types = FALSE)
@@ -49,12 +52,17 @@ stat_pop_2020 <- read_delim("data/statpop_hektar_2020/ag-b-00.03-vz2020statpop/S
 # swissBOUNDARIES
 swiss_boundaries <- st_read("data/swissBOUNDARIES/swissBOUNDARIES3D_1_4_TLM_KANTONSGEBIET.shp")
 
-plot(swiss_boundaries)
 
-bl_boundaries <- swiss_boundaries |>
-  filter(NAME == "Basel-Landschaft")
+```
 
-plot(bl_boundaries)
+```{r}
+pop_quarterly_stabl %>%
+  dplyr::group_by(jahr, quartal) |>
+  dplyr::summarise(n = sum(dp_anzahl))
+
+
+pop_quarterly_stabl %>%
+  filter(is.na(gebaeudeidentifikator_egid))
 ```
 
 ```{r}
@@ -96,84 +104,84 @@ energy_clean_02 <- energy_clean_01 %>%
 ### Match STATPOP data {#sec-adding-statpop-data}
 
 ```{r}
-#| label: create-geom-attributes
-#| include: false
-
-# in the colnames of the df's stat_pop_2016, stat_pop_2018 and stat_pop_2020: remove the substrings "B16", "B18" and "B20" from all the colnames (before: B16BTOT, after: BTOT), use tidyverse
-
-
-stat_pop_2016 <- stat_pop_2016 %>% 
-  rename_all(~ str_remove(., "B16")) %>%
-  rename_all(~ str_remove(., "H16")) %>%
-  rename_statpop()
-
-
-stat_pop_2018 <- stat_pop_2018 %>% 
-  rename_all(~ str_remove(., "B18")) %>%
-  rename_all(~ str_remove(., "H18")) %>%
-  rename_statpop()
-
-stat_pop_2020 <- stat_pop_2020 %>% 
-  rename_all(~ str_remove(., "B20")) %>%
-  rename_all(~ str_remove(., "H20")) %>%
-  rename_statpop()
-
-
-energy_points_2016 <- energy_clean_02 |>
-  filter(erhebungsjahr == 2016) |>
-  select(egid, gkode, gkodn) |>
-
-# transform to an sf object
-stat_pop_2016_sf <- stat_pop_2016 |>
-  st_as_sf(coords = c("e_koord", "n_koord"), crs = 4326)
-
-# convert the data to a spatial data frame
-stat_pop_2016_sf <- stat_pop_2016_sf %>%
-  mutate(geom_hectare = sf::st_buffer(geometry, dist = 1, nQuadSegs=1, 
-                        endCapStyle = "SQUARE")) 
-
-# retrieve points from  of energy data
-energy_points_2016 <- energy_clean_02 |>
-  filter(erhebungsjahr == 2016) |>
-  select(egid, gkode, gkodn) |>
-  st_as_sf(coords = c('gkode', 'gkodn'), crs = st_crs(stat_pop_2016_sf), remove = FALSE)
-
-
-energy_stat_pop_2016 <- energy_points_2016 |>
-  mutate(intersection = as.integer(st_intersects(geometry, stat_pop_2016_sf$geom_hectare)),
-         BTOT = stat_pop_2016_sf$BTOT[intersection])
-         
-
-#>  create a polygon from the coordinates represented by E_KOORD and N_KOORD in stat_pop_2016. For each row of the dataframe, i want a new column "hectare" that stores the polygon for that point. E_KOORD/N_KOORD represent the centre of the polygon. Use the sf package and write in tidyverse style.
-
-
-
-  
-
-
-
-
-
-
-plot(stat_pop_2016_sf$BTOT)
-
-# cut stat_pop_2016_BL_sf down to canton BL by intersecting with sf object bl_boundaries
-stat_pop_2016_sf <- stat_pop_2016_sf |>
-  st_transform(st_crs(bl_boundaries))
-
-stat_pop_2016_sf_BL <- st_intersection(stat_pop_2016_sf, bl_boundaries$geometry)
-
-
-plot(bl_boundaries$geometry)
-
-# select and rename relevant variables
-stat_pop_2016 <- stat_pop_2016 |>
-  dplyr::select(RELI, X_KOORD, Y_KOORD, E_KOORD, N_KOORD, B16BTOT, B16B11,  B16B12, B16B13, B16B14,  B16B15,  B16B16, B16B21 , B16B26, B16BMTOT, B16BM01,     
-B16BM02, B16BM03, B16BM04, B16BM05, B16BM06, B16BM07, B16BM08, B16BM09,     
-B16BM10, B16BM11, B16BM12, B16BM13, B16BM14, B16BM15, B16BM16, B16BM17,     
-B16BM18, B16BM19, B16BWTOT, B16BW01, B16BW02, B16BW03, B16BW04, B16BW05,     
-B16BW06, B16BW07, B16BW08, B16BW09, B16BW10, B16BW11, B16BW12, B16BW13,     
-B16BW14, B16BW15, B16BW16, B16BW17, B16BW18, B16BW19)
+# #| label: create-geom-attributes
+# #| include: false
+# 
+# # in the colnames of the df's stat_pop_2016, stat_pop_2018 and stat_pop_2020: remove the substrings "B16", "B18" and "B20" from all the colnames (before: B16BTOT, after: BTOT), use tidyverse
+# 
+# 
+# stat_pop_2016 <- stat_pop_2016 %>% 
+#   rename_all(~ str_remove(., "B16")) %>%
+#   rename_all(~ str_remove(., "H16")) %>%
+#   rename_statpop()
+# 
+# 
+# stat_pop_2018 <- stat_pop_2018 %>% 
+#   rename_all(~ str_remove(., "B18")) %>%
+#   rename_all(~ str_remove(., "H18")) %>%
+#   rename_statpop()
+# 
+# stat_pop_2020 <- stat_pop_2020 %>% 
+#   rename_all(~ str_remove(., "B20")) %>%
+#   rename_all(~ str_remove(., "H20")) %>%
+#   rename_statpop()
+# 
+# 
+# energy_points_2016 <- energy_clean_02 |>
+#   filter(erhebungsjahr == 2016) |>
+#   select(egid, gkode, gkodn)
+# 
+# # transform to an sf object
+# stat_pop_2016_sf <- stat_pop_2016 |>
+#   st_as_sf(coords = c("e_koord", "n_koord"), crs = 4326)
+# 
+# # convert the data to a spatial data frame
+# stat_pop_2016_sf <- stat_pop_2016_sf %>%
+#   mutate(geom_hectare = sf::st_buffer(geometry, dist = 1, nQuadSegs=1, 
+#                         endCapStyle = "SQUARE")) 
+# 
+# # retrieve points from  of energy data
+# energy_points_2016 <- energy_clean_02 |>
+#   filter(erhebungsjahr == 2016) |>
+#   select(egid, gkode, gkodn) |>
+#   st_as_sf(coords = c('gkode', 'gkodn'), crs = st_crs(stat_pop_2016_sf), remove = FALSE)
+# 
+# 
+# energy_stat_pop_2016 <- energy_points_2016 |>
+#   mutate(intersection = as.integer(st_intersects(geometry, stat_pop_2016_sf$geom_hectare)),
+#          BTOT = stat_pop_2016_sf$BTOT[intersection])
+#          
+# 
+# #>  create a polygon from the coordinates represented by E_KOORD and N_KOORD in stat_pop_2016. For each row of the dataframe, i want a new column "hectare" that stores the polygon for that point. E_KOORD/N_KOORD represent the centre of the polygon. Use the sf package and write in tidyverse style.
+# 
+# 
+# 
+#   
+# 
+# 
+# 
+# 
+# 
+# 
+# plot(stat_pop_2016_sf$BTOT)
+# 
+# # cut stat_pop_2016_BL_sf down to canton BL by intersecting with sf object bl_boundaries
+# stat_pop_2016_sf <- stat_pop_2016_sf |>
+#   st_transform(st_crs(bl_boundaries))
+# 
+# stat_pop_2016_sf_BL <- st_intersection(stat_pop_2016_sf, bl_boundaries$geometry)
+# 
+# 
+# plot(bl_boundaries$geometry)
+# 
+# # select and rename relevant variables
+# stat_pop_2016 <- stat_pop_2016 |>
+#   dplyr::select(RELI, X_KOORD, Y_KOORD, E_KOORD, N_KOORD, B16BTOT, B16B11,  B16B12, B16B13, B16B14,  B16B15,  B16B16, B16B21 , B16B26, B16BMTOT, B16BM01,     
+# B16BM02, B16BM03, B16BM04, B16BM05, B16BM06, B16BM07, B16BM08, B16BM09,     
+# B16BM10, B16BM11, B16BM12, B16BM13, B16BM14, B16BM15, B16BM16, B16BM17,     
+# B16BM18, B16BM19, B16BWTOT, B16BW01, B16BW02, B16BW03, B16BW04, B16BW05,     
+# B16BW06, B16BW07, B16BW08, B16BW09, B16BW10, B16BW11, B16BW12, B16BW13,     
+# B16BW14, B16BW15, B16BW16, B16BW17, B16BW18, B16BW19)
 ```
 
 ```{r}
@@ -216,10 +224,9 @@ energy_clean_04 <- energy_clean_03 %>%
 #> Set datatypes explicitly
 
 energy_clean_05 <- energy_clean_04 %>%
-  mutate_at(vars(erhebungsjahr, genh1_energy, genw1_energy, energienutzung_anlage, ggdenr, gbaup, gbaum, gksce, gwaerzh1, genh1_gwr, gwaersceh1, gwaerzw1, genw1_gwr, genw1_gwr, gwaerscew1, k_gsknu, k_gskqu, k_gska, k_gphvoqu, k_idwv, k_wvhz, gkat, gklas, gstat, gvolnorm, gvolsce), factor) %>%
+  mutate_at(vars(erhebungsjahr, genh1_energy, genw1_energy, energienutzung_anlage, ggdenr, gbaup, gbaum, gksce, gwaerzh1, genh1_gwr, gwaersceh1, gwaerzw1, genw1_gwr, genw1_gwr, gwaerscew1, k_gsknu, k_gskqu, k_gska, k_gphvoqu, k_idwv, k_wvhz, gkat, gklas, gstat, gvolnorm, gvolsce, k_gsoko, k_gphvo), factor) %>%
   mutate_at(vars(egid, anzahl_bewohner, baujahr_anlage, gbauj, gabbj, gastw, gazzi, k_ganzwhg, k_egid_hz), as.integer) %>%
   mutate_at(vars(verbrauch_erhoben_mwh, verbrauch_geschaetzt_mwh, heizkoeffizient_erhoben, heizkoeffizient_geschaetzt, wirkungsgrad_anlage, bruttogeschossflaeche, produktion_soko_kwh, k_gskfl, k_gphvokw, garea, gvol, gebf, meters_above_sealevel, produktion_soko_mwh, verbrauch_warmwasser_mwh, beheizte_flache), as.double) %>%
-  mutate_at(vars(k_gsoko, k_gphvo), as.logical) %>%
   mutate_at(vars(gbez), as.character) %>%
   mutate_at(vars(gwaerdath1, gwaerdatw1), as.Date)
 ```
@@ -300,7 +307,11 @@ energy_clean_06 <- energy_clean_05 %>%
 
 ### Calculation HEC and HEPI
 
-To calculate the HEC for each building, we use the @eq-hec introduced in Chapter @sec-problem-definition. Based on the HEC, we can also calculate HEPI.
+To calculate the HEC for each building, we use the @eq-hec introduced in Chapter @sec-problem-definition. Based on the HEC, we can also calculate HEPI. For easier comparison with results of other publications, we use the following units:
+
+-   HEC in kWh/year
+
+-   HEPI in kWh/m²/year
 
 ```{r}
 #| label: calculate-hec-hepi
@@ -311,8 +322,8 @@ To calculate the HEC for each building, we use the @eq-hec introduced in Chapter
 energy_clean_07 <- energy_clean_06 %>%
   filter(energy_consumed_measured_mwh > 0 & !is.na(energy_consumed_measured_mwh)) %>%
   mutate(efficiency_of_installation = if_else(is.na(efficiency_of_installation), 0.85, efficiency_of_installation),
-    hec = ((energy_consumed_measured_mwh*efficiency_of_installation) + energy_production_solar_mwh - energy_consumed_hot_water_mwh),
-         hepi = hec*1000/heated_area_m2)
+    hec = ((energy_consumed_measured_mwh*efficiency_of_installation) + energy_production_solar_mwh - energy_consumed_hot_water_mwh)*1000,
+         hepi = hec/heated_area_m2)
 
 energy_clean_07 %>%
   dplyr::group_by(building_category, energy_usage_of_installation) %>%
@@ -599,16 +610,17 @@ retrofit_all_match <- retrofit_all_clean %>%
 energy_clean_09 <- energy_clean_08 %>%
   left_join(retrofit_all_match, by = "egid") %>%
   #> create new variable "retrofitted" based on survey_year and year_completion: Buildings only count as retrofitted if the year of completion is before the survey year
-  mutate(retrofitted = case_when(survey_year == 2016 & year_completion < 2016 ~ TRUE,
-                                 survey_year == 2018 & year_completion < 2018 ~ TRUE,
-                                 survey_year == 2020 & year_completion < 2020 ~ TRUE,
-                                 TRUE ~ FALSE)) %>%
+  mutate(retrofitted = case_when(survey_year == 2016 & year_completion < 2016 ~ 'Yes',
+                                 survey_year == 2018 & year_completion < 2018 ~ 'Yes',
+                                 survey_year == 2020 & year_completion < 2020 ~ 'Yes',
+                                 TRUE ~ 'No')) %>%
+  mutate(retrofitted = as.factor(retrofitted)) |>
   #> set retrofit variables to NA if building is not tagged as retrofitted
-  mutate(admin_id = if_else(retrofitted == TRUE, admin_id, NA_character_), 
-         admin_project_type = if_else(retrofitted == TRUE, admin_project_type, NA_character_), 
-         admin_project_name = if_else(retrofitted == TRUE, admin_project_name, NA_character_), 
-         param_investment_costs = if_else(retrofitted == TRUE, param_investment_costs, NA_real_),
-         year_completion = if_else(retrofitted == TRUE, year_completion, NA_integer_)) %>%
+  mutate(admin_id = if_else(retrofitted == 1, admin_id, NA_character_), 
+         admin_project_type = if_else(retrofitted == 1, admin_project_type, NA_character_), 
+         admin_project_name = if_else(retrofitted == 1, admin_project_name, NA_character_), 
+         param_investment_costs = if_else(retrofitted == 1, param_investment_costs, NA_real_),
+         year_completion = if_else(retrofitted == 1, year_completion, NA_integer_)) |>
   rename(retrofit_id = admin_id, 
          retrofit_project_type = admin_project_type, 
          retrofit_project_name = admin_project_name, 
@@ -625,8 +637,8 @@ energy_clean_09 %>%
 
 ```{r}
 energy_clean_10 <- energy_clean_09 %>%
-  mutate(solar_system = if_else(is.na(solar_system), FALSE, TRUE),
-         photovoltaic_system = if_else(is.na(photovoltaic_system), FALSE, TRUE))
+  mutate(solar_system = if_else(is.na(solar_system), "No", "Yes"),
+         photovoltaic_system = if_else(is.na(photovoltaic_system), "No", "Yes"))
 
 
 table(energy_clean_10$solar_system)
@@ -681,7 +693,7 @@ To make sure that the values of the current method are correct, we recalculate t
 ```{r}
 energy_clean_13 <- energy_clean_12 |>
   dplyr::mutate(hepi_pred_current_method = heating_coefficient_estimated,
-                hec_pred_current_method = heating_coefficient_estimated*heated_area_m2/1000)
+                hec_pred_current_method = heating_coefficient_estimated*heated_area_m2)
 ```
 
 ## Save data

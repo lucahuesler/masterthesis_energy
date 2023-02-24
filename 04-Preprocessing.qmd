@@ -56,13 +56,21 @@ swiss_boundaries <- st_read("data/swissBOUNDARIES/swissBOUNDARIES3D_1_4_TLM_KANT
 ```
 
 ```{r}
+#| label: check-population-data
+#| include: false
 pop_quarterly_stabl %>%
   dplyr::group_by(jahr, quartal) |>
   dplyr::summarise(n = sum(dp_anzahl))
 
 
-pop_quarterly_stabl %>%
-  filter(is.na(gebaeudeidentifikator_egid))
+pop_quarterly_stabl_transformed <- pop_quarterly_stabl %>%
+  group_by(gebaeudeidentifikator_egid, jahr, quartal) %>%
+  summarise(dp_anzahl = sum(dp_anzahl)) %>%
+  pivot_wider(names_from = quartal, values_from = dp_anzahl, names_prefix = "Q")
+
+pop_quarterly_stabl_mean <- pop_quarterly_stabl_transformed |>
+  rowwise() |>
+  mutate(pop_mean = mean(c(Q1, Q2, Q3, Q4), na.rm = T))
 ```
 
 ```{r}
@@ -338,9 +346,6 @@ energy_clean_07 %>%
   select(egid, survey_year,heating_coefficient_measured, efficiency_of_installation, energy_production_solar_mwh, energy_consumed_hot_water_mwh, energy_consumed_measured_mwh, num_residents)
 ```
 
-```{r}
-
-```
 
 ### Data filtering
 
@@ -359,7 +364,7 @@ In order to prepare the data for modelling, we apply the following filters:
 energy_clean_08 <- energy_clean_07 %>%
   filter(between(hepi,20,300),
          building_category == 1020,
-         energy_usage_of_installation %in% c("Raumwärme", "Raumwärme + Warmwasser", "Warmluftheizung", NA)
+         energy_usage_of_installation %in% c("Raumwärme + Warmwasser", NA)
          )
 
 energy_clean_08 %>%
@@ -694,6 +699,15 @@ To make sure that the values of the current method are correct, we recalculate t
 energy_clean_13 <- energy_clean_12 |>
   dplyr::mutate(hepi_pred_current_method = heating_coefficient_estimated,
                 hec_pred_current_method = heating_coefficient_estimated*heated_area_m2)
+```
+
+
+## Add mean population
+
+```{r}
+energy_clean_14 <- energy_clean_13 |>
+  inner_join(pop_quarterly_stabl_mean, by = c("property_street" = "strname", "property_number" = "deinr", "property_zip" = "dplz4"))
+  
 ```
 
 ## Save data

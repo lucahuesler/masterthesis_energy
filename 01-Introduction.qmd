@@ -95,6 +95,7 @@ where:
 
 -   n~floors~ = Number of floors
 
+
 As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate average HEPI each building category (single-family house, multi-family house) and period of construction. The following figure shows the average HEPI for construction period for single-family houses.
 
 <!--# add HEPI figure -->

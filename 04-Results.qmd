@@ -122,7 +122,7 @@ retrofit_mean_hepi <- energy_modelling |>
                                              "Building with three or more apartments"))) |>
   dplyr::rename("Building class" = building_class) |>
   spread(retrofitted, `Mean HEPI (kWh/m2/year)`) |>
-  rename(`Retrofitted` = `TRUE`, `Not retrofitted` = `FALSE`, ) |>
+  rename(`Retrofitted` = "Yes", `Not retrofitted` = "No") |>
   mutate(`Difference in %` = 100 * (`Retrofitted` - `Not retrofitted`) / `Not retrofitted`) |>
   knitr::kable(booktabs = TRUE, digits = 1) 
 
@@ -146,7 +146,7 @@ retrofit_investment_plot
 #| fig-cap: "Construction year per municipality"
 
 retrofit_plot <- energy_modelling |>
-  filter(retrofitted == TRUE) |>
+  filter(retrofitted == "Yes") |>
   arrange(desc(egid)) |>
   distinct(egid, survey_year, retrofit_year_completion, energy_consumed_measured_mwh) |>
   pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
@@ -269,47 +269,13 @@ energy_modelling |>
 ```
 
 ## Modelling
-
-   ### Splitting the data
+### Splitting the data
 
 ```{r}
 #| label: train-test-split
 #| include: false
 
 #> select variables for modelling
-df_energy_modelling <- energy_modelling |>
-  select(egid, 
-         hepi, 
-         hec, 
-         survey_year, 
-         num_residents, 
-         num_floors, 
-         building_area_m2, 
-         gross_floor_area_m2, 
-         heated_area_m2, 
-         year_of_installation, 
-         efficiency_of_installation, 
-         energy_usage_of_installation, 
-         solar_system, 
-         solar_system_area_m2, 
-         solar_system_usage, 
-         solar_system_area_m2, 
-         photovoltaic_system, 
-         photovoltaic_system_power_kw, 
-         municipality_code, 
-         building_class, 
-         construction_year, 
-         coordinate_e, 
-         coordinate_n, 
-         num_dwellings, 
-         meters_above_sealevel, 
-         energy_production_solar_mwh, 
-         energy_consumed_hot_water_mwh,
-         retrofitted,
-         retrofit_investment_costs,
-         hdd,
-         hepi_pred_current_method,
-         hec_pred_current_method)
 
          
 #> Set the random number stream using `set.seed()` so that the results can be 
@@ -317,8 +283,8 @@ df_energy_modelling <- energy_modelling |>
 set.seed(501)
 
 #> Save the split information for an 80/20 split of the data
-energy_split <- initial_split(df_energy_modelling, 
-                              prop = 0.10, 
+energy_split <- initial_split(energy_modelling, 
+                              prop = 0.5, 
                               strata = hec)
 energy_split
 
@@ -359,7 +325,39 @@ In the preprocessing, we apply the following:
 # Specify basic recipe (applicable to all models)
 recipe_base_hec <- recipe(hec ~ .,
                           data = energy_train) |> 
-  # remove variables from predictors that are only used for info or later comparison
+   step_select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents, 
+         num_floors, 
+         building_area_m2, 
+         gross_floor_area_m2, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         solar_system, 
+         solar_system_area_m2, 
+         solar_system_usage, 
+         solar_system_area_m2, 
+         photovoltaic_system, 
+         photovoltaic_system_power_kw, 
+         municipality_code, 
+         building_class, 
+         construction_year, 
+         coordinate_e, 
+         coordinate_n, 
+         num_dwellings, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         retrofit_investment_costs,
+         hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method) |>
+  # remove variables from predictors that are only used for info or later comparison 
   update_role(egid, hepi, hepi_pred_current_method, hec_pred_current_method, new_role = "id") |>
   # Create dummy variables for nominal predictors
   step_dummy(all_nominal()) |>
@@ -439,6 +437,19 @@ xgb_spec <-
    set_engine("xgboost") %>% 
    set_mode("regression")
 
+# svm radial
+svm_r_spec <-
+   svm_rbf(cost = tune(), rbf_sigma = tune()) %>%
+   set_engine("kernlab") %>%
+   set_mode("regression")
+
+# svm poly
+svm_p_spec <-
+ svm_poly(cost = tune(), degree = tune()) %>%
+ set_engine("kernlab") %>%
+ set_mode("regression")
+
+
 # articifial neural net
 nnet_spec <- 
    mlp(hidden_units = tune(), penalty = tune(), epochs = tune()) %>% 
@@ -513,9 +524,10 @@ auto_ml_spec <- auto_ml() |>
 normalized <- 
    workflow_set(
       preproc = list(normalized = recipe_base_hec_norm), 
-      models = list(neural_network = nnet_spec#SVM_radial = svm_r_spec, SVM_poly = svm_p_spec, 
-                    #KNN = knn_spec
-                    )
+      models = list(neural_network = nnet_spec, 
+                    SVM_radial = svm_r_spec, 
+                    SVM_poly = svm_p_spec, 
+                    KNN = knn_spec)
    )
 
 normalized
@@ -531,10 +543,12 @@ normalized
 no_pre_proc <- 
    workflow_set(
       preproc = list(simple = recipe_base_hec), 
-      models = list(#MARS = mars_spec, CART = cart_spec, CART_bagged = bag_cart_spec,
-                    RF = rf_spec, boosting = xgb_spec, lm_basic = lm_basic_spec #Cubist = cubist_spec
+      models = list(lm_basic = lm_basic_spec, 
+                    random_forest = rf_spec, 
+                    xgboost = xgb_spec
                     )
    )
+
 no_pre_proc
 ```
 
@@ -556,8 +570,9 @@ with_features <-
 ```{r}
 #| label: combine-workflows
 #| include: false
+
 all_workflows <- 
-   bind_rows(no_pre_proc, normalized, with_features) %>% 
+   bind_rows(no_pre_proc, normalized) %>% 
    # Make the workflow ID's a little more simple: 
    mutate(wflow_id = gsub("(simple_)|(normalized_)", "", wflow_id))
 
@@ -570,7 +585,6 @@ all_workflows
 ```{r}
 #| label: hyperparameter-tuning
 #| include: false
-#| eval: false
 
 #> Almost all of the members of all_workflows contain tuning parameters. To evaluate their performance, we can use the standard tuning or resampling functions (e.g., tune_grid() and so on). The workflow_map() function will apply the same function to all of the workflows in the set; the default is tune_grid()
 
@@ -579,7 +593,7 @@ grid_ctrl <-
    control_grid(
       save_pred = TRUE,
       parallel_over = "everything",
-      save_workflow = TRUE
+      save_workflow = FALSE
    )
 
 grid_results <-
@@ -597,8 +611,12 @@ grid_results <-
 #| label: grid-results
 #| include: false
 
+# without knn
+grid_results_subset <- grid_results %>%
+   subset(wflow_id != "KNN")
+
 autoplot(
-   grid_results,
+   grid_results_subset,
    rank_metric = "rmse",  # <- how to order models
    metric = "rmse",       # <- which metric to visualize
    select_best = TRUE     # <- one point per workflow
@@ -720,9 +738,7 @@ results_train_hec_current_method <- energy_train |>
 results_train_hec_current_method
 ```
 
-```{r}
-fit_basic
-```
+
 
 
 ```{r}

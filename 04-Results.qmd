@@ -21,6 +21,9 @@ library(viridis)
 library(hrbrthemes)
 library(finetune)
 library(ggrepel)
+library(vip)
+library(shapviz)
+library(DALEXtra)
 ```
 
 ```{r}
@@ -110,6 +113,7 @@ A first explorative way of analyzing the effect of retrofit measures consists in
 #| label: tbl-retrofit
 #| tbl-cap: "Mean HEPI of retrofitted versus non-retrofitted."
 #| tbl-cap-location: bottom
+#| eval: false
 
 retrofit_mean_hepi <- energy_modelling |>
   dplyr::group_by(survey_year, building_class, retrofitted) |>
@@ -284,7 +288,7 @@ set.seed(501)
 
 #> Save the split information for an 80/20 split of the data
 energy_split <- initial_split(energy_modelling, 
-                              prop = 0.5, 
+                              prop = 0.01, 
                               strata = hec)
 energy_split
 
@@ -623,7 +627,10 @@ autoplot(
 ) +
    geom_text(aes(y = mean - 1/2, label = wflow_id), angle = 90, hjust = 1) +
    #lims(y = c(3.5, 9.5)) +
-   theme(legend.position = "none")
+   theme(legend.position = "none") +
+   ylim(18000, 28000) +
+   ggtitle("Benchmark") +
+   ylab("RMSE")
 ```
 
 #### Improve effiecency: Racing approach
@@ -767,22 +774,26 @@ autoplot(fit_basic)
 ### Final model {#sec-final-model}
 
 ```{r}
-best_results <- 
-   fit_basic %>% 
-   extract_workflow_set_result("simple_lm") %>% 
+best_model_xgboost <- 
+   grid_results %>% 
+   extract_workflow_set_result("xgboost") %>% 
    select_best(metric = "rmse")
-best_results
+
+best_model_xgboost
+
+test_results_xgboost <- 
+   grid_results %>% 
+   extract_workflow("xgboost") %>% 
+   finalize_workflow(best_model_xgboost) %>% 
+   last_fit(split = energy_split)
 
 
-test_results <- 
-   fit_basic %>% 
-   extract_workflow("simple_lm") %>% 
-   finalize_workflow(best_results) %>% 
-   last_fit(split = testing_data)
 ```
 
 ```{r}
-test_results %>% 
+collect_metrics(test_results_xgboost)
+
+test_results_xgboost %>% 
    collect_predictions() %>% 
    ggplot(aes(x = hec, y = .pred)) + 
    geom_abline(color = "gray50", lty = 2) + 
@@ -790,6 +801,15 @@ test_results %>%
    coord_obs_pred() + 
    labs(x = "observed", y = "predicted")
 
-ggplotly(test_results)
+```
+
+### Save models
+
+```{r}
+#| label: save-models
+#| include: false
+xgboost_wf <- extract_workflow(test_results_xgboost)
+
+readr::write_rds(test_results_xgboost, "models/xgboost_wf")
 ```
 

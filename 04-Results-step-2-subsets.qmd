@@ -22,7 +22,9 @@ library(viridis)
 library(hrbrthemes)
 library(finetune)
 library(ggrepel)
-
+library(vip)
+library(shapviz)
+library(DALEXtra)
 ```
 
 ```{r}
@@ -53,6 +55,7 @@ nrow(energy_multi_family)
 ```
 
 #### Single-family houses
+
 ```{r}
 #| label: train-test-split-single-family
 #| include: false
@@ -77,7 +80,9 @@ set.seed(234)
 energy_folds_single_family <- vfold_cv(energy_train_single_family, v = 5, strata = hec)
 
 ```
+
 #### Multi-family houses
+
 ```{r}
 #| label: train-test-split-single-family
 #| include: false
@@ -109,7 +114,7 @@ energy_folds_multi_family <- vfold_cv(energy_train_multi_family, v = 5, strata =
 
 # Specify basic recipe (applicable to all models)
 recipe_base_hec_building_class <- recipe(hec ~ .,
-                          data = energy_train) |> 
+                          data = energy_train_single_family) |> 
    step_select(egid, 
          hepi, 
          hec, 
@@ -197,7 +202,6 @@ building_class_metrics <- single_family_metrics |>
 building_class_metrics
 ```
 
-
 ```{r}
 xgb_fit_single_family %>% 
    collect_predictions() %>% 
@@ -216,7 +220,6 @@ xgb_fit_multifamily_family %>%
    labs(x = "observed", y = "predicted")
 ```
 
-
 ```{r}
 #| label: metrics-current-approach
 #| include: false
@@ -232,8 +235,6 @@ energy_train_metrics_single_family_current_method <- energy_train_current_method
 
 energy_train_metrics_current_method
 ```
-
-
 
 ```{r}
 #| label: xgboost-tuning
@@ -255,7 +256,6 @@ xgb_grid
 
 ```
 
-
 ```{r}
 #| label: xgboost-tune-racing
 #| include: false
@@ -274,8 +274,62 @@ xgb_racing <-
 xgb_racing
 ```
 
+#### Feature importance
 
 ```{r}
+#| label: feature-importance-vip
+#| include: false
 
+vip_features <- c("heated_area_m2", "meters_above_sealevel", "construction_year", 
+                  "coordinate_n", "coordinate_e", "solar_system")
+
+vip_train <- 
+  energy_train_single_family 
+
+test <- bake(recipe_base_hec_building_class, new_data = vip_train) |>
+  prep()
+
+xgb_fit_workflow <- xgb_fit_single_family |>
+  extract_workflow()
+
+explainer_xgboost <- 
+  explain_tidymodels(
+    xgb_fit_workflow, 
+    data = vip_train, 
+    y = energy_train_single_family$hec,
+    label = "XGboost",
+    verbose = FALSE
+  )
+
+explainer_xgboost
 ```
 
+
+
+Explain model for a single observation
+```{r}
+efh <- vip_train[120,]
+efh
+```
+
+```{r}
+xgboost_breakdown <- predict_parts(explainer = explainer_xgboost, new_observation = efh)
+
+xgboost_breakdown
+```
+
+
+```{r}
+#| label: feature-importance-shap
+#| include: false
+
+shap <- test_results |>
+   extract_fit_engine() |>
+   shapviz()
+
+sv_importance(shap, kind = "both", show_numbers = TRUE)
+sv_dependence(shap, "carat", color_var = "auto")
+sv_dependence(shap, "clarity", color_var = "auto")
+sv_force(shap, row_id = 1)
+sv_waterfall(shap, row_id = 1)
+```

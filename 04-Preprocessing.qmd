@@ -55,23 +55,6 @@ swiss_boundaries <- st_read("data/swissBOUNDARIES/swissBOUNDARIES3D_1_4_TLM_KANT
 
 ```
 
-```{r}
-#| label: check-population-data
-#| include: false
-pop_quarterly_stabl %>%
-  dplyr::group_by(jahr, quartal) |>
-  dplyr::summarise(n = sum(dp_anzahl))
-
-
-pop_quarterly_stabl_transformed <- pop_quarterly_stabl %>%
-  group_by(gebaeudeidentifikator_egid, jahr, quartal) %>%
-  summarise(dp_anzahl = sum(dp_anzahl)) %>%
-  pivot_wider(names_from = quartal, values_from = dp_anzahl, names_prefix = "Q")
-
-pop_quarterly_stabl_mean <- pop_quarterly_stabl_transformed |>
-  rowwise() |>
-  mutate(pop_mean = mean(c(Q1, Q2, Q3, Q4), na.rm = T))
-```
 
 ```{r}
 #| label: remove-duplicates
@@ -703,16 +686,42 @@ energy_clean_13 <- energy_clean_12 |>
 
 
 ## Add mean population
+```{r}
+#| label: check-population-data
+#| include: false
+pop_quarterly_stabl %>%
+  dplyr::group_by(jahr, quartal) |>
+  dplyr::summarise(n = sum(dp_anzahl))
+
+
+pop_quarterly_stabl_transformed <- pop_quarterly_stabl %>%
+  group_by(gebaeudeidentifikator_egid, jahr, quartal) %>%
+  summarise(dp_anzahl = sum(dp_anzahl)) %>%
+  pivot_wider(names_from = quartal, values_from = dp_anzahl, names_prefix = "Q")
+
+
+pop_quarterly_stabl_mean <- pop_quarterly_stabl_transformed |>
+  rowwise() |>
+  mutate(num_residents_mean = mean(c(Q1, Q2, Q3, Q4)),
+         jahr = as.factor(jahr))
+```
 
 ```{r}
 energy_clean_14 <- energy_clean_13 |>
-  inner_join(pop_quarterly_stabl_mean, by = c("property_street" = "strname", "property_number" = "deinr", "property_zip" = "dplz4"))
+  inner_join(pop_quarterly_stabl_mean, by = c("survey_year" = "jahr", "egid" = "gebaeudeidentifikator_egid"))
   
+qs_pop <- energy_clean_14 |>
+  select(egid, num_residents, num_residents_mean) |>
+  mutate(diff_residents = num_residents - num_residents_mean) 
+
+sum(qs_pop$num_residents, na.rm = T)
+sum(qs_pop$num_residents_mean)
+sum(qs_pop$diff_residents, na.rm = T)
 ```
 
 ## Save data
 
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean_13, "data/energy_modelling.rds")
+write_rds(energy_clean_14, "data/energy_modelling.rds")
 ```

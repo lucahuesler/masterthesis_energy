@@ -50,12 +50,12 @@ graph TD
 
 ## Evaluation metrics {#evaluation-metrics}
 
-For evaluation and comparison of the different models, we will use the following metrics: 
+For evaluation and comparison of the different models, we will use the following metrics:
 
-- Root mean squared error (RMSE)
-- Mean absolute error (MAE)
-- Mean absolute percentage error (MAPE)
-- R-Squared ($$R²$$)
+-   Root mean squared error (RMSE)
+-   Mean absolute error (MAE)
+-   Mean absolute percentage error (MAPE)
+-   R-Squared ($$R²$$)
 
 In the following, we will present the mathematical formula and a short explanation of the metrics that will be used for evaluation.
 
@@ -67,8 +67,8 @@ $$ RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y_i})^2} $$
 
 where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values and $n$ represents the number of samples.
 
-
 ### MAE
+
 The Mean absolute error (MAE) is another measure of the differences between predicted and actual values. Unlike RMSE, it is not squared, so it is less sensitive to outliers. It is calculated as the average of the absolute differences between predicted and actual values. The formula for MAE is given as:
 
 $$ MAE = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y_i} \right| $$
@@ -76,6 +76,7 @@ $$ MAE = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y_i} \right| $$
 where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values and $n$ represents the number of samples.
 
 ### MAPE
+
 The Mean absolute percentage error (MAPE) is a measure of the differences between predicted and actual values as a percentage. It is calculated as the average of the absolute differences between predicted and actual values, expressed as a percentage of the actual values. The formula for MAPE is given as:
 
 $$ MAPE = \frac{100}{n} \sum_{i=1}^{n} \left| \frac{y_i - \hat{y_i}}{y_i} \right| $$
@@ -89,5 +90,3 @@ R-Squared ($$R²$$) is a measure of the goodness of fit of a linear regression m
 $$ R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y_i})^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2} $$
 
 where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values, $\bar{y}$ represents the mean of the actual values, and $n$ represents the number of samples.
-
-

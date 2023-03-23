@@ -12,6 +12,7 @@ library(skimr)
 library(plotly)
 library(sf)
 library(agua)
+library(nngeo)
 source("helpers/helper_functions.R")
 ```
 
@@ -94,85 +95,53 @@ energy_clean_02 <- energy_clean_01 %>%
 
 ### Match STATPOP data {#sec-adding-statpop-data}
 
+
 ```{r}
 # #| label: create-geom-attributes
 # #| include: false
-# 
-# # in the colnames of the df's stat_pop_2016, stat_pop_2018 and stat_pop_2020: remove the substrings "B16", "B18" and "B20" from all the colnames (before: B16BTOT, after: BTOT), use tidyverse
-# 
-# 
-# stat_pop_2016 <- stat_pop_2016 %>% 
-#   rename_all(~ str_remove(., "B16")) %>%
-#   rename_all(~ str_remove(., "H16")) %>%
-#   rename_statpop()
-# 
-# 
-# stat_pop_2018 <- stat_pop_2018 %>% 
-#   rename_all(~ str_remove(., "B18")) %>%
-#   rename_all(~ str_remove(., "H18")) %>%
-#   rename_statpop()
-# 
-# stat_pop_2020 <- stat_pop_2020 %>% 
-#   rename_all(~ str_remove(., "B20")) %>%
-#   rename_all(~ str_remove(., "H20")) %>%
-#   rename_statpop()
-# 
-# 
-# energy_points_2016 <- energy_clean_02 |>
-#   filter(erhebungsjahr == 2016) |>
-#   select(egid, gkode, gkodn)
-# 
-# # transform to an sf object
-# stat_pop_2016_sf <- stat_pop_2016 |>
-#   st_as_sf(coords = c("e_koord", "n_koord"), crs = 4326)
-# 
-# # convert the data to a spatial data frame
-# stat_pop_2016_sf <- stat_pop_2016_sf %>%
-#   mutate(geom_hectare = sf::st_buffer(geometry, dist = 1, nQuadSegs=1, 
-#                         endCapStyle = "SQUARE")) 
-# 
-# # retrieve points from  of energy data
-# energy_points_2016 <- energy_clean_02 |>
-#   filter(erhebungsjahr == 2016) |>
-#   select(egid, gkode, gkodn) |>
-#   st_as_sf(coords = c('gkode', 'gkodn'), crs = st_crs(stat_pop_2016_sf), remove = FALSE)
-# 
-# 
-# energy_stat_pop_2016 <- energy_points_2016 |>
-#   mutate(intersection = as.integer(st_intersects(geometry, stat_pop_2016_sf$geom_hectare)),
-#          BTOT = stat_pop_2016_sf$BTOT[intersection])
-#          
-# 
-# #>  create a polygon from the coordinates represented by E_KOORD and N_KOORD in stat_pop_2016. For each row of the dataframe, i want a new column "hectare" that stores the polygon for that point. E_KOORD/N_KOORD represent the centre of the polygon. Use the sf package and write in tidyverse style.
-# 
-# 
-# 
-#   
-# 
-# 
-# 
-# 
-# 
-# 
-# plot(stat_pop_2016_sf$BTOT)
-# 
-# # cut stat_pop_2016_BL_sf down to canton BL by intersecting with sf object bl_boundaries
-# stat_pop_2016_sf <- stat_pop_2016_sf |>
-#   st_transform(st_crs(bl_boundaries))
-# 
-# stat_pop_2016_sf_BL <- st_intersection(stat_pop_2016_sf, bl_boundaries$geometry)
-# 
-# 
-# plot(bl_boundaries$geometry)
-# 
-# # select and rename relevant variables
-# stat_pop_2016 <- stat_pop_2016 |>
-#   dplyr::select(RELI, X_KOORD, Y_KOORD, E_KOORD, N_KOORD, B16BTOT, B16B11,  B16B12, B16B13, B16B14,  B16B15,  B16B16, B16B21 , B16B26, B16BMTOT, B16BM01,     
-# B16BM02, B16BM03, B16BM04, B16BM05, B16BM06, B16BM07, B16BM08, B16BM09,     
-# B16BM10, B16BM11, B16BM12, B16BM13, B16BM14, B16BM15, B16BM16, B16BM17,     
-# B16BM18, B16BM19, B16BWTOT, B16BW01, B16BW02, B16BW03, B16BW04, B16BW05,     
-# B16BW06, B16BW07, B16BW08, B16BW09, B16BW10, B16BW11, B16BW12, B16BW13,     
-# B16BW14, B16BW15, B16BW16, B16BW17, B16BW18, B16BW19)
+
+# in the colnames of the df's stat_pop_2016, stat_pop_2018 and stat_pop_2020: remove the substrings "B16", "B18" and "B20" from all the colnames (before: B16BTOT, after: BTOT), use tidyverse
+
+
+stat_pop_2016 <- stat_pop_2016 %>%
+  rename_all(~ str_remove(., "B16")) %>%
+  rename_all(~ str_remove(., "H16")) %>%
+  rename_statpop()
+
+
+stat_pop_2018 <- stat_pop_2018 %>%
+  rename_all(~ str_remove(., "B18")) %>%
+  rename_all(~ str_remove(., "H18")) %>%
+  rename_statpop()
+
+stat_pop_2020 <- stat_pop_2020 %>%
+  rename_all(~ str_remove(., "B20")) %>%
+  rename_all(~ str_remove(., "H20")) %>%
+  rename_statpop()
+
+# transform to an sf object
+stat_pop_2016_sf <- stat_pop_2016 |>
+  st_as_sf(coords = c("e_koord", "n_koord"), crs = 4326) |>
+  st_make_valid()
+
+# crop to BL
+box = c(xmin = 2590110, ymin = 1242580, xmax = 2639810, ymax = 1268980)
+
+stat_pop_2016_sf_bl <- stat_pop_2016_sf |>
+  st_crop(box)
+
+# retrieve points from  of energy data
+energy_points_2016 <- energy_clean_02 |>
+  filter(erhebungsjahr == 2016) |>
+  select(egid, gkode, gkodn) |>
+  st_as_sf(coords = c('gkode', 'gkodn'), crs = st_crs(stat_pop_2016_sf), remove = FALSE)
+
+
+matched = st_join(energy_stat_pop_2016, stat_pop_2016_sf, join = nngeo::st_nn, maxdist = 100, k = 1, progress = TRUE)
+View(matched)
+
+
+
 ```
 
 ```{r}

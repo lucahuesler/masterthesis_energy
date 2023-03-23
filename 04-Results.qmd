@@ -6,24 +6,11 @@ In this chapter, the results of our analysis will be presented. In a first step,
 #| label: load-libs
 #| include: false
 
-library(tidyverse)
-library(tidymodels)
-library(doParallel)
-library(skimr)
-library(plotly)
-library(sf)
-library(agua)
-library(gt)
-library(rules)
-library(baguette)
-library(ggridges)
-library(viridis)
-library(hrbrthemes)
-library(finetune)
-library(ggrepel)
-library(vip)
-library(shapviz)
-library(DALEXtra)
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
+               rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
+               vip, shapviz, DALEXtra)
+
 ```
 
 ```{r}
@@ -357,6 +344,7 @@ recipe_base_hec <- recipe(hec ~ .,
          energy_consumed_hot_water_mwh,
          retrofitted,
          retrofit_investment_costs,
+         stand_alone,
          hdd,
          hepi_pred_current_method,
          hec_pred_current_method) |>
@@ -392,8 +380,8 @@ recipe_base_hec_norm
 
 # Add polynomials and interaction
 recipe_base_hec_poly <- 
-   recipe_base_hec_norm %>% 
-   step_poly(all_numeric_predictors()) %>% 
+   recipe_base_hec_norm |> 
+   step_poly(all_numeric_predictors()) |> 
    step_interact(~ all_numeric_predictors():all_numeric_predictors())
 
 recipe_base_hec_poly
@@ -413,7 +401,7 @@ lm_basic_spec <-
 
 # MLR glmnet spec
 lm_glmnet_spec <- 
-   linear_reg(penalty = tune(), mixture = tune()) %>% 
+   linear_reg(penalty = tune(), mixture = tune()) |> 
    set_engine("glmnet")
 
 # decision tree
@@ -424,8 +412,8 @@ dt_spec <-
 
 # k nearest neighbour
 knn_spec <-
-   nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) %>%
-   set_engine("kknn") %>%
+   nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) |>
+   set_engine("kknn") |>
    set_mode("regression")
 
 # random forest
@@ -436,27 +424,27 @@ rf_spec <- rand_forest() |>
 # xgboost
 xgb_spec <- 
    boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
-              min_n = tune(), sample_size = tune(), trees = tune()) %>% 
-   set_engine("xgboost") %>% 
+              min_n = tune(), sample_size = tune(), trees = tune()) |> 
+   set_engine("xgboost") |> 
    set_mode("regression")
 
 # svm radial
 svm_r_spec <-
-   svm_rbf(cost = tune(), rbf_sigma = tune()) %>%
-   set_engine("kernlab") %>%
+   svm_rbf(cost = tune(), rbf_sigma = tune()) |>
+   set_engine("kernlab") |>
    set_mode("regression")
 
 # svm poly
 svm_p_spec <-
- svm_poly(cost = tune(), degree = tune()) %>%
- set_engine("kernlab") %>%
+ svm_poly(cost = tune(), degree = tune()) |>
+ set_engine("kernlab") |>
  set_mode("regression")
 
 
 # articifial neural net
 nnet_spec <- 
-   mlp(hidden_units = tune(), penalty = tune(), epochs = tune()) %>% 
-   set_engine("nnet", MaxNWts = 2600) %>% 
+   mlp(hidden_units = tune(), penalty = tune(), epochs = tune()) |> 
+   set_engine("nnet", MaxNWts = 2600) |> 
    set_mode("regression")
 
 # auto ml
@@ -473,44 +461,44 @@ auto_ml_spec <- auto_ml() |>
 #> https://www.tmwr.org/workflow-sets.html#creating-the-workflow-set
 
 # mars_spec <- 
-#    mars(prod_degree = tune()) %>%  #<- use GCV to choose terms
-#    set_engine("earth") %>% 
+#    mars(prod_degree = tune()) |>  #<- use GCV to choose terms
+#    set_engine("earth") |> 
 #    set_mode("regression")
 # 
 # svm_r_spec <- 
-#    svm_rbf(cost = tune(), rbf_sigma = tune()) %>% 
-#    set_engine("kernlab") %>% 
+#    svm_rbf(cost = tune(), rbf_sigma = tune()) |> 
+#    set_engine("kernlab") |> 
 #    set_mode("regression")
 # 
 # svm_p_spec <- 
-#    svm_poly(cost = tune(), degree = tune()) %>% 
-#    set_engine("kernlab") %>% 
+#    svm_poly(cost = tune(), degree = tune()) |> 
+#    set_engine("kernlab") |> 
 #    set_mode("regression")
 # 
 # knn_spec <- 
-#    nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) %>% 
-#    set_engine("kknn") %>% 
+#    nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) |> 
+#    set_engine("kknn") |> 
 #    set_mode("regression")
 # 
 # cart_spec <- 
-#    decision_tree(cost_complexity = tune(), min_n = tune()) %>% 
-#    set_engine("rpart") %>% 
+#    decision_tree(cost_complexity = tune(), min_n = tune()) |> 
+#    set_engine("rpart") |> 
 #    set_mode("regression")
 # 
 # bag_cart_spec <- 
-#    bag_tree() %>% 
-#    set_engine("rpart", times = 50L) %>% 
+#    bag_tree() |> 
+#    set_engine("rpart", times = 50L) |> 
 #    set_mode("regression")
 # 
 # rf_spec <- 
-#    rand_forest(mtry = tune(), min_n = tune(), trees = 1000) %>% 
-#    set_engine("ranger") %>% 
+#    rand_forest(mtry = tune(), min_n = tune(), trees = 1000) |> 
+#    set_engine("ranger") |> 
 #    set_mode("regression")
 # 
 # 
 # 
 # cubist_spec <- 
-#    cubist_rules(committees = tune(), neighbors = tune()) %>% 
+#    cubist_rules(committees = tune(), neighbors = tune()) |> 
 #    set_engine("Cubist") 
 ```
 
@@ -575,7 +563,7 @@ with_features <-
 #| include: false
 
 all_workflows <- 
-   bind_rows(no_pre_proc, normalized) %>% 
+   bind_rows(no_pre_proc, normalized) |> 
    # Make the workflow ID's a little more simple: 
    mutate(wflow_id = gsub("(simple_)|(normalized_)", "", wflow_id))
 
@@ -600,7 +588,7 @@ grid_ctrl <-
    )
 
 grid_results <-
-   all_workflows %>%
+   all_workflows |>
    workflow_map(
       seed = 1503,
       resamples = energy_validation,
@@ -617,7 +605,7 @@ grid_results <-
 #| include: false
 
 # without knn
-grid_results_subset <- grid_results %>%
+grid_results_subset <- grid_results |>
    subset(wflow_id != "KNN")
 
 autoplot(
@@ -647,7 +635,7 @@ race_ctrl <-
    )
 
 race_results <-
-   all_workflows %>%
+   all_workflows |>
    workflow_map(
       "tune_race_anova",
       seed = 1503,
@@ -680,17 +668,17 @@ autoplot(
 #| label: compare-grid-race
 #| include: true
 matched_results <- 
-   rank_results(race_results, select_best = TRUE) %>% 
-   select(wflow_id, .metric, race = mean, config_race = .config) %>% 
+   rank_results(race_results, select_best = TRUE) |> 
+   select(wflow_id, .metric, race = mean, config_race = .config) |> 
    inner_join(
-      rank_results(grid_results, select_best = TRUE) %>% 
+      rank_results(grid_results, select_best = TRUE) |> 
          select(wflow_id, .metric, complete = mean, 
                 config_complete = .config, model),
       by = c("wflow_id", ".metric"),
-   ) %>%  
+   ) |>  
    filter(.metric == "rmse")
 
-matched_results %>% 
+matched_results |> 
    ggplot(aes(x = complete, y = race)) + 
    geom_abline(lty = 3) + 
    geom_point() + 
@@ -776,16 +764,16 @@ autoplot(fit_basic)
 
 ```{r}
 best_model_xgboost <- 
-   grid_results %>% 
-   extract_workflow_set_result("xgboost") %>% 
+   grid_results |> 
+   extract_workflow_set_result("xgboost") |> 
    select_best(metric = "rmse")
 
 best_model_xgboost
 
 test_results_xgboost <- 
-   grid_results %>% 
-   extract_workflow("xgboost") %>% 
-   finalize_workflow(best_model_xgboost) %>% 
+   grid_results |> 
+   extract_workflow("xgboost") |> 
+   finalize_workflow(best_model_xgboost) |> 
    last_fit(split = energy_split)
 
 
@@ -794,8 +782,8 @@ test_results_xgboost <-
 ```{r}
 collect_metrics(test_results_xgboost)
 
-test_results_xgboost %>% 
-   collect_predictions() %>% 
+test_results_xgboost |> 
+   collect_predictions() |> 
    ggplot(aes(x = hec, y = .pred)) + 
    geom_abline(color = "gray50", lty = 2) + 
    geom_point(alpha = 0.5) + 

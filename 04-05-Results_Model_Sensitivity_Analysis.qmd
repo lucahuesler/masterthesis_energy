@@ -1,0 +1,19 @@
+## Sensitivity analysis {#sec-sensitivity-analysis}
+
+```{r}
+#| label: load-libs
+#| include: false
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
+               rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
+               vip, shapviz, DALEXtra)
+
+```
+
+```{r}
+#| label: load-data
+#| include: false
+
+energy_modelling <- read_rds("data/energy_modelling.rds")
+```

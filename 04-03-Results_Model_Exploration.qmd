@@ -206,10 +206,6 @@ nnet_spec <-
    set_engine("nnet", MaxNWts = 2600) |> 
    set_mode("regression")
 
-# auto ml
-auto_ml_spec <- auto_ml() |>
-  set_engine("h2o") |>
-  set_mode("regression") 
   
 ```
 
@@ -303,7 +299,7 @@ grid_ctrl <-
 # define cluster for parallel computing
 num_cores <- detectCores() - 1  
 registerDoParallel(cores=num_cores)  
-cl <- makeForkCluster(no_cores) 
+cl <- makeForkCluster(num_cores) 
 
 
 # run grid tuning
@@ -313,7 +309,8 @@ grid_results <-
       seed = 1503,
       resamples = energy_folds,
       grid = 10,
-      control = grid_ctrl
+      control = grid_ctrl,
+      verbose = TRUE
    )
 
 

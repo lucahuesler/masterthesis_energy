@@ -15,7 +15,11 @@ book:
     - 01-Introduction.qmd
     - 02-TheoreticalBackground.qmd
     - 03-Methodology.qmd
-    - 04-Results.qmd
+    - 04-02_Descriptive_Statistics.qmd
+    - 04-03-Results_Model_Exploration.qmd
+    #- 04-04_Results-Model_Subsets.qmd
+    - 04-05-Results_Model_Sensitivity_Analysis.qmd
+    - 05-Discussion_Conclusion.qmd
     - 99-references.qmd
   appendices:
     - 05-appendix.qmd

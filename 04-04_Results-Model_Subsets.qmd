@@ -84,7 +84,7 @@ energy_folds_single_family <- vfold_cv(energy_train_single_family, v = 5, strata
 #### Multi-family houses
 
 ```{r}
-#| label: train-test-split-single-family
+#| label: train-test-split-single-family-mfh
 #| include: false
 
 #> Set the random number stream using `set.seed()` so that the results can be 
@@ -134,7 +134,7 @@ recipe_base_hec_building_class <- recipe(hec ~ .,
          photovoltaic_system, 
          photovoltaic_system_power_kw, 
          municipality_code, 
-         #building_class, 
+         building_class, 
          construction_year, 
          coordinate_e, 
          coordinate_n, 
@@ -157,7 +157,7 @@ recipe_base_hec_building_class <- recipe(hec ~ .,
   step_impute_mean(num_residents) |>
   step_impute_mean(year_of_installation)
 
-recipe_base_hec
+recipe_base_hec_building_class
 ```
 
 ```{r}
@@ -176,7 +176,7 @@ xgboost_spec <-
    set_mode("regression")
 
 
-xgb_workflow <- workflow(recipe_base_hec, xgboost_spec)
+xgb_workflow <- workflow(recipe_base_hec_building_class, xgboost_spec)
 ```
 
 ```{r}
@@ -193,7 +193,7 @@ xgb_fit_multi_family <- xgb_workflow %>%
 single_family_metrics <- xgb_fit_single_family |>
   collect_metrics()
 
-multi_family_metrics <- xgb_fit_multifamily_family |>
+multi_family_metrics <- xgb_fit_multi_family |>
   collect_metrics()
 
 building_class_metrics <- single_family_metrics |>
@@ -211,7 +211,7 @@ xgb_fit_single_family %>%
    coord_obs_pred() + 
    labs(x = "observed", y = "predicted")
 
-xgb_fit_multifamily_family %>% 
+xgb_fit_multi_family %>% 
    collect_predictions() %>% 
    ggplot(aes(x = hec, y = .pred)) + 
    geom_abline(color = "gray50", lty = 2) + 
@@ -225,7 +225,7 @@ xgb_fit_multifamily_family %>%
 #| include: false
 
 energy_train_current_method_single_family <- energy_train_single_family |>
-  dplyr::inner_join(energy_modelling, by = c("egid"), suffix = c("", "_y")) |>
+  dplyr::inner_join(energy_modelling, by = c("egid", "survey_year"), suffix = c("", "_y")) |>
   dplyr::select(egid, survey_year, hec, hepi, hepi_pred_current_method, hec_pred_current_method, heated_area_m2)
 
 custom_metrics <- metric_set(rmse, mape, mae, rsq)
@@ -234,6 +234,11 @@ energy_train_metrics_single_family_current_method <- energy_train_current_method
   custom_metrics(hec, hec_pred_current_method)
 
 energy_train_metrics_current_method
+
+
+energy_modelling |>
+  filter(egid == 390049) |>
+  select(egid, survey_year, hec, hec_pred_current_method, hepi, hepi_pred_current_method)
 ```
 
 ```{r}
@@ -259,6 +264,7 @@ xgb_grid
 ```{r}
 #| label: xgboost-tune-racing
 #| include: false
+#| eval: false
 doParallel::registerDoParallel()
 
 set.seed(234)
@@ -286,8 +292,6 @@ vip_features <- c("heated_area_m2", "meters_above_sealevel", "construction_year"
 vip_train <- 
   energy_train_single_family 
 
-test <- bake(recipe_base_hec_building_class, new_data = vip_train) |>
-  prep()
 
 xgb_fit_workflow <- xgb_fit_single_family |>
   extract_workflow()
@@ -304,20 +308,19 @@ explainer_xgboost <-
 explainer_xgboost
 ```
 
-
-
 Explain model for a single observation
+
 ```{r}
 efh <- vip_train[120,]
 efh
 ```
 
 ```{r}
+
 xgboost_breakdown <- predict_parts(explainer = explainer_xgboost, new_observation = efh)
 
 xgboost_breakdown
 ```
-
 
 ```{r}
 #| label: feature-importance-shap

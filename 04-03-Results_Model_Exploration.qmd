@@ -299,17 +299,25 @@ grid_ctrl <-
       save_workflow = FALSE
    )
 
+
+# define cluster for parallel computing
+num_cores <- detectCores() - 1  
+registerDoParallel(cores=num_cores)  
+cl <- makeForkCluster(no_cores) 
+
+
+# run grid tuning
 grid_results <-
    all_workflows |>
    workflow_map(
       seed = 1503,
-      resamples = energy_validation,
+      resamples = energy_folds,
       grid = 10,
       control = grid_ctrl
    )
 
 
-
+stopCluster(cl)  
 ```
 
 ```{r}
@@ -317,7 +325,7 @@ grid_results <-
 #| include: false
 
 #> load grid results that have been trained before
-grid_results <- read_rds("output/grid_results.rds")
+# grid_results <- read_rds("output/grid_results.rds")
 
 autoplot(
    grid_results,
@@ -333,25 +341,6 @@ autoplot(
    ylab("RMSE")
 ```
 
-
-### Training
-
-```{r}
-#| label: model-fit-basic
-#| include: false
-
-
-doParallel::registerDoParallel()
-
-fit_basic <- workflow_map(wf_set_basic,
-                          "fit_resamples", 
-                          resamples = energy_folds,
-                          metrics = metric_set(rmse, mape, mae, rsq),
-                          verbose = TRUE,
-                          seed = 22)
-
-fit_basic
-```
 
 ### Model evaluation {#sec-model-evaluation}
 
@@ -379,32 +368,6 @@ results_train_hec_current_method <- energy_train |>
    labs(x = "Observed HEC", y = "Predicted HEC")
 
 results_train_hec_current_method
-```
-
-
-
-
-```{r}
-#| label: fig-model-benchmarking
-#| fig-cap: "Benchmarking of models"
-fit_basic |>
-   rena
-autoplot(fit_basic)
-```
-
-```{r}
-#| label: fig-model-benchmarking-ranking-rmse
-#| fig-cap: "Benchmarking of models: RMSE ranking"
-
-fit_basic_metrics <- collect_metrics(fit_basic)
-
-workflowsets::rank_results(fit_basic, rank_metric = "mape", select_best = TRUE)
-
-fit_basic_metrics
-```
-
-```{r}
-autoplot(fit_basic)
 ```
 
 ### Final model {#sec-final-model}

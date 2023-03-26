@@ -9,7 +9,7 @@ In this chapter, the results of our analysis will be presented. In a first step,
 if (!require(pacman)) install.packages("pacman")
 pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
                rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
-               vip, shapviz, DALEXtra)
+               vip, shapviz, DALEXtra, gtsummary)
 
 ```
 
@@ -20,13 +20,13 @@ pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
 energy_modelling <- read_rds("data/energy_modelling.rds")
 ```
 
-## Exploratory Analysis {#sec-exploratory-analysis}
+## Descriptive statistics {#sec-descriptive-statistics}
 
-To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data.
+To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data. The final dataset that for modelling is the result of joining data from different sources that are provided in @sec-methodology. Furthermore, we applied several filters that are outlined in @sec-data-prep.
 
 ### Summary statistics
 
-As outlined in @sec-data-prep, we applied several filters to the initial raw data. Thus, the final dataset for modelling contains `r nrow(energy_modelling)` observations (buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-obs-per-year shows that the number of gas-heated buildings is slightly decreasing between 2016 and 2020. Also, we observe a decrease of the mean HEPI and the total HEC between 2016 and 2020.
+The final dataset for modelling contains `r nrow(energy_modelling)` observations (buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-obs-per-year shows that the number of gas-heated buildings is slightly decreasing between 2016 and 2020. Also, we observe a decrease of the mean HEPI and the total HEC between 2016 and 2020.
 
 ```{r}
 #| label: tbl-obs-per-year
@@ -46,16 +46,49 @@ obs_per_year
 ```
 
 ```{r}
+#| label: tbl-summary-stats-numeric
+#| tbl-cap: "Summary statistics of numeric variables."
+#| tbl-cap-location: bottom
+
+
+summary_table_numeric <- energy_modelling |>
+  select(construction_year, num_floors, stand_alone, num_dwellings, num_residents_mean, meters_above_sealevel, hdd, energy_production_solar_mwh) |>
+  skim()
+
+# select columns of interest
+summary_table_numeric <- summary_table_numeric |>
+  select(skim_variable, complete_rate, numeric.p0, numeric.p25, numeric.p50, numeric.p75, numeric.p100) |>
+  rename("Name" = skim_variable, 
+         "Complete rate" =  complete_rate,
+         "Min" = numeric.p0, 
+         "25%" = numeric.p25,
+         "50%" = numeric.p50, 
+         "75%" = numeric.p75, 
+         "Max" = numeric.p100) |>
+  as.data.frame() |>
+  knitr::kable(booktabs = TRUE, digits = 1)
+
+summary_table_numeric
+```
+
+```{r}
 #| label: tbl-summary-stats
 #| tbl-cap: "Summary statistics of modelling input data."
 #| tbl-cap-location: bottom
-#| eval: false
 
 summary_stats_numeric <- energy_modelling |>
+  select(- c(Q1, Q2, Q3, Q4)) |>
   skim() |>
-  yank("numeric")
+  yank("numeric") |>
+  knitr::kable(booktabs = TRUE, digits = 1)
 
-summary_stats_numeric
+
+energy_modelling |> 
+  select(entrance_municipality_name , construction_period) |>
+  tbl_summary(by = construction_period) |>
+  add_n() |>
+  bold_labels() %>%
+  modify_spanning_header(all_stat_cols() ~ "**Chemotherapy Treatment**")
 ```
 
 ### Retrofitting
@@ -66,7 +99,7 @@ summary_stats_numeric
 
 #> Calculations of numbers and indicators for easier use as inline code in text.
 
-n_retrofit <- energy_modelling |> filter(retrofitted == TRUE) |> nrow()
+n_retrofit <- energy_modelling |> filter(retrofitted == "Yes") |> nrow()
 
 n_retrofit_m01 <- energy_modelling |> 
   filter(retrofitted == TRUE,
@@ -85,7 +118,7 @@ The retrofit data considers retrofit measures that have been financially support
 #| fig-cap: "Distribution of retrofit year."
 
 retrofit_per_year <- energy_modelling |>
-  dplyr::filter(retrofitted == TRUE) |>
+  dplyr::filter(retrofitted == "Yes") |>
   ggplot((aes(retrofit_year_completion))) +
            geom_bar(aes(fill = retrofit_project_name)) +
   scale_x_continuous(breaks=seq(2009, 2019, 1))
@@ -173,7 +206,7 @@ retrofit_plot_2018_2020
 retrofit_plot_2016_2020
 ```
 
-### Municipalities
+### Geographical distribution
 
 ```{r}
 #| label: indicators-municipalities
@@ -231,7 +264,7 @@ boxplot_hepi <- plot_boxplot(energy_modelling, "hepi")
 #| fig-cap: "HEPI per municipality"
 #| include: false
 
-ggplotly(boxplot_hepi)
+boxplot_hepi
 
 ```
 
@@ -239,7 +272,7 @@ ggplotly(boxplot_hepi)
 #| label: fig-municipality-construction-year
 #| fig-cap: "Construction year per municipality"
 
-ggplotly(boxplot_construction_year) 
+boxplot_construction_year
 
 ```
 
@@ -258,7 +291,3 @@ energy_modelling |>
   xlim(0,300) +
    theme(axis.title.x=element_blank())
 ```
-
-
-
-

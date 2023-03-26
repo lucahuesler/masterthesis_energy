@@ -236,7 +236,7 @@ Sub-questions with regard to RQ2:
 
 ## Modelling strategy
 
-Step 1: Explore different models on small subset of training data
+Step 1: Explore different models
 
 ```{mermaid}
 %%| fig-width: 15
@@ -250,7 +250,7 @@ graph LR
     D --> E[Multiple linear regression]
     D --> F[Random forest]
     D --> G[Artificial neural network]
-    D --> H[...other models...  ]
+    D --> H[...other models...]
     E --> I(Model evaluation) 
     F --> I 
     G --> I

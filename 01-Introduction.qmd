@@ -56,7 +56,7 @@ In 2020, the gross energy consumption of the canton was about 7600 gigawatt hour
 
 ## Problem definition {#sec-problem-definition}
 
-As mentioned in @cantonal-energy-planning, the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 1990[^01-introduction-2]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations <!--# to be verified -->.
+As mentioned in @sec-cantonal-energy-planning, the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 1990[^01-introduction-2]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations <!--# to be verified -->.
 
 [^01-introduction-2]: The tables and illustrations of the cantonal energy statistics are available at: https://www.statistik.bl.ch/web_portal/8.
 
@@ -64,7 +64,11 @@ Since 2010, the estimation is based on a new method that has been developed toge
 
 The measured gas consumption represents the total annual amount of energy in kWh that the energy provider (Industrielle Werke Basel, IWB) delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows:
 
-$$HEC = Gas_{m}*e + Solar_{Total} - c_{DHW}*N_{I}$$ {#eq-hec}
+$$
+\begin{aligned}
+HEC &= Gas_{m}*e + Solar_{Total} - c_{DHW}*N_{I}
+\end{aligned}
+$$ {#eq-hec}
 
 where:
 
@@ -79,10 +83,10 @@ where:
 By adjusting the measured gas consumption with @eq-hec, the amount of useful energy (german: Nutzenergie( is obtained. Based on this, the heating energy consumption per square meter of area (HEPI):
 
 $$
-\begin{align}
+\begin{aligned}
 HEPI = \frac{HEC}{ERA}
 &= \frac{HEC}{GFA*n_{floors}}
-\end{align}
+\end{aligned}
 $$ {#eq-hepi}
 
 where:
@@ -94,7 +98,6 @@ where:
 -   GFA = Gross floor area
 
 -   n~floors~ = Number of floors
-
 
 As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate average HEPI each building category (single-family house, multi-family house) and period of construction. The following figure shows the average HEPI for construction period for single-family houses.
 

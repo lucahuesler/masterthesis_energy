@@ -1,0 +1,7 @@
+# Discussion {#sec-discussion}
+
+Here will come a very smart discussion.
+
+# Conclusion {#sec-conclusion}
+
+This thesis is amazing!

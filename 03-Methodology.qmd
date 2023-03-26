@@ -16,7 +16,25 @@ However, the above steps are usually not carried out in a linear manner. Usually
 
 ![A schematic for the typical modeling process [@silge].](figures/03-fig-modelling-process.png){#fig-modelling-process}
 
+In the following subsections of this chapter, we will discuss the steps listed above in the context of the present study.
+
 ## Data unterstanding and exploration {#sec-data-unterstanding-and-exploration}
+
+The dataset that we use for modelling is the result of merging information from various sources. @tbl-data-sources provides a overview of the data sources used for the project.
+
+| **Data/Information**                   | **Spatial resolution**         | **Temporal resolution**      | **Source**                                                                                                                                                                                                                                 | **Owner**                                               |
+|---------------|---------------|---------------|---------------|---------------|
+| Building characteristics               | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal register of buildings and dwellings](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                         | Statistisches Amt des Kantons-Basel Landschaft (STA BL) |
+| Energy consumption                     | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                     | STA BL                                                  |
+| Inhabitants per buidling               | Building                       | Quarterly (2016, 2018, 2020) | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                 | STA BL                                                  |
+| Demographic characteristics            | Raster grid (mesh size 100 m)  | Yearly (2016, 2018, 2020)    | [Population and Households Statistics (STATPOP)](https://www.bfs.admin.ch/bfs/en/home/statistics/population/surveys/statpop.assetdetail.22406439.html)                                                                                     | Bundesamt für Statistik (BFS)                           |
+| Retrofit information                   | Building                       | Daily (2009-2020)            | [Baselbieter Energiepaket](https://www.energiepaket-bl.ch/)                                                                                                                                                                                | Amt für Umwelschutz und Energie (AUE BL)                |
+| Elevation information                  | Raster grid (mesh size 0.25 m) | 2021                         | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm) | Amt für Geoinformation (AGI BL)                         |
+| Building floor plan[^03-methodology-1] | Building                       | Daily (2016, 2018, 2020)     | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                | Amt für Geoinformation (AGI BL)                         |
+
+: Overview of data sources {#tbl-data-sources}
+
+[^03-methodology-1]: The building floor plan servers as basis to calculate the distance to the next building and therby extract the information if a building is stand-alone or directly connected to another buidling.
 
 ## Data preparation {#sec-data-prep}
 
@@ -28,34 +46,89 @@ In order to prepare the data for modelling, we apply the following filters:
 
 ## Modelling {#sec-modelling}
 
-The modelling strategy of the present study is guided by the research questions as defined in @sec-research-questions . In a first step, all the available buildings after applying the filters defined in @sec-data-prep will be used for modelling. After splitting the data into a test and training set, we will train different models on our training data. By focussing on
+### Modelling workflow
+
+The modelling workflow of the present study is guided by the research questions as defined in @sec-research-questions. The modelling process consists of three steps: In a first step, all the available buildings after applying the filters defined in @sec-data-prep will be used for modelling. After splitting the data into a test and training set, we will train different models on our training data and evaluate and compare the results of the models based on the metrics defined in @sec-evaluation-metrics (see @fig-model-exploration).
 
 ```{mermaid}
-
+%%| fig-cap: "Step 1: Model exploration."
+%%| label: fig-model-exploration
+%%| fig-width: 6
+%%{init: {'theme': 'neutral'}}%%
 graph TD
-    A[Initial data] -->|Preprocessing| B(Test data 20 %)
-    A[Initial data] -->|Preprocessing| C(Training data 80%)
-    C --> D([Variable selection<br>1. All predictors<br>2.Without retrofit<br>3.Without socio-economic])
-    style D text-align:left
+    A[Initial data] -->|Preprocessing| B(Training data 80%)
+    A -->|Preprocessing| C(Test data 20%) 
+    style A B C fill:#f7cac9,stroke:#333,stroke-width:2px
+    B --> D[Variable selection]
     D --> E[Multiple linear regression]
-    D --> F[fa:fa-tree Random forest]
+    D --> F[Random forest]
     D --> G[Artificial neural network]
-    D --> H[...]
-    E --> I(Model evaluation <br> - Compare metrics <br> - Feature importance) 
+    D --> H[...other models...]
+    E --> I(Model evaluation) 
     F --> I 
     G --> I
     H --> I 
-    style I text-align:left
+    style D fill:#d5f5e3,stroke:#333,stroke-width:2px
+    style E F G H fill:#fff2cc,stroke:#333,stroke-width:2px
+    style I fill:#2ac470,stroke:#333,stroke-width:2px
+
 ```
 
-## Evaluation metrics {#evaluation-metrics}
+Subsequently in a second step, the best model of the first step will be used to train on different subsets of the data. This allows as to focus on subquestion 1.2 defined in @sec-research-questions.
+
+```{mermaid}
+%%| fig-cap: "Step 2: Model on subsets."
+%%| label: fig-model-subsets
+%%| fig-width: 6
+%%{init: {'theme': 'neutral'}}%%
+graph TD
+    A(Initial data) -->|Preprocessing| B(Training data 80%)
+    A -->|Preprocessing| C(Test data 20%) 
+    B --> D(Data subsets)
+    D --> E(Building class)
+    D --> F(Municipality)
+    D --> G(Construction period)
+    E --> I(Best model step 1) 
+    F --> I 
+    G --> I
+    I --> H(Model evaluation)
+    C --> H
+
+    style A fill:#f7cac9,stroke:#333,stroke-width:2px
+    style D fill:#d5f5e3,stroke:#333,stroke-width:2px
+    style I fill:#2ac470,stroke:#333,stroke-width:2px
+    style H fill:#fff2cc,stroke:#333,stroke-width:2px
+```
+
+Finally, the last step of the modelling process consists of comparing the final model(s) of the previous steps with the current approach. Furthermore, a sensitivity analysis will be carried out in order to understand what input variables are most important in the final model (see @fig-model-compare-sensitivity).
+
+```{mermaid}
+%%| fig-cap: "Step 3: Compare predictions to current approach and sensitivity analysis."
+%%| label: fig-model-compare-sensitivity
+%%| fig-width: 6
+%%{init: {'theme': 'neutral'}}%%
+graph TD
+    A(Final model) -->|apply on| B(Test data )
+    B --> C(Predictions  )
+    C --> D(<b>Evaluation</b>: <br>Compare to current approach)
+    C --> E(<b>Sensitivity analysis:</b><br>What features are most important?)
+    style A fill:#f7cac9,stroke:#333,stroke-width:2px
+    style D fill:#d5f5e3,stroke:#333,stroke-width:2px
+    style E fill:#d5f5e3,stroke:#333,stroke-width:2px
+```
+
+{{< pagebreak >}}
+
+### Model tuning
+
+## Evaluation metrics {#sec-evaluation-metrics}
 
 For evaluation and comparison of the different models, we will use the following metrics:
 
 -   Root mean squared error (RMSE)
 -   Mean absolute error (MAE)
 -   Mean absolute percentage error (MAPE)
--   R-Squared ($$R²$$)
+-   R-Squared ($R²$)
 
 In the following, we will present the mathematical formula and a short explanation of the metrics that will be used for evaluation.
 
@@ -85,7 +158,7 @@ where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted v
 
 ### R-Squared
 
-R-Squared ($$R²$$) is a measure of the goodness of fit of a linear regression model. It is calculated as the ratio of explained variance to total variance. A higher R-Squared value indicates that a larger proportion of the variance in the dependent variable is explained by the independent variables. The formula for R-Squared is given as:
+R-Squared ($R²$) is a measure of the goodness of fit of a linear regression model. It is calculated as the ratio of explained variance to total variance. A higher R-Squared value indicates that a larger proportion of the variance in the dependent variable is explained by the independent variables. The formula for R-Squared is given as:
 
 $$ R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y_i})^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2} $$
 

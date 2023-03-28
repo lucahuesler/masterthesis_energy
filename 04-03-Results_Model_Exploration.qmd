@@ -7,7 +7,7 @@
 if (!require(pacman)) install.packages("pacman")
 pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
                rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
-               vip, shapviz, DALEXtra)
+               vip, shapviz, DALEXtra, ranger, kernlab, kknn)
 
 ```
 
@@ -283,7 +283,6 @@ all_workflows
 ```{r}
 #| label: hyperparameter-tuning
 #| include: false
-#| eval: false
 
 #> Almost all of the members of all_workflows contain tuning parameters. To evaluate their performance, we can use the standard tuning or resampling functions (e.g., tune_grid() and so on). The workflow_map() function will apply the same function to all of the workflows in the set; the default is tune_grid()
 

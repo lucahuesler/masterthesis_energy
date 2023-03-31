@@ -1,9 +1,7 @@
 # Auto ML
 
 if (!require(pacman)) install.packages("pacman")
-pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
-               rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
-               vip, shapviz, DALEXtra)
+pacman::p_load(tidyverse, tidymodels, vip, shapviz, DALEXtra, agua)
 
 
 energy_modelling <- read_rds("data/energy_modelling.rds")
@@ -125,8 +123,30 @@ ggplot(energy_test_pred, aes(x = hec, y = .pred)) +
 
 # rank results
 rank_results(auto_fit) %>%
-  filter(.metric == "rmse") %>%
+  filter(.metric == "r2") %>%
   arrange(rank)
 
-# vip
+# check metrics
+metric_set <- metric_set(rmse, mape, mae, rsq)
+
+autoML_metrics <- auto_fit %>%
+  collect_metrics()
+
+
+# current approach
+energy_train_current_method <- energy_train |>
+  dplyr::inner_join(energy_modelling, by = c("egid"), suffix = c("", "_y")) |>
+  dplyr::select(egid, survey_year, hec, hepi, hepi_pred_current_method, hec_pred_current_method, heated_area_m2)
+
+custom_metrics <- metric_set(rmse, mape, mae, rsq)
+
+energy_train_metrics_current_method <- energy_train_current_method |>
+  custom_metrics(hec, hec_pred_current_method)
+
+
+energy_train_metrics_current_method
+
+
+
+auto_fit
 

@@ -321,8 +321,9 @@ stopCluster(cl)
 #| label: grid-results
 #| include: false
 
+
 #> load grid results that have been trained before
-# grid_results <- read_rds("output/grid_results.rds")
+grid_results <- read_rds("output/grid_results.rds")
 
 autoplot(
    grid_results,

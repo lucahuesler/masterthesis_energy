@@ -61,7 +61,7 @@ dim(energy_train)
 # run for a maximum of 120 seconds
 auto_spec <-
   auto_ml() %>%
-  set_engine("h2o", max_runtime_secs = 6000, seed = 1) %>%
+  set_engine("h2o", max_runtime_secs = 120, seed = 1) %>%
   set_mode("regression")
 
 

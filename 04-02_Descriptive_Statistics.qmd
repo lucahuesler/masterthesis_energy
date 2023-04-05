@@ -45,6 +45,8 @@ obs_per_year <- energy_modelling |>
 obs_per_year
 ```
 
+
+
 ```{r}
 #| label: tbl-summary-stats-numeric
 #| tbl-cap: "Summary statistics of numeric variables."

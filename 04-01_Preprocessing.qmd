@@ -738,4 +738,5 @@ table(energy_clean_15$stand_alone)
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
 write_rds(energy_clean_15, "data/energy_modelling.rds")
+write_delim(energy_clean_15, "data/energy_modelling.csv")
 ```

@@ -28,6 +28,11 @@ gwr_building_heights <-  read_delim("data/gwr_building_heights.csv", delim = ";"
 gwr_dwelling <- read_delim("data/gwr_wohnung_20221027.csv", delim = ";", show_col_types = FALSE)
 gwr_entrance <- read_delim("data/gwr_eingang_20230109.csv", delim = "\t", show_col_types = FALSE)
 
+# municipalities
+municipalities <- readxl::read_excel("data/gemeindeverzeichis.xlsx", sheet = "GDE") |>
+  filter(GDEKT == "BL") |>
+  select(GDENR, GDENAME)
+
 #> retrofit data
 retrofit_m01 <- read_delim("data/sanierungen_typ_M01.csv", delim = ",", show_col_types = FALSE)
 retrofit_bl01 <- read_delim("data/sanierungen_typ_BL01.csv", delim = ",", show_col_types = FALSE)
@@ -725,11 +730,24 @@ building_distances_clean <- building_distances_clean |>
 # join to energy data
 energy_clean_15 <- energy_clean_14 |>
   left_join(building_distances_clean) |>
-  select(-geom_text)
+  select(-geom_text) |>
+  mutate(stand_alone = base::as.factor(stand_alone))
 
 # check
 table(energy_clean_15$stand_alone)
 
+```
+
+## Add municipality name
+
+```{r}
+municipalities <- municipalities |>
+  mutate(GDENR = base::as.factor(GDENR))
+
+energy_clean_16 <- energy_clean_15 |>
+  left_join(municipalities, by = c("municipality_code" = "GDENR")) |>
+  rename(municipality_name = GDENAME) |>
+  mutate(municipality_name = base::as.factor(municipality_name))
 ```
 
 
@@ -737,6 +755,6 @@ table(energy_clean_15$stand_alone)
 
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean_15, "data/energy_modelling.rds")
-write_delim(energy_clean_15, "data/energy_modelling.csv")
+write_rds(energy_clean_16, "data/energy_modelling.rds")
+write_delim(energy_clean_16, "data/energy_modelling.csv")
 ```

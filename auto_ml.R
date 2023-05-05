@@ -147,6 +147,40 @@ energy_train_metrics_current_method <- energy_train_current_method |>
 energy_train_metrics_current_method
 
 
+automl_fit_tidy <- auto_fit |>
+  tidy()
 
-auto_fit
 
+tidy(auto_fit) %>%
+  mutate(
+    .predictions = map(.model, predict, new_data = energy_test)
+  )
+
+
+autoplot(auto_fit, type = "rank") +
+  theme(legend.position = "none")
+
+
+
+auto_fit_test <- read_rds("output/auto_fit2023-03-26 17:35:21.rds")
+
+auto_fit_test %>%
+  extract_fit_parsnip() %>%
+  member_weights() %>%
+  unnest(importance) %>%
+  filter(type == "scaled_importance") %>%
+  ggplot() +
+  geom_boxplot(aes(value, algorithm)) +
+  scale_x_sqrt() +
+  labs(y = NULL, x = "scaled importance", title = "Member importance in stacked ensembles")
+
+
+
+library(vip)
+
+auto_fit %>% 
+  tidy() |>
+  filter(id == "StackedEnsemble_AllModels_2_AutoML_1_20230331_95110") |>
+  extract_fit_parsnip()
+  
+  vip()

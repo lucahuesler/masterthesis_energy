@@ -21,6 +21,7 @@ pacman::p_load(
   flextable,     # converting tables to pretty images
   gptstudio,
   plotly,
+  ggplot2,
   sf
   )
 

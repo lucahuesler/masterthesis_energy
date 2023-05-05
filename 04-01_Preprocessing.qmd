@@ -97,8 +97,9 @@ energy_clean_02 <- energy_clean_01 |>
 ### Match STATPOP data {#sec-adding-statpop-data}
 
 ```{r}
-# #| label: create-geom-attributes
-# #| include: false
+#| label: create-geom-attributes
+#| include: false
+#| eval: false
 
 # in the colnames of the df's stat_pop_2016, stat_pop_2018 and stat_pop_2020: remove the substrings "B16", "B18" and "B20" from all the colnames (before: B16BTOT, after: BTOT), use tidyverse
 
@@ -146,6 +147,8 @@ View(matched)
 
 
 ```{r}
+#| eval: false
+
 energy_points_2016_sf <- energy_points_2016 |>
   st_as_sf(coords = c("gkode", "gkodn"), crs = 4326)
 
@@ -589,11 +592,11 @@ energy_clean_09 <- energy_clean_08 |>
                                  TRUE ~ 'No')) |>
   mutate(retrofitted = as.factor(retrofitted)) |>
   #> set retrofit variables to NA if building is not tagged as retrofitted
-  mutate(admin_id = if_else(retrofitted == 1, admin_id, NA_character_), 
-         admin_project_type = if_else(retrofitted == 1, admin_project_type, NA_character_), 
-         admin_project_name = if_else(retrofitted == 1, admin_project_name, NA_character_), 
-         param_investment_costs = if_else(retrofitted == 1, param_investment_costs, NA_real_),
-         year_completion = if_else(retrofitted == 1, year_completion, NA_integer_)) |>
+  mutate(admin_id = if_else(retrofitted == 'Yes', admin_id, NA_character_), 
+         admin_project_type = if_else(retrofitted == 'Yes', admin_project_type, NA_character_), 
+         admin_project_name = if_else(retrofitted == 'Yes', admin_project_name, NA_character_), 
+         param_investment_costs = if_else(retrofitted == 'Yes', param_investment_costs, NA_real_),
+         year_completion = if_else(retrofitted == 'Yes', year_completion, NA_integer_)) |>
   rename(retrofit_id = admin_id, 
          retrofit_project_type = admin_project_type, 
          retrofit_project_name = admin_project_name, 

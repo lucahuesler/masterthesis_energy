@@ -23,7 +23,7 @@ In the following subsections of this chapter, we will discuss the steps listed a
 The dataset that we use for modelling is the result of merging information from various sources. @tbl-data-sources provides a overview of the data sources used for the project.
 
 | **Data/Information**                   | **Spatial resolution**         | **Temporal resolution**      | **Source**                                                                                                                                                                                                                                 | **Owner**                                               |
-|---------------|---------------|---------------|---------------|---------------|
+|----------------------------------------|--------------------------------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
 | Building characteristics               | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal register of buildings and dwellings](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                         | Statistisches Amt des Kantons-Basel Landschaft (STA BL) |
 | Energy consumption                     | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                     | STA BL                                                  |
 | Inhabitants per buidling               | Building                       | Quarterly (2016, 2018, 2020) | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                 | STA BL                                                  |
@@ -45,6 +45,12 @@ In order to prepare the data for modelling, we apply the following filters:
 -   Only buildings where the gas is used for HEC or for DWH+HEC. As this information is absent for many buildings, we also include `NA` values here.
 
 ## Modelling {#sec-modelling}
+
+### Algorithms {#sec-algorithms}
+
+The following algorithms are considered in the modelling process:
+
+...
 
 ### Modelling workflow
 

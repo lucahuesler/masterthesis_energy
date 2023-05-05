@@ -16,10 +16,15 @@ pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
 #| include: false
 
 energy_modelling <- read_rds("data/energy_modelling.rds")
+
+auto_ml_results <- read_delim("models/auto_ml_models/all_hec_metrics_20230408.csv")
 ```
 
-
 ### Results Step 1: Comparing different models {#sec-model-exploration}
+
+According to the modelling workflow defined in @sec-modelling-worflow, the first step of the modelling process focuses on the exploration of different models. To do so, we run the algorithms defined in @sec-algorithms manually but also with automated machine learning (AutoML)[^04-03-results_model_exploration-1]. We here present the results of the manual application of the algorithms, followed by the results obtained from the AutoML approach.
+
+[^04-03-results_model_exploration-1]: For automated machine learning, the open-source AutoML library of H20 was used via interface (see also https://h2o.ai/platform/h2o-automl/).
 
 ```{r}
 #| label: train-test-split
@@ -67,7 +72,7 @@ In the preprocessing, we apply the following:
 -   Normalize numeric variables
 -   Log-transform numeric variables
 -   Create dummy variables from all nominal variables
-   
+
 ```{r}
 #| label: preprocessing-base-recipe-hec
 #| include: false
@@ -146,7 +151,6 @@ recipe_base_hec_poly <-
 recipe_base_hec_poly
 ```
 
-
 ### Defining models
 
 ```{r}
@@ -209,10 +213,10 @@ nnet_spec <-
   
 ```
 
-
 ### Define workflows
 
 #### Workflow for nonlinear models
+
 ```{r}
 #| label: workflow-definition-normalized
 #| include: false
@@ -230,6 +234,7 @@ normalized <-
 
 normalized
 ```
+
 #### Workflow with only basic preprocessing
 
 ```{r}
@@ -276,7 +281,6 @@ all_workflows <-
 
 all_workflows
 ```
-
 
 ### Tuning
 
@@ -337,7 +341,6 @@ autoplot(
    ggtitle("Benchmark") +
    ylab("RMSE")
 ```
-
 
 ### Model evaluation {#sec-model-evaluation}
 
@@ -408,3 +411,74 @@ xgboost_wf <- extract_workflow(test_results_xgboost)
 
 readr::write_rds(test_results_xgboost, "models/xgboost_wf")
 ```
+
+### AutoML
+
+The AutoML approach takes care of data preprocessing, feature engineering and model selection. Thus, this approach requires much less manual work throughout the modelling process.
+
+```{r}
+#| label: automl-test-rsquared
+#| include: false
+options(scipen = 999)
+auto_ml_results <- auto_ml_results %>%
+  mutate(Algorithm = if_else(Algorithm == "Based on HEPI", "Current Approach", Algorithm))
+
+best_r2_per_algo <- auto_ml_results %>%
+  group_by(Algorithm) %>%
+   dplyr::slice_max(order_by = R_squared, n = 1) |>
+   arrange(desc(R_squared))
+
+best_r2_per_algo
+
+```
+
+```{r}
+#| label: automl-test-rmse
+#| include: false
+#| 
+best_rmse_per_algo <- auto_ml_results %>%
+  group_by(Algorithm) %>%
+   dplyr::slice_min(order_by = RMSE, n = 1) |>
+   arrange(RMSE)
+
+best_rmse_per_algo
+```
+```{r}
+#| label: automl-test-mae
+#| include: false
+#| 
+best_mae_per_algo <- auto_ml_results %>%
+  group_by(Algorithm) %>%
+   dplyr::slice_min(order_by = MAE, n = 1) |>
+   arrange(MAE)
+
+best_mae_per_algo
+```
+
+```{r}
+# Create named vector of colors
+algorithm_colors <- c("gbm" = "#d73027", 
+                      "xgboost" = "#f46d43", 
+                      "deeplearning" = "#fdae61", 
+                      "drf" = "#fee090", 
+                      "stackedensemble" = "#e6f598",
+                      "Current Approach" = "#abd9e9",
+                      "glm" = "#74add1")
+
+# Reshape the data to long format
+best_rmse_per_algo_long <- pivot_longer(best_rmse_per_algo, cols = c("R_squared", "RMSE", "MAE", "MAPE"), names_to = "Metric", values_to = "Value")
+
+# Reorder the levels of Algorithm by the median of RMSE
+best_rmse_per_algo_long$Algorithm <- factor(best_rmse_per_algo_long$Algorithm, levels = levels(reorder(best_rmse_per_algo_long$Algorithm, best_rmse_per_algo_long$Value, median)))
+
+# Create the plot
+ggplot(best_rmse_per_algo_long, aes(x = Algorithm, y = Value, fill = Algorithm)) +
+  geom_col(position = position_dodge()) +
+  facet_wrap(~ Metric, scales = "free_y") +
+  labs(x = NULL, y = "Value", fill = "") +
+  theme_bw() +
+  scale_fill_manual(values = algorithm_colors)
+
+
+```
+

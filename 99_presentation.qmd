@@ -38,13 +38,19 @@ library(kableExtra)
 library(ggridges)
 library(viridis)
 library(hrbrthemes)
+library(DT)
+library(kableExtra)
+library(htmlwidgets)
+library(htmltools)
 ```
 
 ```{r}
 #| label: load-data
 #| include: false
 
-energy_modelling <- read_rds("data/energy_modelling.rds")
+energy_modelling <- read_delim("data/energy_modelling.csv")
+auto_ml_results <- read_csv("models/auto_ml_models/all_hec_metrics_20230408.csv")
+grid_results <- read_rds("output/grid_results.rds")
 
 ```
 
@@ -338,7 +344,7 @@ obs_per_year <- energy_modelling |>
 obs_per_year
 ```
 
-# First results
+# Results
 
 ## HEPI per municipality
 
@@ -517,6 +523,57 @@ Evaluation of models tried so far:
 :::
 :::
 
+# AutoML (with h2o)
+
+## Metrics of best model per algorithm (on test)
+
+Target = HEC in kWh/year
+
+```{r}
+options(scipen = 999)
+auto_ml_results <- auto_ml_results %>%
+  mutate(Algorithm = if_else(Algorithm == "Based on HEPI", "Current Approach", Algorithm))
+
+# best rmse per algorithm
+best_rmse_per_algo <- auto_ml_results %>%
+  group_by(Algorithm) %>%
+   dplyr::slice_min(order_by = RMSE, n = 1) |>
+   arrange(RMSE)
+
+# Create named vector of colors
+algorithm_colors <- c("gbm" = "#d73027", 
+                      "xgboost" = "#f46d43", 
+                      "deeplearning" = "#fdae61", 
+                      "drf" = "#fee090", 
+                      "stackedensemble" = "#e6f598",
+                      "Current Approach" = "#abd9e9",
+                      "glm" = "#74add1")
+
+# Reshape the data to long format
+best_rmse_per_algo_long <- pivot_longer(best_rmse_per_algo, cols = c("R_squared", "RMSE", "MAE", "MAPE"), names_to = "Metric", values_to = "Value")
+
+# Reorder the levels of Algorithm by the median of RMSE
+best_rmse_per_algo_long$Algorithm <- factor(best_rmse_per_algo_long$Algorithm, levels = levels(reorder(best_rmse_per_algo_long$Algorithm, best_rmse_per_algo_long$Value, median)))
+
+# Create the plot
+p <- ggplot(best_rmse_per_algo_long, aes(x = Algorithm, y = Value, fill = Algorithm)) +
+  geom_col(position = position_dodge()) +
+  facet_wrap(~ Metric, scales = "free_y") +
+  labs(x = NULL, y = "Value", fill = "") +
+  theme_bw() +
+  scale_fill_manual(values = algorithm_colors) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+p
+```
+
+## Detailed results (all models)
+
+```{r}
+
+DT::datatable(auto_ml_results)
+```
+
 # Next steps
 
 ## Run models on subsets of data
@@ -536,10 +593,4 @@ STATPOP data can deliver information about :
 -   Duration of residence
 -   Ratio of swiss/foreign population
 
-## Adding new variables
-
-Idea that came to my mind: Also consider if building is stand-alone or connected to other buildings.
-
-![](figures/freistehend_angebaut.png){width="300"}
-
-(see also [Olu-Ajayi & al., 2021](https://www.sciencedirect.com/science/article/abs/pii/S235271022101264X))
+## 

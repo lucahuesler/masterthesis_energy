@@ -27,6 +27,7 @@ gwr_building <-  read_delim("data/gwr_gebaeude_20221027.csv", delim = ";", show_
 gwr_building_heights <-  read_delim("data/gwr_building_heights.csv", delim = ";", show_col_types = FALSE)
 gwr_dwelling <- read_delim("data/gwr_wohnung_20221027.csv", delim = ";", show_col_types = FALSE)
 gwr_entrance <- read_delim("data/gwr_eingang_20230109.csv", delim = "\t", show_col_types = FALSE)
+gwr_building_statpop <- read_delim("data/gwr_gebaeude_statpop.csv", delim = ",")
 
 # municipalities
 municipalities <- readxl::read_excel("data/gemeindeverzeichis.xlsx", sheet = "GDE") |>
@@ -45,13 +46,6 @@ retrofit_ezb <- read_delim("data/sanierungen_typ_EZB.csv", delim = ",", show_col
 # Population quarterly STA  BL
 pop_quarterly_stabl <- read_delim("data/population_quarterly_stabl.csv", delim = ";", show_col_types = FALSE)
 
-# STATPOP data
-stat_pop_2016 <- read_delim("data/statpop_hektar_2016/STATPOP2016.csv", delim = ",", show_col_types = FALSE)
-stat_pop_2018 <- read_delim("data/statpop_hektar_2018/STATPOP2018.csv", delim = ",", show_col_types = FALSE)
-stat_pop_2020 <- read_delim("data/statpop_hektar_2020/ag-b-00.03-vz2020statpop/STATPOP2020.csv", delim = ";", show_col_types = FALSE)
-
-# swissBOUNDARIES
-swiss_boundaries <- st_read("data/swissBOUNDARIES/swissBOUNDARIES3D_1_4_TLM_KANTONSGEBIET.shp")
 
 # building polygons
 building_distances <- read_rds("data/buildings_distances.rds")
@@ -89,80 +83,54 @@ gwr_entrance <- gwr_entrance |>
 
 energy_clean_02 <- energy_clean_01 |>
   left_join(gwr_entrance, by = "egid") |>
-  select(!c(edid, egaid, esid, strnamk, strindx, strsp, stroffiziel, dkode, dkodn, doffadr, dexpdat))
-
+  select(!c(edid, egaid, esid, strnamk, strindx, strsp, stroffiziel, dkode, dkodn, doffadr, dexpdat)) 
 
 ```
 
 ### Match STATPOP data {#sec-adding-statpop-data}
 
+STATPOP data has been matched to gwr_building using QGIS (see "/qgis_statpop). Here, we only match it to the energy data.
+
 ```{r}
-#| label: create-geom-attributes
+#| label: match-statpop-data
 #| include: false
-#| eval: false
 
-# in the colnames of the df's stat_pop_2016, stat_pop_2018 and stat_pop_2020: remove the substrings "B16", "B18" and "B20" from all the colnames (before: B16BTOT, after: BTOT), use tidyverse
+gwr_building_statpop <- gwr_building_statpop |>
+  select(-egid) |>
+  rename(egid = fid)
 
-
-stat_pop_2016 <- stat_pop_2016 |>
+gwr_building_statpop_2016 <- gwr_building_statpop |>
+  select(egid, starts_with("B16"), starts_with("H16")) |>
   rename_all(~ str_remove(., "B16")) |>
   rename_all(~ str_remove(., "H16")) |>
-  rename_statpop()
+  rename_statpop() |>
+  mutate(survey_year = 2016)
 
 
-stat_pop_2018 <- stat_pop_2018 |>
+gwr_building_statpop_2018 <- gwr_building_statpop |>
+  select(egid, starts_with("B18"), starts_with("H18")) |>
   rename_all(~ str_remove(., "B18")) |>
   rename_all(~ str_remove(., "H18")) |>
-  rename_statpop()
+  rename_statpop()|>
+  mutate(survey_year = 2018)
 
-stat_pop_2020 <- stat_pop_2020 |>
+gwr_building_statpop_2020 <- gwr_building_statpop |>
+  select(egid, starts_with("B20"), starts_with("H20")) |>
   rename_all(~ str_remove(., "B20")) |>
   rename_all(~ str_remove(., "H20")) |>
-  rename_statpop()
+  rename_statpop()|>
+  mutate(survey_year = 2020)
 
-# transform to an sf object
-stat_pop_2016_sf <- stat_pop_2016 |>
-  st_as_sf(coords = c("e_koord", "n_koord"), crs = 4326) |>
-  st_make_valid()
+gwr_building_statpop_all <- gwr_building_statpop_2016 |>
+  bind_rows(gwr_building_statpop_2018) |>
+  bind_rows(gwr_building_statpop_2020)
 
-# crop to BL
-box = c(xmin = 2590110, ymin = 1242580, xmax = 2639810, ymax = 1268980)
-
-stat_pop_2016_sf_bl <- stat_pop_2016_sf |>
-  st_crop(box)
-
-# retrieve points from  of energy data
-energy_points_2016 <- energy_clean_02 |>
-  filter(erhebungsjahr == 2016) |>
-  select(egid, gkode, gkodn) |>
-  st_as_sf(coords = c('gkode', 'gkodn'), crs = st_crs(stat_pop_2016_sf), remove = FALSE)
-
-
-matched = st_join(energy_stat_pop_2016, stat_pop_2016_sf, join = nngeo::st_nn, maxdist = 100, k = 1, progress = TRUE)
-View(matched)
-
-
-
+energy_clean_02 <- energy_clean_02 |>
+  left_join(gwr_building_statpop_all, by = c("egid"="egid", "erhebungsjahr" = "survey_year"))
 ```
 
 
-```{r}
-#| eval: false
-
-energy_points_2016_sf <- energy_points_2016 |>
-  st_as_sf(coords = c("gkode", "gkodn"), crs = 4326)
-
-stat_pop_2016_sf <- stat_pop_2016 |>
-  st_as_sf(coords = c("e_koord", "n_koord"), crs = 4326)
-
-
-energy_points_2016_statpop <- energy_points_2016_sf |>
-  st_join(stat_pop_2016_sf, join = st_nearest_feature)
-
-
-```
-
-
+### Match heating degree days 
 ```{r}
 #| label: match-heating-degree-days
 #| include: false
@@ -753,11 +721,79 @@ energy_clean_16 <- energy_clean_15 |>
   mutate(municipality_name = base::as.factor(municipality_name))
 ```
 
+## Calculate social indicators
 
+```{r}
+#| label: calculate-social-indicators
+#| include: false
+
+
+# Calculate the social indicators
+energy_clean_17 <- energy_clean_16 |>
+  mutate(
+    swiss_ratio = swiss_pop / total_pop,
+    foreign_ratio = foreign_pop / total_pop,
+    eu_ratio = eu_pop / total_pop,
+    eur_ratio = eur_pop / total_pop,
+    non_eur_ratio = non_eur_pop / total_pop,
+    born_swiss_ratio = born_swiss_pop / total_pop,
+    born_abroad_ratio = born_abroad_pop / total_pop,
+    male_ratio = male_pop / total_pop,
+    female_ratio = female_pop / total_pop,
+    residence_less_1_year_ratio = residence_less_1_year / total_pop,
+    residence_1_5_years_ratio = residence_1_5_years / total_pop,
+    residence_6_10_years_ratio = residence_6_10_years / total_pop,
+    residence_more_10_years_ratio = residence_more_10_years / total_pop,
+    residence_since_birth_ratio = residence_since_birth / total_pop,
+    household_1_person_ratio = household_1_person / household_total,
+    household_2_person_ratio = household_2_person / household_total,
+    household_3_person_ratio = household_3_person / household_total,
+    household_4_person_ratio = household_4_person / household_total,
+    household_5_person_ratio = household_5_person / household_total,
+    household_6_person_ratio = household_6_person / household_total,
+    above_65 = male_65_69 + male_70_74 + male_75_79 + male_80_84 + male_85_89 + male_90plus + female_65_69 + female_70_74 + female_75_79 + female_80_84 + female_85_89 + female_90plus,
+         elderly_ratio = above_65 / total_pop,
+    below_15 = male_0_4 + male_5_9 + male_10_14 + female_0_4 + female_5_9 + female_10_14,
+    youth_ratio = below_15 / total_pop)
+
+
+
+
+# Reshape the data to a long format
+indicators <- c("swiss_ratio", "foreign_ratio", "eu_ratio", "eur_ratio", "non_eur_ratio",
+                "born_swiss_ratio", "born_abroad_ratio", "male_ratio", "female_ratio",
+                "residence_less_1_year_ratio", "residence_1_5_years_ratio", "residence_6_10_years_ratio",
+                "residence_more_10_years_ratio", "residence_since_birth_ratio", "household_1_person_ratio",
+                "household_2_person_ratio", "household_3_person_ratio", "household_4_person_ratio",
+                "household_5_person_ratio", "household_6_person_ratio")
+
+long_energy_clean_17 <- energy_clean_17 %>%
+  select(indicators) %>%
+  gather(key = "indicator", value = "value", -c())
+
+# Create boxplots of all indicators at once using facets
+ggplot(long_energy_clean_17, aes(x = indicator, y = value)) +
+  geom_boxplot() +
+  facet_wrap(~ indicator, scales = "free", ncol = 4) +
+  labs(y = "Value", x = "", title = "Boxplots of All Indicators") +
+  theme_minimal() +
+  theme(axis.text.x = element_blank(), axis.ticks.x = element_blank())
+
+
+# Create boxplots of all indicators at once using facets
+# Create histograms of all indicators at once using facets
+ggplot(long_energy_clean_17, aes(x = value)) +
+  geom_histogram(bins = 30, color = "black", fill = "lightblue") +
+  facet_wrap(~ indicator, scales = "free", ncol = 4) +
+  labs(y = "Frequency", x = "Value", title = "Histograms of All Indicators") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
 ## Save data
 
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean_16, "data/energy_modelling.rds")
-write_delim(energy_clean_16, "data/energy_modelling.csv")
+write_rds(energy_clean_17, "data/energy_modelling.rds")
+write_delim(energy_clean_17, "data/energy_modelling.csv")
 ```

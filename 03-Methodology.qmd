@@ -1,4 +1,26 @@
-# Methodology {#sec-methodology}
+# Methodology & Materials {#sec-methodology-materials}
+
+In this chapter, we provide an description of the data in @sec-data-description . Subsequently in @sec-methodology, we describe the methodological approach used to answer the research questions.
+
+## Data description {#sec-data-description}
+
+The dataset that we use for modelling is the result of merging information from various sources. @tbl-data-sources provides a overview of the data sources used for the project.
+
+| **Data/Information**                   | **Spatial resolution**         | **Temporal resolution**      | **Source**                                                                                                                                                                                                                                 | **Owner**                                               |
+|-------------|-------------|-------------|---------------------|-------------|
+| Building characteristics               | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal register of buildings and dwellings](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                         | Statistisches Amt des Kantons-Basel Landschaft (STA BL) |
+| Energy consumption                     | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                     | STA BL                                                  |
+| Inhabitants per buidling               | Building                       | Quarterly (2016, 2018, 2020) | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                 | STA BL                                                  |
+| Demographic characteristics            | Raster grid (mesh size 100 m)  | Yearly (2016, 2018, 2020)    | [Population and Households Statistics (STATPOP)](https://www.bfs.admin.ch/bfs/en/home/statistics/population/surveys/statpop.assetdetail.22406439.html)                                                                                     | Bundesamt für Statistik (BFS)                           |
+| Retrofit information                   | Building                       | Daily (2009-2020)            | [Baselbieter Energiepaket](https://www.energiepaket-bl.ch/)                                                                                                                                                                                | Amt für Umwelschutz und Energie (AUE BL)                |
+| Elevation information                  | Raster grid (mesh size 0.25 m) | 2021                         | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm) | Amt für Geoinformation (AGI BL)                         |
+| Building floor plan[^03-methodology-1] | Building                       | Daily (2016, 2018, 2020)     | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                | Amt für Geoinformation (AGI BL)                         |
+
+: Overview of data sources {#tbl-data-sources}
+
+[^03-methodology-1]: The building floor plan servers as basis to calculate the distance to the next building and therby extract the information if a building is stand-alone or directly connected to another buidling.
+
+## Methodology
 
 In order to address the research questions defined in @sec-research-questions--goals, we first need to define a suitable methodology. From a high-level perspective, a machine learning workflow follows the following steps:
 
@@ -19,22 +41,6 @@ However, the above steps are usually not carried out in a linear manner. Usually
 In the following subsections of this chapter, we will discuss the steps listed above in the context of the present study.
 
 ## Data unterstanding and exploration {#sec-data-unterstanding-and-exploration}
-
-The dataset that we use for modelling is the result of merging information from various sources. @tbl-data-sources provides a overview of the data sources used for the project.
-
-| **Data/Information**                   | **Spatial resolution**         | **Temporal resolution**      | **Source**                                                                                                                                                                                                                                 | **Owner**                                               |
-|----------------------------------------|--------------------------------|------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
-| Building characteristics               | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal register of buildings and dwellings](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                         | Statistisches Amt des Kantons-Basel Landschaft (STA BL) |
-| Energy consumption                     | Building                       | Yearly (2016, 2018, 2020)    | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                     | STA BL                                                  |
-| Inhabitants per buidling               | Building                       | Quarterly (2016, 2018, 2020) | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                 | STA BL                                                  |
-| Demographic characteristics            | Raster grid (mesh size 100 m)  | Yearly (2016, 2018, 2020)    | [Population and Households Statistics (STATPOP)](https://www.bfs.admin.ch/bfs/en/home/statistics/population/surveys/statpop.assetdetail.22406439.html)                                                                                     | Bundesamt für Statistik (BFS)                           |
-| Retrofit information                   | Building                       | Daily (2009-2020)            | [Baselbieter Energiepaket](https://www.energiepaket-bl.ch/)                                                                                                                                                                                | Amt für Umwelschutz und Energie (AUE BL)                |
-| Elevation information                  | Raster grid (mesh size 0.25 m) | 2021                         | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm) | Amt für Geoinformation (AGI BL)                         |
-| Building floor plan[^03-methodology-1] | Building                       | Daily (2016, 2018, 2020)     | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                | Amt für Geoinformation (AGI BL)                         |
-
-: Overview of data sources {#tbl-data-sources}
-
-[^03-methodology-1]: The building floor plan servers as basis to calculate the distance to the next building and therby extract the information if a building is stand-alone or directly connected to another buidling.
 
 ## Data preparation {#sec-data-prep}
 

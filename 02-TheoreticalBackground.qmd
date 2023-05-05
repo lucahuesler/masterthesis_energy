@@ -65,3 +65,21 @@ Typically, there are three groups of independent variables:
 Among the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN).
 
 ### Grey-box models {#grey-box-models}
+
+## Terminology {#sec-terminology}
+
+Energy always passes through different stages between the first extraction and final consumption (e.g. distrbution, storage). From a high-level perspective, we can differentiate between four stages as illustrated in @fig-energy-stages . Between the different stages, there are always losses through transformation to the next stage.
+
+[![Stages of the energy chain (Source: OurWorldinData.org)](figures/02-energy_terms.png){#fig-energy-stages}](https://ourworldindata.org/energy-definitions)
+
+In the context of this master thesis, we only focus on the last two stages: final energy and useful energy. As defined by the United Nations @departmentofeconomicandsocialaffairsstatisticsdivision2018 [p. 55] , final energy consumption "refers to all fuel and energy delivered to users for both their energy and non-energy uses". While there exist various uses of energy, we exclusively focus on the use of heat generation.
+
+The data used for modelling contains the amount natural gas delivered by the provider to the building and therefore does not take into account potential losses due to the inefficiencies of heating appliances. In the context of @fig-energy-stages, this corresponds to the stage of final energy.
+
+The available data allows to determine the useful energy for heating. Thus, the target variables HEC and HEPI as defined in the @sec-research-questions are referring to the useful energy of a building.
+
+| Col1 | Col2 | Col3 |
+|------|------|------|
+|      |      |      |
+|      |      |      |
+|      |      |      |

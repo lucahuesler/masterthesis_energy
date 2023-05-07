@@ -55,10 +55,11 @@ test <- energy_split[[2]]
 ```{r}
 # variable selection
 vars <- names(energy_modelling)
+
 # predictor variables for HEC overall
 predictors_hec_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
 
-# without retrofit (R)
+# without retrofit
 predictors_hec_without_retrofit <- predictors_hec_all[-which(predictors_hec_all == "retrofitted")]
 
 
@@ -128,7 +129,8 @@ hec_without_standalone_aml_leaderboard <- hec_without_standalone_aml |>
 ```{r}
 hec_aml_leaderboard_all <- hec_all_aml_leaderboard |>
   bind_rows(hec_without_retrofit_aml_leaderboard) |>
-  bind_rows(hec_without_social_aml_leaderboard)
+  bind_rows(hec_without_social_aml_leaderboard) |>
+  bind_rows(hec_without_standalone_aml_leaderboard)
   
 hec_aml_leaderboard_all
 
@@ -144,16 +146,20 @@ Save the best models of each run:
 hec_all_aml_best_model <- h2o.get_best_model(hec_without_retrofit_aml)
 hec_all_aml_best_model_without_retrofit <- h2o.get_best_model(hec_without_retrofit_aml)
 hec_all_aml_best_model_without_social <- h2o.get_best_model(hec_without_social_aml)
+hec_without_standalone_aml_best_model <- h2o.get_best_model(hec_without_standalone_aml)
+
+
 
 h2o.saveModel(hec_all_aml_best_model, "models/auto_ml_models/hec_all_predictors/")
 h2o.saveModel(hec_all_aml_best_model_without_retrofit, "models/auto_ml_models/hec_without_retrofit/")
 h2o.saveModel(hec_all_aml_best_model_without_social, "models/auto_ml_models/hec_without_social/")
+h2o.saveModel(hec_without_standalone_aml_best_model, "models/auto_ml_models/hec_without_social/")
 ```
 
 
 ## Prediction
 
-We 
+
 ```{r}
 all_metrics <- data.frame()
 
@@ -185,7 +191,7 @@ for (i in 1:nrow(hec_aml_leaderboard_all)) {
     dplyr::arrange(RMSE)
     
   
-  print(paste0(model_id, " done!"))
+  #print(paste0(model_id, " done!"))
 }
 ```
 
@@ -193,17 +199,19 @@ for (i in 1:nrow(hec_aml_leaderboard_all)) {
 ## Explain models
 
 ```{r}
-preds <- h2o.predict(hec_all_aml_best_model, test)
-h2o.explain_row(hec_all_aml_best_model_xgb, test, row_index = 10102)
+# preds <- h2o.predict(hec_all_aml_best_model, test)
+# h2o.explain_row(hec_all_aml_best_model_xgb, test, row_index = 10102)
+# # 
+# h2o.explain(hec_all_aml_best_model_xgb, test)
 # 
-h2o.explain(hec_all_aml_best_model_xgb, test)
-
-h2o.learning_curve_plot(hec_all_aml_best_model)
+# h2o.learning_curve_plot(hec_all_aml_best_model)
 
 ```
 
 # Modelling on subsets
+As result from the first step, we model without social indicators.
 
+## Modelling per survey year
 ```{r}
 # Split the data by survey year
 data_by_survey_year <- split(energy_modelling, energy_modelling$survey_year)
@@ -235,6 +243,61 @@ models_by_survey_year <- lapply(data_by_survey_year, function(df) {
          energy_consumed_hot_water_mwh,
          retrofitted,
          hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method,
+         stand_alone)
+  
+  # Split data
+  df_h2o <- as.h2o(df)
+  split <- h2o.splitFrame(df_h2o, seed = 1)
+  train <- split[[1]]
+  test <- split[[2]]
+  
+  # Run AutoML
+  vars <- names(df)
+  predictors <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
+  
+  aml_results <- run_h2o_automl(target = "hec", 
+                                predictors = predictors, 
+                                data = train, 
+                                runtime = 60)
+  
+  # Return results
+  return(aml_results$aml)
+})
+
+```
+
+## Modelling per building class
+
+```{r}
+# Split the data by survey year
+data_by_building_class <- split(energy_modelling, energy_modelling$building_class)
+
+```
+
+```{r}
+# Run AutoML for each survey year separately
+models_by_building_class <- lapply(data_by_building_class, function(df) {
+  # Prepare data
+  df <- df %>%
+    select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents_mean, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         municipality_name, 
+         building_class, 
+         construction_year, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         hdd,
          foreign_ratio,
          household_1_person_ratio,
          elderly_ratio,
@@ -251,13 +314,21 @@ models_by_survey_year <- lapply(data_by_survey_year, function(df) {
   test <- split[[2]]
   
   # Run AutoML
-  vars <- names(df)
+  # variable selection
+  vars <- names(energy_modelling)
+  
+  # predictor variables for HEC overall
   predictors_hec_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
   
+  
+  # without social indicators
+  predictors_without_social <- predictors_hec_all[-which(predictors_hec_all %in% c("foreign_ratio","household_1_person_ratio","elderly_ratio","youth_ratio","residence_less_1_year_ratio"))]
+
+
   aml_results <- run_h2o_automl(target = "hec", 
-                                predictors = predictors_hec_all, 
+                                predictors = predictors_without_social, 
                                 data = train, 
-                                runtime = 60)
+                                runtime = 3600)
   
   # Return results
   return(aml_results$aml)
@@ -265,10 +336,5 @@ models_by_survey_year <- lapply(data_by_survey_year, function(df) {
 
 ```
 
-```{r}
 
-best_2020 <- h2o.get_best_model(models_by_survey_year$`2020`)
-
-h2o.learning_curve_plot()
-```
 

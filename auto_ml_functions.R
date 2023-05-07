@@ -17,7 +17,7 @@ run_h2o_automl <- function(target, predictors, data, runtime = 60) {
 
 ###############################################
 
-calc_metrics <- function(model, data, fitted_values) {
+calc_metrics <- function(model, data, fitted_values, target = "HEC")  {
   # function to calculate R-squared, RMSE, MAE, and MAPE
   
   # get model id and algorithm as string
@@ -53,12 +53,19 @@ calc_metrics <- function(model, data, fitted_values) {
                            MAPE = mape)
   
   # calculate metrics of current approach
-  current_actual <- data$hec
-  current_predicted <- data$hec_pred_current_method
-  current_algo = 
+  if (target == "HEC") {
+    current_actual <- data$hec
+    current_predicted <- data$hec_pred_current_method
+  } else if (target == "HEPI") {
+    current_actual <- data$hepi
+    current_predicted <- data$hepi_pred_current_method
+  } else {
+    print("Define target")
+  }
+
     
-    # calculate R-squared
-    rsq <- cor(current_predicted, current_actual)^2
+  # calculate R-squared
+  rsq <- cor(current_predicted, current_actual)^2
   
   # calculate RMSE
   rmse <- sqrt(mean((current_predicted - current_actual)^2))

@@ -1,6 +1,6 @@
 # Results {#sec-results}
 
-In this chapter, the results of our analysis will be presented. In a first step, we will conduct a descriptive and exploratory analysis in @sec-descriptive-statistics of the data used for modelling. In @sec-model-evaluation, we will present and compare the results of the different models. Finally in @sec-final-model, we will provide the results of the final model and the sensitivity analysis of the input features.
+In this chapter, the results of our analysis will be presented. In a first step, we will conduct a descriptive and exploratory analysis in @sec-descriptive-statistics of the data used for modelling. In @sec-modelling, we will present and compare the results of the different models. Finally in @sec-sensitivity-analysis, we will provide the results of the final model and the sensitivity analysis of the input features.
 
 ```{r}
 #| label: load-libs
@@ -22,11 +22,38 @@ energy_modelling <- read_rds("data/energy_modelling.rds")
 
 ## Descriptive statistics {#sec-descriptive-statistics}
 
-To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data. The final dataset that for modelling is the result of joining data from different sources that are provided in @sec-methodology. Furthermore, we applied several filters that are outlined in @sec-data-prep.
+To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data. The final dataset for modelling is the result of joining data from different sources that are provided in @sec-data-description. Furthermore, we applied several filters that are outlined in @sec-data-prep.
+
+The final dataset for modelling contains `r nrow(energy_modelling)` observations (gas-heated buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. The buildings are distributed over 20 municipalities of the Canton of Basel-Landschaft.
+
+```{r}
+#| label: fig-buildings-per-municipality
+#| tbl-cap: "Number of buildings per municipality."
+#| tbl-cap-location: bottom
+#| warning: false
+
+energy_modelling %>%
+  count(entrance_municipality_name, name = "n_obs") %>%
+  arrange(n_obs) %>%
+  ggplot(aes(x = n_obs, y = reorder(entrance_municipality_name, n_obs))) +
+  geom_col(fill = "#0072B2") +
+  labs(title = "Number of observations per municipality",
+       x = "Number of buildings",
+       y = "Municipality") +
+  theme_minimal()
+
+
+```
+
+```{r}
+#| label: n-municipalities
+#| echo: false
+
+#> Calculations of numbers and indicators for easier use as inline code in text.
+n_municipalities <- n_distinct(energy_modelling$municipality_code)
+```
 
 ### Target variables {#sec-target-variables}
-
-The final dataset for modelling contains `r nrow(energy_modelling)` observations (gas-heated buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum.
 
 As outlined in Chapter @sec-methodology, we will use both HEC and HEPI as target variables. @tbl-obs-per-year shows that the means of HEC and HEPI are both decreasing between 2016 and 2020.
 

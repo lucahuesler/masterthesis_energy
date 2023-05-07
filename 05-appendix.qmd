@@ -1,5 +1,8 @@
-# Appendix
+# Data dictionary
 
+# Data preparation
+
+# Data analysis
 ## Retrofit analysis
 
 ```{r}
@@ -17,8 +20,10 @@ cleaning_retrofit <- function(df){
 retrofit_m01_clean <- cleaning_retrofit(retrofit_m01)
 ```
 
-## Details on model comparison
+# Modelling
 
+
+# Other
 ## Classification of energy source
 
 ```{r}

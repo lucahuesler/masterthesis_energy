@@ -1,0 +1,152 @@
+# Automated machine learning
+
+## Modelling with all data
+```{r}
+library(h2o)
+library(tidymodels)
+library(tidyverse)
+source("auto_ml_functions.R")
+```
+
+
+```{r}
+
+h2o.init()
+
+# prepare data
+energy_modelling <- read_rds("data/energy_modelling.rds")
+
+energy_modelling <- energy_modelling |>
+  select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents_mean, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         municipality_name, 
+         building_class, 
+         construction_year, 
+         coordinate_e, 
+         coordinate_n, 
+         num_dwellings, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method)
+
+
+# h2o split
+energy_modelling.h20 <- as.h2o(energy_modelling)
+energy_split <- h2o.splitFrame(energy_modelling.h20, seed = 1)
+train <- energy_split[[1]]
+test <- energy_split[[2]]
+```
+
+
+```{r}
+# variable selection
+vars <- names(energy_modelling)
+
+# predictor variables for hepi overall
+predictors_hepi_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method", "heated_area_m2"))]
+
+
+predictors_hepi_without_retrofit <- predictors_hepi_all[-which(predictors_hepi_all == "retrofitted")]
+
+```
+
+```{r}
+# With complete data and all predictors
+hepi_all_aml_results <- run_h2o_automl(target = "hepi", 
+                                      predictors = predictors_hepi_all, 
+                                      data = train, 
+                                      runtime = 36000)
+
+
+hepi_all_aml <- hepi_all_aml_results$aml
+hepi_all_aml_leaderboard <- hepi_all_aml_results$leaderboard |>
+    as.data.frame() |>
+  mutate(approach = "hepi all predictors")
+
+
+# Without predictor "retrofitted"
+# hepi_without_retrofit_aml_results <- run_h2o_automl(target = "hepi",
+#                                                    predictors = predictors_hepi_without_retrofit,
+#                                                    data = train,
+#                                                    runtime = 120)
+# 
+# 
+# hepi_without_retrofit_aml <- hepi_without_retrofit_aml_results$aml
+# hepi_without_retrofit_aml_leaderboard <- hepi_without_retrofit_aml_results$leaderboard |> 
+#   as.data.frame() |>
+#   mutate(approach = "hepi without retrofit")
+
+
+```
+
+```{r}
+
+hepi_all_aml_leaderboard
+
+```
+## Best model
+
+```{r}
+hepi_all_aml_best_model <- h2o.get_best_model(hepi_all_aml)
+hepi_all_aml_best_model_xgb <- h2o.get_best_model(hepi_all_aml, algorithm = "xgboost")
+```
+
+
+## Prediction
+
+```{r}
+all_metrics <- data.frame()
+
+for (i in 1:nrow(hepi_all_aml_leaderboard)) {
+  
+  # Get the model id and algorithm for the current model
+  model_id <- as.character(hepi_all_aml_leaderboard[i, "model_id"])
+  algorithm <- as.character(hepi_all_aml_leaderboard[i, "algorithm"])
+  print(model_id)
+  
+  # Get the model from the H2O AutoML object
+  model <- h2o.getModel(model_id)
+  
+  # Save the model 
+  h2o.saveModel(model, paste0("models/auto_ml_models/hepi_all_", model_id,"_",Sys.Date()))
+  
+  # make predictions
+  predictions <- h2o.predict(model, test)
+  
+  # Call the calc_metrics function to get the metrics
+  metrics <- calc_metrics(model, test, predictions)
+  
+  # Add the metrics to the data frame
+  all_metrics <- rbind(all_metrics, metrics)
+  
+  # remove duplicates
+  all_metrics <- all_metrics |>
+    dplyr::distinct() |>
+    dplyr::arrange(RMSE)
+    
+  
+  print(paste0(model_id, " done!"))
+}
+```
+
+
+## Explain models
+
+```{r}
+# preds <- h2o.predict(hepi_all_aml_best_model_xgb, test)
+# h2o.explain_row(hepi_all_aml_best_model_xgb, test, row_index = 10102)
+# 
+# h2o.explain(hepi_all_aml_best_model, test)
+```
+

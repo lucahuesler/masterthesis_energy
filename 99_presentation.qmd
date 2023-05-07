@@ -13,6 +13,7 @@ format:
      width: 1280
      height: 720
      theme: default
+     df-print: paged
      
 # global definition of code chunk execution
 execute:
@@ -50,6 +51,7 @@ library(htmltools)
 
 energy_modelling <- read_delim("data/energy_modelling.csv")
 auto_ml_results <- read_csv("models/auto_ml_models/all_hec_metrics_20230408.csv")
+hec_aml_leaderboard_all <- read_csv("models/auto_ml_models/hec_aml_leaderboard_all_2023-05-07.csv")
 grid_results <- read_rds("output/grid_results.rds")
 
 ```
@@ -391,7 +393,7 @@ energy_modelling |>
 n_retrofit <- energy_modelling |> filter(retrofitted == TRUE) |> nrow()
 
 n_retrofit_m01 <- energy_modelling |> 
-  filter(retrofitted == TRUE,
+  filter(retrofitted == "Yes",
          retrofit_investment_costs > 0) |> 
   nrow()
 
@@ -408,11 +410,12 @@ perc_retrofit <- round((n_retrofit / nrow(energy_modelling))*100,digits = 2)
 #| label: retrofit-year
 
 retrofit_per_year <- energy_modelling |>
-  dplyr::filter(retrofitted == TRUE) |>
+  dplyr::filter(retrofitted == "Yes") |>
   dplyr::mutate(retrofit_project_name = case_when(
     grepl("Einzelbauteile", retrofit_project_name) ~ "Sanierung Einzelbauteile",
     grepl("Energieanalyse", retrofit_project_name) ~ "Energieanalyse",
     grepl("Energiecoach Gesamt", retrofit_project_name) ~ "Energiecoach Gesamtsanierung",
+    grepl("Wärmedämmung", retrofit_project_name) ~ "Wärmedämmung",
     grepl("GEAK", retrofit_project_name) ~ "GEAK Analyse",
     TRUE ~ retrofit_project_name
   ))|>
@@ -443,7 +446,7 @@ retrofit_mean_hepi <- energy_modelling |>
                                              "Building with three or more apartments"))) |>
   dplyr::rename("Building class" = building_class) |>
   spread(retrofitted, `Mean HEPI (kWh/m2/year)`) |>
-  rename(`Retrofit` = `TRUE`, `Non-retrofit` = `FALSE`, ) |>
+  rename(`Retrofit` = `Yes`, `Non-retrofit` = `No`, ) |>
   mutate(`Difference in %` = 100 * (`Retrofit` - `Non-retrofit`) / `Non-retrofit`) |>
   knitr::kable(format = "html", digits = 1)
 
@@ -459,7 +462,7 @@ retrofit_mean_hepi
 #| label: figure-retrofitting
 
 retrofit_before_after <- energy_modelling |>
-  filter(retrofitted == TRUE) |>
+  filter(retrofitted == "Yes") |>
   arrange(desc(egid)) |>
   distinct(egid, survey_year, energy_consumed_measured_mwh) |>
   pivot_wider(names_from = survey_year, names_prefix = "energy_consumed_measured_mwh_", values_from = energy_consumed_measured_mwh) 
@@ -524,6 +527,40 @@ Evaluation of models tried so far:
 :::
 
 # AutoML (with h2o)
+
+## Results Step 1
+
+Train models with three different settings of variable selection:
+
+-   With all predicotors
+
+-   Without retrofit predictor
+
+-   Without social indicators (youth ratio, elderly ratio, etc.)
+
+## Evaluation (on training set)
+
+Top 10 models on (based on RMSE):
+
+```{r}
+
+hec_aml_leaderboard_all %>%
+  arrange(rmse) %>%
+  ungroup() |>
+  slice_head(n = 10) %>%
+  select(approach, algo, rmse, mae, rmsle) |>
+  knitr::kable(format = "html", digits = 2)
+
+
+```
+
+## Observations
+
+-   Best three models (RMSE) are without social indicators. Hypothesis: They do not improve the model because they are on hectare level.
+
+-   Model perfomance gets worse when removing retrofit information.
+
+-   When considering MAE, which is robust to outliers, the leaderboard changes (but still models without social indicators perform best).
 
 ## Metrics of best model per algorithm (on test)
 

@@ -53,8 +53,8 @@ calc_metrics <- function(model, data, fitted_values) {
                            MAPE = mape)
   
   # calculate metrics of current approach
-  current_actual <- hec_all_fit_df$hec
-  current_predicted <- hec_all_fit_df$hec_pred_current_method
+  current_actual <- data$hec
+  current_predicted <- data$hec_pred_current_method
   current_algo = 
     
     # calculate R-squared

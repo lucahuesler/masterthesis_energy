@@ -12,6 +12,7 @@ book:
     - abstract.qmd
     - declaration.qmd
     - acknowledgements.qmd
+    #- 00-list-of-abbreviations
     - 01-Introduction.qmd
     - 02-TheoreticalBackground.qmd
     - 03-Methodology.qmd
@@ -59,4 +60,5 @@ execute:
 # definiing location of figure and table captures
 fig-cap-location: bottom
 tbl-cap-location: bottom
-  
+
+# font

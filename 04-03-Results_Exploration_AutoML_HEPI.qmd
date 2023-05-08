@@ -29,16 +29,19 @@ energy_modelling <- energy_modelling |>
          municipality_name, 
          building_class, 
          construction_year, 
-         coordinate_e, 
-         coordinate_n, 
-         num_dwellings, 
          meters_above_sealevel, 
          energy_production_solar_mwh, 
          energy_consumed_hot_water_mwh,
          retrofitted,
          hdd,
+         foreign_ratio,
+         household_1_person_ratio,
+         elderly_ratio,
+         youth_ratio,
+         residence_less_1_year_ratio,
          hepi_pred_current_method,
-         hec_pred_current_method)
+         hec_pred_current_method,
+         stand_alone)
 
 
 # h2o split
@@ -56,97 +59,453 @@ vars <- names(energy_modelling)
 # predictor variables for hepi overall
 predictors_hepi_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method", "heated_area_m2"))]
 
-
+# without retrofit
 predictors_hepi_without_retrofit <- predictors_hepi_all[-which(predictors_hepi_all == "retrofitted")]
+
+
+# without social indicators
+predictors_without_social <- predictors_hepi_all[-which(predictors_hepi_all %in% c("foreign_ratio","household_1_person_ratio","elderly_ratio","youth_ratio","residence_less_1_year_ratio"))]
+
+
+# without stand alone
+predictors_hepi_without_standalone <- predictors_hepi_all[-which(predictors_hepi_all == "stand_alone")]
 
 ```
 
+
+## Fitting
 ```{r}
 # With complete data and all predictors
 hepi_all_aml_results <- run_h2o_automl(target = "hepi", 
                                       predictors = predictors_hepi_all, 
                                       data = train, 
-                                      runtime = 36000)
+                                      runtime = 20)
 
 
 hepi_all_aml <- hepi_all_aml_results$aml
-hepi_all_aml_leaderboard <- hepi_all_aml_results$leaderboard |>
+hepi_all_aml_leaderboard <- hepi_all_aml |>
+  h2o.get_leaderboard(extra_columns = 'algo') |>
     as.data.frame() |>
-  mutate(approach = "hepi all predictors")
+  mutate(approach = "All predictors")
 
 
 # Without predictor "retrofitted"
-# hepi_without_retrofit_aml_results <- run_h2o_automl(target = "hepi",
-#                                                    predictors = predictors_hepi_without_retrofit,
-#                                                    data = train,
-#                                                    runtime = 120)
-# 
-# 
-# hepi_without_retrofit_aml <- hepi_without_retrofit_aml_results$aml
-# hepi_without_retrofit_aml_leaderboard <- hepi_without_retrofit_aml_results$leaderboard |> 
-#   as.data.frame() |>
-#   mutate(approach = "hepi without retrofit")
+hepi_without_retrofit_aml_results <- run_h2o_automl(target = "hepi",
+                                                   predictors = predictors_hepi_without_retrofit,
+                                                   data = train,
+                                                   runtime = 20)
 
+
+hepi_without_retrofit_aml <- hepi_without_retrofit_aml_results$aml
+hepi_without_retrofit_aml_leaderboard <- hepi_without_retrofit_aml |>
+  h2o.get_leaderboard(extra_columns = 'algo') |>
+  as.data.frame() |>
+  mutate(approach = "Without retrofit")
+
+# Without socio-economic predictors 
+hepi_without_social_aml_results <- run_h2o_automl(target = "hepi",
+                                                   predictors = predictors_without_social,
+                                                   data = train,
+                                                   runtime = 20)
+
+
+hepi_without_social_aml <- hepi_without_social_aml_results$aml
+hepi_without_social_aml_leaderboard <- hepi_without_social_aml |>
+  h2o.get_leaderboard(extra_columns = 'algo') |>
+  as.data.frame() |>
+  mutate(approach = "Without social indicators")
+
+# Without stand_alone 
+hepi_without_stand_alone_aml_results <- run_h2o_automl(target = "hepi",
+                                                   predictors = predictors_hepi_without_standalone,
+                                                   data = train,
+                                                   runtime = 20)
+
+
+hepi_without_standalone_aml <- hepi_without_stand_alone_aml_results$aml
+hepi_without_standalone_aml_leaderboard <- hepi_without_standalone_aml |>
+  h2o.get_leaderboard(extra_columns = 'algo') |>
+  as.data.frame() |>
+  mutate(approach = "Without stand alone")
 
 ```
 
-```{r}
-
-hepi_all_aml_leaderboard
-
-```
 ## Best model
-
 ```{r}
-hepi_all_aml_best_model <- h2o.get_best_model(hepi_all_aml)
-hepi_all_aml_best_model_xgb <- h2o.get_best_model(hepi_all_aml, algorithm = "xgboost")
+hepi_all_aml_best_model <- h2o.get_best_model(hepi_without_retrofit_aml)
+hepi_all_aml_best_model_without_retrofit <- h2o.get_best_model(hepi_without_retrofit_aml)
+hepi_all_aml_best_model_without_social <- h2o.get_best_model(hepi_without_social_aml)
+hepi_without_standalone_aml_best_model <- h2o.get_best_model(hepi_without_standalone_aml)
+
+
+
+h2o.saveModel(hepi_all_aml_best_model, "models/auto_ml_models/hepi_all_predictors/")
+h2o.saveModel(hepi_all_aml_best_model_without_retrofit, "models/auto_ml_models/hepi_without_retrofit/")
+h2o.saveModel(hepi_all_aml_best_model_without_social, "models/auto_ml_models/hepi_without_social/")
+h2o.saveModel(hepi_without_standalone_aml_best_model, "models/auto_ml_models/hepi_without_social/")
 ```
+
 
 
 ## Prediction
-
 ```{r}
-all_metrics <- data.frame()
+# Define a list of dataframes
+leaderboards <- list(
+  hepi_all_aml_leaderboard,
+  hepi_without_retrofit_aml_leaderboard,
+  hepi_without_social_aml_leaderboard,
+  hepi_without_standalone_aml_leaderboard
+)
 
-for (i in 1:nrow(hepi_all_aml_leaderboard)) {
-  
-  # Get the model id and algorithm for the current model
-  model_id <- as.character(hepi_all_aml_leaderboard[i, "model_id"])
-  algorithm <- as.character(hepi_all_aml_leaderboard[i, "algorithm"])
-  print(model_id)
-  
-  # Get the model from the H2O AutoML object
-  model <- h2o.getModel(model_id)
-  
-  # Save the model 
-  h2o.saveModel(model, paste0("models/auto_ml_models/hepi_all_", model_id,"_",Sys.Date()))
-  
-  # make predictions
-  predictions <- h2o.predict(model, test)
-  
-  # Call the calc_metrics function to get the metrics
-  metrics <- calc_metrics(model, test, predictions)
-  
-  # Add the metrics to the data frame
-  all_metrics <- rbind(all_metrics, metrics)
-  
-  # remove duplicates
-  all_metrics <- all_metrics |>
-    dplyr::distinct() |>
-    dplyr::arrange(RMSE)
+# Define an empty dataframe to store the results
+all_metrics_hepi <- data.frame()
+
+# Define the function to process each dataframe
+process_leaderboard <- function(df) {
+  # Loop over the rows of the dataframe
+  print("Starting process_leaderboard()...")
+  for (i in 1:nrow(df)) {
+    # Extract the model_id, algorithm, and approach columns
+    model_id <- as.character(df[i, "model_id"])
+    algorithm <- as.character(df[i, "algo"])
+    approach <- as.character(df[i, "approach"])
+    print(paste0(model_id, " / ", algorithm, " / ", approach))
     
+    # Get the model from the H2O AutoML object
+    model <- h2o.getModel(model_id)
+    
+    # Save the model 
+    # h2o.saveModel(model, paste0("models/auto_ml_models/hepi_all_", model_id,"_",Sys.Date()))
+    
+    # Make predictions on the test dataset
+    predictions <- h2o.predict(model, test)
+    
+    # Call the calc_metrics function to get the metrics
+    metrics <- calc_metrics(model, test, predictions, target = "HEPI") |>
+      bind_cols(Algorithm = algorithm) |>
+      bind_cols(Approach = approach)
+    
+    # Add the metrics to the data frame
+    all_metrics_hepi <<- rbind(all_metrics_hepi, metrics) 
+    
+    # Remove duplicates from the data frame and sort by RMSE
+    all_metrics_hepi <<- all_metrics_hepi |>
+      dplyr::distinct() |>
+      dplyr::arrange(RMSE)
+    
+  }
   
-  print(paste0(model_id, " done!"))
+  # Return the all_metrics dataframe
+  return(all_metrics_hepi)
 }
+
+# Loop over the leaderboards and process each one
+lapply(leaderboards, process_leaderboard)
+
+write_csv(all_metrics_hepi, "models/auto_ml_models/all_hepi_metrics_20230408.csv")
 ```
 
 
-## Explain models
+# Modelling on subsets
+As result from the first step, we model without social indicators.
+
+## Modelling per survey year
+### Fitting
+```{r}
+# Split the data by survey year
+data_by_survey_year <- split(energy_modelling, energy_modelling$survey_year)
+
+```
 
 ```{r}
-# preds <- h2o.predict(hepi_all_aml_best_model_xgb, test)
-# h2o.explain_row(hepi_all_aml_best_model_xgb, test, row_index = 10102)
-# 
-# h2o.explain(hepi_all_aml_best_model, test)
+# Run AutoML for each survey year separately
+models_by_survey_year <- lapply(data_by_survey_year, function(df) {
+  # Prepare data
+  df <- df %>%
+  select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents_mean, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         municipality_name, 
+         building_class, 
+         construction_year, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         hdd,
+         foreign_ratio,
+         household_1_person_ratio,
+         elderly_ratio,
+         youth_ratio,
+         residence_less_1_year_ratio,
+         hepi_pred_current_method,
+         hec_pred_current_method,
+         stand_alone)
+  
+  # Split data
+  df_h2o <- as.h2o(df)
+  split <- h2o.splitFrame(df_h2o, seed = 1)
+  train <- split[[1]]
+  test <- split[[2]]
+  
+  # Run AutoML
+  vars <- names(df)
+  predictors <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
+  
+  aml_results <- run_h2o_automl(target = "hepi", 
+                                predictors = predictors, 
+                                data = train, 
+                                runtime = 20)
+  
+  # Return results
+  return(aml_results$aml)
+})
+
 ```
 
+### Leaderboard
+
+```{r}
+hepi_aml_survey_year_2016_leaderboard <-  h2o.get_leaderboard(models_by_survey_year$`2016`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "2016")
+
+hepi_aml_survey_year_2018_leaderboard <-  h2o.get_leaderboard(models_by_survey_year$`2018`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "2018")
+
+hepi_aml_survey_year_2020_leaderboard <-  h2o.get_leaderboard(models_by_survey_year$`2020`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "2020")
+```
+
+
+### Best model
+```{r}
+hepi_aml_survey_year_2016_best_model <- h2o.get_best_model(models_by_survey_year$`2016`)
+hepi_aml_survey_year_2018_best_model <- h2o.get_best_model(models_by_survey_year$`2018`)
+hepi_aml_survey_year_2020_best_model <- h2o.get_best_model(models_by_survey_year$`2020`)
+
+
+h2o.saveModel(hepi_aml_survey_year_2016_best_model, "models/auto_ml_models/hepi_subset_survey_year_2016_best_model/")
+h2o.saveModel(hepi_aml_survey_year_2018_best_model, "models/auto_ml_models/hepi_subset_survey_year_2018_best_model/")
+h2o.saveModel(hepi_aml_survey_year_2020_best_model, "models/auto_ml_models/hepi_subset_survey_year_2020_best_model/")
+```
+
+### Prediction
+```{r}
+# Define a list of dataframes
+leaderboards <- list(
+  hepi_aml_survey_year_2016_leaderboard,
+  hepi_aml_survey_year_2018_leaderboard,
+  hepi_aml_survey_year_2020_leaderboard
+)
+
+# Define an empty dataframe to store the results
+all_metrics_hepi_subset_survey_year <- data.frame()
+
+# Define the function to process each dataframe
+process_leaderboard <- function(df) {
+  # Loop over the rows of the dataframe
+  print("Starting process_leaderboard()...")
+  for (i in 1:nrow(df)) {
+    # Extract the model_id, algorithm, and approach columns
+    model_id <- as.character(df[i, "model_id"])
+    algorithm <- as.character(df[i, "algo"])
+    approach <- as.character(df[i, "approach"])
+    print(paste0(model_id, " / ", algorithm, " / ", approach))
+    
+    # Get the model from the H2O AutoML object
+    model <- h2o.getModel(model_id)
+    
+    # Save the model 
+    # h2o.saveModel(model, paste0("models/auto_ml_models/hepi_all_", model_id,"_",Sys.Date()))
+    
+    # Make predictions on the test dataset
+    predictions <- h2o.predict(model, test)
+    
+    # Call the calc_metrics function to get the metrics
+    metrics <- calc_metrics(model, test, predictions, target = "HEPI") |>
+      bind_cols(Algorithm = algorithm) |>
+      bind_cols(Approach = approach)
+    
+    # Add the metrics to the data frame
+    all_metrics_hepi_subset_survey_year <<- rbind(all_metrics_hepi_subset_survey_year, metrics) 
+    
+    # Remove duplicates from the data frame and sort by RMSE
+    all_metrics_hepi_subset_survey_year <<- all_metrics_hepi_subset_survey_year |>
+      dplyr::distinct() |>
+      dplyr::arrange(RMSE)
+    
+  }
+  
+  # Return the all_metrics dataframe
+  return(all_metrics_hepi_subset_survey_year)
+}
+
+# Loop over the leaderboards and process each one
+lapply(leaderboards, process_leaderboard)
+
+write_csv(all_metrics_hepi_subset_survey_year, "models/auto_ml_models/all_metrics_hepi_subset_survey_year.csv")
+```
+
+## Modelling per building class
+### Fitting
+```{r}
+# Split the data by survey year
+data_by_building_class <- split(energy_modelling, energy_modelling$building_class)
+
+```
+
+```{r}
+# Run AutoML for each survey year separately
+models_by_building_class <- lapply(data_by_building_class, function(df) {
+  # Prepare data
+  df <- df %>%
+    select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents_mean, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         municipality_name, 
+         building_class, 
+         construction_year, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         hdd,
+         foreign_ratio,
+         household_1_person_ratio,
+         elderly_ratio,
+         youth_ratio,
+         residence_less_1_year_ratio,
+         hepi_pred_current_method,
+         hec_pred_current_method,
+         stand_alone)
+  
+  # Split data
+  df_h2o <- as.h2o(df)
+  split <- h2o.splitFrame(df_h2o, seed = 1)
+  train <- split[[1]]
+  test <- split[[2]]
+  
+  # Run AutoML
+  # variable selection
+  vars <- names(energy_modelling)
+  
+  # predictor variables for hepi overall
+  predictors_hepi_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
+  
+  
+  # without social indicators
+  predictors_without_social <- predictors_hepi_all[-which(predictors_hepi_all %in% c("foreign_ratio","household_1_person_ratio","elderly_ratio","youth_ratio","residence_less_1_year_ratio"))]
+
+
+  aml_results <- run_h2o_automl(target = "hepi", 
+                                predictors = predictors_without_social, 
+                                data = train, 
+                                runtime = 20)
+  
+  # Return results
+  return(aml_results$aml)
+})
+
+```
+
+
+### Leaderboard
+
+```{r}
+hepi_aml_building_class_subset_1_flat_leaderboard <-  h2o.get_leaderboard(models_by_building_class$`1110`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "Single-family")
+
+hepi_aml_building_class_subset_2_flats_leaderboard <- h2o.get_leaderboard(models_by_building_class$`1121`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "Multi-family two flats")
+
+hepi_aml_building_class_subset_3_or_more_flats_leaderboard <- h2o.get_leaderboard(models_by_building_class$`1122`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "Multi-family three or more flats")
+```
+
+
+### Best model
+```{r}
+hepi_aml_building_class_subset_1_flat_best_model <- h2o.get_best_model(models_by_building_class$`1110`)
+hepi_aml_building_class_subset_2_flats_best_model <- h2o.get_best_model(models_by_building_class$`1121`)
+hepi_aml_building_class_subset_3_or_more_flats_best_model <- h2o.get_best_model(models_by_building_class$`1122`)
+
+
+h2o.saveModel(hepi_all_aml_best_model_without_retrofit, "models/auto_ml_models/hepi_subset_1_flat_best_model/")
+h2o.saveModel(hepi_all_aml_best_model_without_social, "models/auto_ml_models/hepi_subset_2_flats_best_model/")
+h2o.saveModel(hepi_without_standalone_aml_best_model, "models/auto_ml_models/hepi_subset_3_or_more_flats_best_model/")
+```
+
+### Prediction
+```{r}
+# Define a list of dataframes
+leaderboards <- list(
+  hepi_aml_building_class_subset_1_flat_leaderboard,
+  hepi_aml_building_class_subset_2_flats_leaderboard,
+  hepi_aml_building_class_subset_3_or_more_flats_leaderboard
+)
+
+# Define an empty dataframe to store the results
+all_metrics_hepi_subset_building_class <- data.frame()
+
+# Define the function to process each dataframe
+process_leaderboard <- function(df) {
+  # Loop over the rows of the dataframe
+  print("Starting process_leaderboard()...")
+  for (i in 1:nrow(df)) {
+    # Extract the model_id, algorithm, and approach columns
+    model_id <- as.character(df[i, "model_id"])
+    algorithm <- as.character(df[i, "algo"])
+    approach <- as.character(df[i, "approach"])
+    print(paste0(model_id, " / ", algorithm, " / ", approach))
+    
+    # Get the model from the H2O AutoML object
+    model <- h2o.getModel(model_id)
+    
+    # Save the model 
+    # h2o.saveModel(model, paste0("models/auto_ml_models/hepi_all_", model_id,"_",Sys.Date()))
+    
+    # Make predictions on the test dataset
+    predictions <- h2o.predict(model, test)
+    
+    # Call the calc_metrics function to get the metrics
+    metrics <- calc_metrics(model, test, predictions, target = "HEPI") |>
+      bind_cols(Algorithm = algorithm) |>
+      bind_cols(Approach = approach)
+    
+    # Add the metrics to the data frame
+    all_metrics_hepi_subset_building_class <<- rbind(all_metrics_hepi_subset_building_class, metrics) 
+    
+    # Remove duplicates from the data frame and sort by RMSE
+    all_metrics_hepi_subset_building_class <<- all_metrics_hepi_subset_building_class |>
+      dplyr::distinct() |>
+      dplyr::arrange(RMSE)
+    
+  }
+  
+  # Return the all_metrics dataframe
+  return(all_metrics_hepi_subset_building_class)
+}
+
+# Loop over the leaderboards and process each one
+lapply(leaderboards, process_leaderboard)
+
+write_csv(all_metrics_hepi_subset_building_class, "models/auto_ml_models/all_metrics_hepi_subset_building_class.csv")
+```

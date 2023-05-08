@@ -159,41 +159,67 @@ h2o.saveModel(hec_without_standalone_aml_best_model, "models/auto_ml_models/hec_
 
 ## Prediction
 
-
 ```{r}
+# Define a list of dataframes
+leaderboards <- list(
+  hec_all_aml_leaderboard,
+  hec_without_retrofit_aml_leaderboard,
+  hec_without_social_aml_leaderboard,
+  hec_without_standalone_aml_leaderboard
+)
+
+# Define an empty dataframe to store the results
 all_metrics <- data.frame()
 
-for (i in 1:nrow(hec_aml_leaderboard_all)) {
-  
-  # Get the model id and algorithm for the current model
-  model_id <- as.character(hec_all_aml_leaderboard[i, "model_id"])
-  algorithm <- as.character(hec_all_aml_leaderboard[i, "algorithm"])
-  print(model_id)
-  
-  # Get the model from the H2O AutoML object
-  model <- h2o.getModel(model_id)
-  
-  # Save the model 
-  # h2o.saveModel(model, paste0("models/auto_ml_models/hec_all_", model_id,"_",Sys.Date()))
-  
-  # make predictions
-  predictions <- h2o.predict(model, test)
-  
-  # Call the calc_metrics function to get the metrics
-  metrics <- calc_metrics(model, test, predictions)
-  
-  # Add the metrics to the data frame
-  all_metrics <- rbind(all_metrics, metrics)
-  
-  # remove duplicates
-  all_metrics <- all_metrics |>
-    dplyr::distinct() |>
-    dplyr::arrange(RMSE)
+# Define the function to process each dataframe
+process_leaderboard <- function(df) {
+  # Loop over the rows of the dataframe
+  print("Starting process_leaderboard()...")
+  for (i in 1:nrow(df)) {
+    # Extract the model_id, algorithm, and approach columns
+    model_id <- as.character(df[i, "model_id"])
+    algorithm <- as.character(df[i, "algo"])
+    approach <- as.character(df[i, "approach"])
+    print(paste0(model_id, " / ", algorithm, " / ", approach))
     
+    # Get the model from the H2O AutoML object
+    model <- h2o.getModel(model_id)
+    
+    # Save the model 
+    # h2o.saveModel(model, paste0("models/auto_ml_models/hec_all_", model_id,"_",Sys.Date()))
+    
+    # Make predictions on the test dataset
+    predictions <- h2o.predict(model, test)
+    
+    # Call the calc_metrics function to get the metrics
+    metrics <- calc_metrics(model, test, predictions) |>
+      bind_cols(Algorithm = algorithm) |>
+      bind_cols(Approach = approach)
+    
+    # Add the metrics to the data frame
+    all_metrics <<- rbind(all_metrics, metrics) 
+    
+    # Remove duplicates from the data frame and sort by RMSE
+    all_metrics <<- all_metrics |>
+      dplyr::distinct() |>
+      dplyr::arrange(RMSE)
+    
+    # Print the updated all_metrics dataframe
+    print(all_metrics)
+    
+    #print(paste0(model_id, " done!"))
+  }
   
-  #print(paste0(model_id, " done!"))
+  # Return the all_metrics dataframe
+  return(all_metrics)
 }
+
+# Loop over the leaderboards and process each one
+lapply(leaderboards, process_leaderboard)
+
+write_csv(all_metrics, "models/auto_ml_models/all_hec_metrics_20230408.csv")
 ```
+
 
 
 ## Explain models

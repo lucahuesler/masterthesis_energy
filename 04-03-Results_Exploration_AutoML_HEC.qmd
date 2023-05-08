@@ -270,6 +270,7 @@ models_by_survey_year <- lapply(data_by_survey_year, function(df) {
 
 ## Modelling per building class
 
+### Fitting
 ```{r}
 # Split the data by survey year
 data_by_building_class <- split(energy_modelling, energy_modelling$building_class)
@@ -328,7 +329,7 @@ models_by_building_class <- lapply(data_by_building_class, function(df) {
   aml_results <- run_h2o_automl(target = "hec", 
                                 predictors = predictors_without_social, 
                                 data = train, 
-                                runtime = 3600)
+                                runtime = 1200)
   
   # Return results
   return(aml_results$aml)
@@ -336,5 +337,20 @@ models_by_building_class <- lapply(data_by_building_class, function(df) {
 
 ```
 
+### Leaderboard
+
+```{r}
+hec_aml_building_class_subset_1_flat_leaderboard <-  h2o.get_leaderboard(models_by_building_class$`1110`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "Single-family")
+
+hec_aml_building_class_subset_2_flats_leaderboard <- h2o.get_leaderboard(models_by_building_class$`1121`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "Multi-family two flats")
+
+hec_aml_building_class_subset_3_or_more_flats_leaderboard <- h2o.get_leaderboard(models_by_building_class$`1122`, extra_columns = 'algo')  |>
+  as.data.frame() |>
+  mutate(approach = "Multi-family three or more flats")
+```
 
 

@@ -790,10 +790,26 @@ ggplot(long_energy_clean_17, aes(x = value)) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
 ```
+
+## Clean year of installation
+Impute mean for missing and values less than 1950 in year_of_installation.
+
+```{r}
+summary(energy_clean_17$year_of_installation)
+
+energy_clean_18 <- energy_clean_17 |>
+  mutate(year_of_installation = case_when(
+  is.na(year_of_installation) | year_of_installation < 1950 ~ as.integer(mean(year_of_installation, na.rm = TRUE)),
+  TRUE ~ year_of_installation
+))
+
+summary(energy_clean_18$year_of_installation)
+```
+
 ## Save data
 
 ```{r}
 write_rds(energy_clean_06, "data/energy_classification_energy_source.rds")
-write_rds(energy_clean_17, "data/energy_modelling.rds")
-write_delim(energy_clean_17, "data/energy_modelling.csv")
+write_rds(energy_clean_18, "data/energy_modelling.rds")
+write_delim(energy_clean_18, "data/energy_modelling.csv")
 ```

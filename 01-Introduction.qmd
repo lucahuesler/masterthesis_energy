@@ -16,134 +16,90 @@ The {#rmd-basics} text after the chapter declaration will allow us to link throu
 
 ## General Background {#sec-general-background}
 
-\[#TODO\]
+According to the latest report of the Intergovernmental Panel on Climate Change (IPCC) *"human activities, principally through emissions of greenhouse gases, have unequivocally caused global warming, with global surface temperature reaching 1.1°C above 1850--1900 in 2011--2020."* [@mukherji2023, p.4]. Global warming is happening at accelerated speed and its consequences become increasingly visible. The building sector is one of the main contributors to global greenhouse gas emissions [@zhong2021]. This is especially true for Switzerland, where the building sector contributes approximately 25.8% of the country's total emissions [@federalofficefortheenvironment2023a].
 
--   Global background
+By signing the United Nations Paris agreement, Switzerland committed to reducing its emissions by half until 2030 compared to the level of 1990 [@federalofficefortheenvironment2023b]. Furthermore, the Federal Council decided in 2019 that Switzerland aims for the so-called *net zero target* and thereby should reduce its emissions to net zero by 2050 [@federalofficefortheenvironment2019a][^01-introduction-1].
 
--   National background Switzerland
+[^01-introduction-1]: As defined by @federalofficefortheenvironment2023d, the net zero target means that "*from 2050 Switzerland aims to emit no more greenhouse gases into the atmosphere than can be captured and stored in natural and technological sinks ('net zero emissions').*"
+
+On June 13th 2021, Switzerland voted on the *Federal Act on the Reduction of Greenhouse Gas Emissions (CO~2~ Act)*. The Act also included measures concerning the building sector: For new buildings and for changes of the heating system in older buildings, the installation of non-renewable heating systems would no longer be allowed [@federalofficefortheenvironment2021]. However, the CO~2~ Act was rejected by the Swiss electorate [@bundeskanzlei2023]. This result also had consequences for the energy policies of the Cantons. As stated in the newest version of the Cantonal Energy Planning Report of Basel-Landschaft, the rejection of the CO~2~ Act increased the pressure on the Cantons to take action, particularly in the building sector [@regierungsratdeskantonsbasel-landschaft2022]. According to Switzerland's long-term climate strategy, the Cantons are responsible for reducing the emissions of the building sector in order to meet the the country's net zero target [@federalcouncilofswitzerland2021].
 
 ## Energy policy in the Canton of Basel-Landschaft {#sec-energy-policy-in-the-canton-of-basel-landschaft}
 
-In 2021, the cantonal government of Basel-Landschaft signed the Climate Charter of the Northwestern Intergovernmental Conference together with the governments of the cantons of Aargau, Basel-Stadt, Jura and Solothurn. In the Charter, the five cantons agree on the net zero target by 2050[^01-introduction-1]. Thus, the energy supply of the participating cantons should be switched to 100% renewable energy sources by no later than 2050 [@nordwestschweizerregierungskonferenz2021].
+In 2021, the cantonal government of Basel-Landschaft, together with the governments of the Cantons of Aargau, Basel-Stadt, Jura and Solothurn, signed the Climate Charter of the Northwestern Intergovernmental Conference. In accordance with the goals on the national level, the five cantons committed on reaching the net zero target by 2050. Furthermore, they agreed that the energy supply of the signing Cantons should be switched to 100% renewable energy sources by no later than 2050 [@nordwestschweizerregierungskonferenz2021].
 
-[^01-introduction-1]: As defined by [@2050ind], the net zero target means that "*from 2050 Switzerland aims to emit no more greenhouse gases into the atmosphere than can be captured and stored in natural and technological sinks ('net zero emissions').*"
-
-The current legally valid version of the cantonal energy law defines in [§ 2 (1-4)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) the following goals [@landratdeskantonsbasel-landschaft]:
+The current legally valid version of the cantonal energy law defines in [§ 2 (1-4)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) the following goals [@landratdeskantonsbasel-landschaft2020]:
 
 1.  The end energy consumption (german: Endenergieverbrauch) in the canton, excluding mobility, should be reduced by 40% by 2050 compared to 2000 (6,500 GWh).
-2.  The share of renewable energies in total energy consumption (excluding mobility) should be increased to at least 40% by 2030.
-3.  In the building sector, the heating demand for **new buildings** should be reduced to an average of 20 kilowatt hours (kWh) per square meter of energy reference area per year by 2030.
-4.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.
+2.  The share of renewable energies in total energy consumption, excluding mobility, should be increased to at least 40% by 2030.
+3.  In the building sector, the heating demand for **new buildings** should be reduced to an average of 20 kilowatt hours (kWh) per square meter of energy reference area (ERA) per year by 2030.
+4.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of ERA per year by 2050.
 
-In 2022, the cantonal council published a new version of the energy planning report, in which the above targets were reviewed for compatibility with the net zero target. The report states that goal 1 and 3 are not compatible with the net zero target [@regierungsratdeskantonsbasel-landschaft2022]. As a result of this finding, the cantonal government submitted a proposal on behalf of the Landrat in which the two goals are changed as follows [@regierungsratdeskantonsbasel-landschaft]:
+However, the latest version of the energy planning report reviewed these targets for compatibility with the net-zero target. The report states that the first and third goal above are not compatible with the net zero target [@regierungsratdeskantonsbasel-landschaft2022]. As a result of this finding, the cantonal government submitted a proposal on behalf of the cantonal parliament (german: Landratsvorlage) in which the two goals are adapted as follows [@regierungsratdeskantonsbasel-landschaft2022b]:
 
 1.  The end energy consumption in the canton, excluding mobility, should be reduced by **70%** by 2050 compared to 2000 (6,500 GWh).
-2.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.
+2.  In the building sector, the heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050[^01-introduction-2].
 
-### Cantonal energy planning {#sec-cantonal-energy-planning}
+[^01-introduction-2]: In difference with the goal in the current version of the cantonal energy law, the limitation to non-renewable has been removed. Thus, the new version of the goal would be transformed into a pure efficiency goal of 40 kWh/m^~2~^. As stated by the cantonal government, this goal is ambitious and would imply a comprehensive renovation of the building stock [@regierungsratdeskantonsbasel-landschaft2022a].
 
-With the total revision of the cantonal energy law in 2016, the new [§ 3](https://bl.clex.ch/app/de/texts_of_law/490/art/3) on energy planning of the canton was introduced. This § 3 obliges the cantonal government to create an energy plan on the basis of the federal requirements and frameworks and to report the results to the cantonal council. Furthermore, according to [§ 2 (6)](https://bl.clex.ch/app/de/texts_of_law/490/art/2) of the cantonal energy law, the government council must also report periodically on the effectiveness of the (previous) measures.
+To achieve the above mentioned goals, the cantonal building stock has to be transformed fundamentally. In 2020, two thirds of about 65'000 residential buildings in the canton were heated by fossil energy sources [@statistischesamtdeskantonsbasel-landschaft2022]. As shown in @fig-heat-energy-sources-2020, the share buildings heated by non-renewable energy sources is particularly high for buildings built before 1980.
 
-As integral part of the energy planning, the canton delivers a energy statistics since 1990. Until 2010, the statistics was mainly based on a top-down approach. Since 2010, a bottom-up approach has been introduced.
+![Residential buildings by heat energy source and construction period, as of 2020 [@statistischesamtdeskantonsbasel-landschaft2022]](figures/01-et-mix-wohngebaeude.png){#fig-heat-energy-sources-2020 fig.pos="h" fig-align="center" width="80%"}
 
-### Cantonal energy system {#sec-cantonal-energy-system}
-
-In 2020, the gross energy consumption of the canton was about 7600 gigawatt hours, which corresponds to a reduction of 4.4% compared to 2018 [@statistischesamtdeskantonsbasel-landschaft2022]. The following figure \@ref(fig:energieflussdiagramm) provides an overview of the cantonal energy system.
-
-```{r energieflussdiagramm, fig.cap="Energieflussdiagramm", out.width="0.2\\linewidth", fig.align="center"}
-#> knitr::include_graphics(path = "figure/energieflussdiagramm_2020.png")
-```
+Against this background, it's clear that a fundamental change of heating systems is necessary to achieve the national and cantonal climate goals, particularly the net zero target. According to the latest energy planning report, around 1000 heating systems per year change to renewable sources through the cantonal subsidies program *Baselbieter Energiepaket* [@regierungsratdeskantonsbasel-landschaft2022]. However, the heating system replacement rate should be around 1500 buildings per year on average to achieve 100% renewable heating of the building sector by 2050.
 
 ## Problem definition {#sec-problem-definition}
 
-As mentioned in @sec-cantonal-energy-planning, the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 1990[^01-introduction-2]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations <!--# to be verified -->.
+To track progress towards an emission-free building sector, it's crucial to have robust and reliable data. The cantonal energy statistics serves this purpose and acts as a central data basis for evaluating and measuring the impact of the cantonal energy policy as well as energy planning at the cantonal and municipal levels [@statistischesamtdeskantonsbasel-landschaft2022c].
 
-[^01-introduction-2]: The tables and illustrations of the cantonal energy statistics are available at: https://www.statistik.bl.ch/web_portal/8.
+The Canton of Basel-Landschaft conducts a energy statistics already since 1990[^01-introduction-3]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measured data is available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings using energy sources not connected to a grid - such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for 2020, about 40% of the total annual energy consumption was based on estimations [@statistischesamtdeskantonsbasel-landschaft2022b].
 
-Since 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt [@statistischesamtdeskantonsbasel-stadt2022]. The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) <!--# Add footnote about difference between federal RBD and cantonal RBD -->. The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).
+[^01-introduction-3]: For tables and illustrations of the cantonal energy statistics, see @statistischesamtdeskantonsbasel-landschaft2022a.
 
-The measured gas consumption represents the total annual amount of energy in kWh that the energy provider (Industrielle Werke Basel, IWB) delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows:
+In 2010, the estimation method has been revised and adapted in collaboration with the canton of Basel-Stadt [@statistischesamtdeskantonsbasel-stadt2022]. The revised method uses a bottom-up approach based on the cantonal Register of Buildings and Dwellings (RBD) and measured energy consumption data in order to determine heat energy consumption per square meter or heat energy performance indicators (HEPI). The HEPI is then used to estimate the heat energy consumption (HEC) for buildings where measured data is unavailable. The details of the estimation method are documented in the methodological guideline (see @statistischesamtdeskantonsbasel-stadt2017) and discussed further in @sec-current-method.
 
-$$
-\begin{aligned}
-HEC &= Gas_{m}*e + Solar_{Total} - c_{DHW}*N_{I}
-\end{aligned}
-$$ {#eq-hec}
+In general, the current methodology presents a clear and transparent approach for estimating the HEC of the building sector. It offers a precise estimation that can produce satisfactory results at the cantonal level. However at the level of a municipality or of individual buildings, the estimation error may be substantial.
 
-where:
-
--   Gas~m~ = Total gas consumption in kWh as measured by provider (IWB)
-
--   Solar~e~ = Estimated solar production in kWh
-
--   c~DHW~ = Constant estimated factor of DWH per person and year (850 kWh)
-
--   N~I~ = Number of inhabitants
-
-By adjusting the measured gas consumption with @eq-hec, the amount of useful energy (german: Nutzenergie( is obtained. Based on this, the heating energy consumption per square meter of area (HEPI):
-
-$$
-\begin{aligned}
-HEPI = \frac{HEC}{ERA}
-&= \frac{HEC}{GFA*n_{floors}}
-\end{aligned}
-$$ {#eq-hepi}
-
-where:
-
--   HEC = Heat energy consumption in kWh/year
-
--   ERA = Energy reference area in square meters
-
--   GFA = Gross floor area
-
--   n~floors~ = Number of floors
-
-As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate average HEPI each building category (single-family house, multi-family house) and period of construction. The following figure shows the average HEPI for construction period for single-family houses.
-
-<!--# add HEPI figure -->
-
-The current methodology presents a clear and transparent approach for estimating the HEC of the building sector. It offers a precise estimation that can produce satisfactory results at the cantonal level. However at the level of individual buildings, the estimation error may be substantial.
-
-The current method has several shortcomings that limit its accuracy and applicability:
+In particular, we can define the following shortcomings of the current estimation method that potentially limit its accuracy and applicability:
 
 1.  **Averaging the HEPI per construction period**: The HEPI for a specific building may not necessarily be representative of the typical HEPI value for buildings of the same construction period. This could introduce inaccuracies in the estimation of HEC of an individual building.
-2.  **Differences between municipalities:** The current method does not consider potential differences between municipalities that could influence the HEPI. However, it is possible that some municipalities have significantly different factors influencing their HEC, such as different building structures or different energy consumption patterns.
-3.  **Retrofitting is not taken into account**: One major limitation is the lack of information on the influence of retrofitting on energy consumption. Without this information, it is not possible to quantify the effect of retrofitting on energy consumption and make accurate predictions.
-4.  **Socio-economic factors are not considered**: Similar to retrofitting, socio-economic factors and the behavior of inhabitants are not considered explicitly in the current method. Currently, only the number of inhabitants registered per 31 december of the respective year are taken into account in order to estimate the DHW consumption. However, the behaviour and inhabitants as well vacancies of a building can have a substantial influence on HEC.
-5.  **Randomness of weather:** In the current method, patterns is also a challenge to integrate in the current method, which can result in variability in the estimated energy consumption. These limitations highlight the need for further research and development to improve the accuracy and applicability of the current method.
+2.  **Differences between municipalities:** The current method does not explicitly consider potential differences between municipalities that could influence the HEPI. However, it is possible that some municipalities have significantly different factors influencing their HEC, such as different building structures or different energy consumption patterns.
+3.  **Retrofitting is not taken into account**: The method does not include any information on the influence of retrofitting on energy consumption. While the effect of retrofitting may be implicitly reflected in the average HEPI, it is not possible to quantify the effect of retrofitting on energy consumption.
+4.  **Socio-economic factors are not considered**: Similar to retrofitting, socio-economic factors and the behavior of inhabitants are not considered explicitly in the current method. Currently, only the number of inhabitants registered at the end of the respective survey year are taken into account in order to estimate the DHW consumption. However, the behavior of the inhabitants, as well vacancies of a building, can influence the HEC.
+5.  **Randomness of weather:** Like the effect of retrofitting, influences of the weather are implicitly reflected in the measured consumption data. However, the effect of changes in the weather can not be quantified.
 
-Since detailed energy data at the level of individual buildings is becoming increasingly important for energy planning at municipal or neighborhood level, it seems crucial to provide accurate and precise estimations.
+These limitations highlight the need for further research to enhance the current method's accuracy and applicability. As detailed energy data at the level of individual buildings becomes increasingly important for energy planning at municipal or neighborhood level, it seems crucial to provide accurate and precise estimations.
+
+The above considerations represent the starting point for this thesis. In what follows, we aim to study and evaluate new approaches to estimating the heat energy use of residential buildings that can potentially improve the results and reliability of the cantonal energy statistics.
 
 ## Research questions & goals {#sec-research-questions}
 
-On the basis of the considerations in @sec-problem-definition , we will here formulate the research questions and also define the goals of the project from a practical perspective.
+Based on the considerations in @sec-problem-definition , we here formulate the research questions and also define the goals of the project from a practical perspective.
 
-The goal of the present master thesis is to explore and evaluate different state-of-the-art machine learning models for estimating the HEC of residential buildings. Thereby, we seek to present alternative approaches to the current method as outlined in @sec-problem-definition, that can potentially deliver more precise estimations of the HEC and address the above mentioned shortcomings.
+The objective of this Master's thesis is to explore and evaluate different state-of-the-art machine learning models for estimating the HEC of residential buildings. Thereby, we seek to present alternative approaches to the current method as outlined in @sec-problem-definition, that can potentially deliver more precise estimations of the HEC and address the above mentioned shortcomings.
 
-Thus, we here formulate the following two main research questions:
+Consequently, we here formulate the following two main research questions:
 
-``` {#research-question .latex}
-\begin{itemize}
-    \item RQ1: Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?
-    \item RQ2: What features of the are most important for the prediction of HEC in the final model?
-\end{itemize}
-```
+-   ***RQ1:** Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?*
+
+-   ***RQ2:** What predictors are the most important for the prediction of HEC?*
 
 By emphasizing on RQ1, we formulate the following sub questions:
 
-``` {#research-subquestions-rq1 .tex}
-\begin{itemize}
-    \item RQ1.1: Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings compared to the current approach?
-    \item RQ1.2: Can we improve the predictions through feature engineering (e.g. imputation of missing values)?
-\end{itemize}
-```
+-   ***RQ1.1:** Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings compared to the current approach?*
 
-By emphasizing on RQ2, we are specifically interested in features of the input data that are not yet considered in the current approach. Thus, we here formulate the following sub questions:
+-   ***RQ1.2:** Can we improve the predictions through feature engineering (e.g. adding new predictor variables) or by training models on different data subsets?*
 
-``` {#research-subquestions-rq2 .latex}
-\begin{itemize}
-    \item RQ2.1: What importance can be attributed to retrofit features in the final model?
-    \item RQ2.2: What importance can be attributed to socio-economic features in the model? (if data available)
-\end{itemize}
-```
+With regard to RQ2, we are specifically interested in features of the input data that are not yet considered in the current approach. Thus, we here formulate the following sub questions:
+
+-   ***RQ2.1:** What importance can be attributed to retrofit features in the final model?*
+
+-   ***RQ2.2:** What importance can be attributed to socio-economic features in the model?*
+
+From a more practical perspective, we here define the following goals of the master thesis:
+
+1.  Generate more detailed insights on the shortcomings of the current method and outline possible strategies to overcome them.
+
+2.  Provide alternative estimation methods that can be integrated in the current method.
+
+3.  Deliver an example use case for the application of machine learning methods in the field of official statistics.

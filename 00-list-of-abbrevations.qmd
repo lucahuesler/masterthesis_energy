@@ -1,9 +1,39 @@
----
+# List of Abbreviations {.unnumbered}
 
----
-
-|     |     |
-|-----|-----|
-| A   | ABC |
-|     |     |
-|     |     |
+| **Abbreviation** | **Definition**                                         |
+|------------------|--------------------------------------------------------|
+| **AutoML**       | Automated Machine Learning                             |
+| **ANN**          | Artificial neural network                              |
+| **API**          | Automatic Programming Interface                        |
+| **CO~2~**        | Carbon dioxide                                         |
+| **CV**           | Coefficient of Variation                               |
+| **CRISP-DM**     | Cross-Industry Standard Process for Data Mining        |
+| **DEM**          | Digital elevation model                                |
+| **DHW**          | Domestic hot water                                     |
+| **DRF**          | Distributed Random Forest                              |
+| **EGID**         | Swiss Building Identification Number                   |
+| **ERA**          | Energy reference area                                  |
+| **GFA**          | Gross floor area                                       |
+| **GBM**          | Gradient Boosting Machine                              |
+| **GLM**          | Generalized Linear Model                               |
+| **GWh**          | Gigawatt hours                                         |
+| **HEC**          | Heating Energy Consumption                             |
+| **HEPI**         | Heating Energy Performance Indicator                   |
+| **IPCC**         | Intergovernmental Panel on Climate Change              |
+| **KNN**          | K-nearest neighbour                                    |
+| **KWh**          | Kilowatt hours                                         |
+| **MAE**          | Mean Absolute Error                                    |
+| **MAPE**         | Mean Absolute Percentage Error                         |
+| **MFH**          | Multi-Family House                                     |
+| **MLR**          | Multiple linear regression                             |
+| **OECD**         | Organisation for Economic Co-operation and Development |
+| **RBD**          | Register of Buildings and Dwellings                    |
+| **RMSE**         | Root Mean Square Error                                 |
+| **R^2^**         | Coefficient of Determination                           |
+| **SH**           | Space heating                                          |
+| **SFH**          | Single-Family House                                    |
+| **SHAP**         | Shapley Additive Explanations                          |
+| **STA BL**       | Cantonal Office of Statistics Basel-Landschaft         |
+| **STATPOP**      | Population and Housholds Statistics                    |
+| **VIA**          | Variable importance analysis                           |
+| **XGB**          | Extreme Gradient Boosting                              |

@@ -1,85 +1,241 @@
----
-bibliography: references.bib
----
+# Theoretical background {#sec-theoretical-background}
 
-# Theoretical background {#theoretical-background}
+This chapter provides the theoretical background of the thesis: After introducing the general concepts of building energy quantification methods in @sec-building-energy-estimation-methods, the following @sec-current-method presents the current method. @sec-terminology introduces the terminology on energy consumption in the context of this study. Finally in @sec-evaluation-metrics and @sec-model-explainability-techniques, we present the metrics and techniques that were used for model evaluation and explainability.
 
-<!-- Required to number equations in HTML files -->
+## Building energy quantification methods {#sec-building-energy-estimation-methods}
 
-```{=html}
-<script type="text/x-mathjax-config">
-MathJax.Hub.Config({
-  TeX: { equationNumbers: { autoNumber: "AMS" } }
-});
-</script>
-```
-## Building energy estimation methods {#energy-estimation-methods}
+Building energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector [@yu2022]. While we focus exclusively on estimating heat energy in this thesis, it is important to note that energy estimation methods can also include other energy usages suchs as cooling, electricity or DHW. On a general level, the relevant literature differs between top-down and bottom-up approaches (@deb2021; @bourdeau2019; @yu2022). We shortly introduce both approaches here, but since we aim at developing estimation models at the level of individual buildings, we consider bottom-up approaches as more relevant in the context of this study.
 
-Building energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector [@yu2022]. On a global level, the models can be divided into two sub-categories([@deb2021; @bourdeau2019];[@yu2022]):
+### Top-down approaches {#sec-top-down-approaches}
 
-1.  Top-down approaches
-2.  Bottom-up approaches
+Top-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. A typcial example for a top-down approach in Switzerland is presented by [@leaeymann2014]: The study uses the national energy statistics of Switzerland to estimate energy consumption on cantonal level. While for some cantons, the results of the study fit quite well with the data published by the cantons, in other cases the authors observed significant differences (e.g. Basel-Stadt). Top-down approaches can be suitable for large-scale planning, but they often do not provide adequate results as the spatial resolution becomes finer (such as municipality, neighbourhood, buidling level).
 
-In the following, the two approaches will be presented. However the emphasis will be on bottom-up approaches, since we consider bottom-up approaches more relevant in the context of this thesis.
+It is worth nothing however, that top-down approaches can offer a good way for cases where no fine-grained data is available. As noted by @guo2022, this is the case in many developing countries.
 
-### Top-down approaches {#top-down-approaches}
+### Bottom-up approaches {#sec-bottom-up-approaches}
 
-Top-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. [@eymann2014] use a top down approach to estimate energy us on cantonal level derived from the national energy statistics of Switzerland.
+Bottom-up approaches on the other hand use the information of individual buildings as starting point. In earlier stages of building energy modelling, the research focused mainly on physics-based or *white-box* models, where the models try to simulate the energy use of a building by the use of physical conditions and parameters. As indicated by the name of *white-box models*, these models are usually very good in terms of explainability [@yu2022].
 
-### Bottom-up approaches {#bottom-up-approaches}
-
-In earlier stages of building energy modelling, the research focused mainly on physics-based or white-box models, where the models tries to simulate the energy use of a building by the use of physical conditions and parameters. As indicate by the name of *white-box models*, these models are usually very good in terms of explainability [@yu2022].
-
-With the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called *black-box models* became more and more popular.
-
-In the following, we will discuss the advantages and disadvantages of the three model types and provide examples for each of them. Further, we will relate it to our use case as presented in the [problem definition](#problem-definition)
-
-### White-box models {#white-box-models}
-
-Advantages:
-
--   interpretability
-
--   high accuracy
-
--   universality
-
--   no requirement for historical data
-
-Disadvantages:
-
--   Need for detailed building information
-
--   Occupant behaviour is unknown
-
--   randomness of the weather is difficult integrate
-
-### Black-box models
-
-Typically, there are three groups of independent variables:
+With the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called *black-box models* became more and more popular (@yu2022, @bourdeau2019, @dong2016). Typically, there are three groups of independent variables in black-box models [@yu2022]:
 
 1.  Socio-economic parameters (e.g. occupant behaviour)
 2.  Weather parameters
 3.  Building parameters
 
-Among the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN).
+In the modelling process, black-box models usually rely on machine learning algorithms. Among the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN). However in recent research, tree-based methods like random forest (RF) or gradient boost machines (GBM) have shown promising results (@deb2021, @olu-ajayi2022, @gubser2022).
 
-### Grey-box models {#grey-box-models}
+There are also different examples, where white-box and black-box models are combined - so-called *hybrid* or grey-box models. Hybrid models seek to eliminate the weaknesses and combine the strengths of white and black-box models [@chalal2016].
+
+Based on literature review on bottom-up approaches, @tbl-bottom-up-approaches summarizes the most important advantages and disadvantages of the three approaches.
+
++------------------+-------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+| Approach         | Advantages                                                                                                  | Disadvantages                                                                                           |
++==================+:============================================================================================================+=========================================================================================================+
+| White-box models | -   Good interpretability: Allow insights into energy flows and system behavior.                            | -   Need for detailed building information                                                              |
+|                  |                                                                                                             |                                                                                                         |
+|                  | -   Universality: Reliability in extrapolating beyond training data, particularly for unobserved scenarios. | -   Complex model development and calibration processes.                                                |
+|                  |                                                                                                             |                                                                                                         |
+|                  | -   No need for historical data                                                                             | -   Reliance on accurate inputs and assumptions about building properties and behavior.                 |
+|                  |                                                                                                             |                                                                                                         |
+|                  |                                                                                                             | -   Challenging to integrate real-world conditions (e.g. randomness of weather).                        |
++------------------+-------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+| Black-box models | -   Ability to capture complex relationships and patterns in the data.                                      | -   May require a large amount of high-quality training data.                                           |
+|                  |                                                                                                             |                                                                                                         |
+|                  | -   Flexibility to handle large and diverse datasets.                                                       | -   Limited interpretability by relying on machine learning algorithms.                                 |
+|                  |                                                                                                             |                                                                                                         |
+|                  | -   Can account for non-linear and dynamic relationships between variables.                                 | -   Sensitivity to data quality, outliers, and changes in underlying patterns.                          |
++------------------+-------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+| Hybrid Models    | -   Capitalize on the strengths of both data-driven and physics-based approaches.                           | -   Increased complexity in model development and integration of disparate techniques.                  |
+|                  |                                                                                                             |                                                                                                         |
+|                  | -   Improved accuracy by integrating physical constraints into data-driven models.                          | -   Higher computational requirements compared to individual approaches.                                |
+|                  |                                                                                                             |                                                                                                         |
+|                  | -   Enhanced interpretability by incorporating domain knowledge.                                            | -   Challenges in determining the appropriate balance between data-driven and physics-based components. |
++------------------+-------------------------------------------------------------------------------------------------------------+---------------------------------------------------------------------------------------------------------+
+
+: Advantages and disadvantages of bottom-up approaches (Own representation based on literature review) {#tbl-bottom-up-approaches tbl-colwidths="\[15,45,45\]"}
+
+The approach chosen for this master thesis can be considered a black-box model for the following reasons: First, the approach uses a clearly data-driven approach. Second, the approach uses various machine learning algorithms that are typically used in black-box models. And finally, one of the main challenges relies in the interpretability of the models. On the other hand, the current method of the cantonal energy statistics, as presented in the following @sec-current-method, can be considered as a hybrid approach. The approach is easily interpretable and relies on various assumptions (e.g. homogeneity of the energy consumption within construction periods or municipalities) - which are typical characteristics of white-box models. Nevertheless, it heavily relies on the quality of the input data, which is typical for black-box models.
+
+## Current method {#sec-current-method}
+
+At it's core, the current method of the cantonal energy statistics uses a bottom-up approach and is based on the cantonal register of buildings and dwellings (RBD)[^02-theoreticalbackground-1]. The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buildings and further information from other data sources (e.g. the number of inhabitants or characteristics of the heat energy installation).
+
+[^02-theoreticalbackground-1]: The Canton of Basel-Landschaft maintains a cantonal RBD since 2006. In addition to the federal RBD, the cantonal register contains additional information about the energy system of the buildings (e.g. if a building is equipped with a solar installation). For a full list of the additional variables in the cantonal RBD, see [appendix 1](https://bl.clex.ch/frontend/annex_document_dictionaries/14611) of the regulation on the cantonal RBD [@regierungsratdeskantonsbasel-landschaft2021].
+
+The measured gas consumption represents the total annual amount of energy in kWh that the energy provider delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows:
+
+$$
+\begin{aligned}
+HEC &= Gas_{m} + Solar_{e} - c_{DHW}*N_{I}
+\end{aligned}
+$$ {#eq-hec}
+
+where:
+
+-   Gas~m~ = Total gas consumption in kWh as measured by the provider
+
+-   Solar~e~ = Estimated solar production in kWh
+
+-   c~DHW~ = Constant estimated factor of DHW per person and year (850 kWh)
+
+-   N~I~ = Number of inhabitants
+
+Based on this, the heating energy consumption per square meter of area (HEPI) can be calculated:
+
+$$
+\begin{aligned}
+HEPI = \frac{HEC*e}{ERA}
+&= \frac{HEC*e}{GFA*n_{floors}}
+\end{aligned}
+$$ {#eq-hepi}
+
+where:
+
+-   HEC = Heat energy consumption in kWh/year
+
+-   e = Efficiency factor of the installation for heat generation[^02-theoreticalbackground-2]
+
+-   ERA = Energy reference area in square meters
+
+-   GFA = Gross floor area
+
+-   n~floors~ = Number of floors
+
+[^02-theoreticalbackground-2]: The method uses an efficiency factor of 0.85 for installations that are older than 2000 and an efficiency factor of 0.95 for installations that were built after 2000 [@statistischesamtdeskantonsbasel-stadt2017a].
+
+As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate the average HEPI for each building category (single-family house or multi-family house) and period of construction. The following @fig-hepi-energy-stats shows the average HEPI per construction period for single-family houses in 2016, 2018 and 2020.
+
+```{r}
+#| label: fig-hepi-energy-stats
+#| cap-location: bottom
+#| warning: false
+#| fig-cap: HEPI in kWh/m2*year by survey year and construction period.
+
+library(tidyverse)
+Heizkoeffizienten_BL <-  read_csv("data/Heizkoeffizienten_BL.csv")
+
+# Rename the columns to English
+Heizkoeffizienten_BL <- Heizkoeffizienten_BL %>%
+  rename(Construction_Period = Bauperiode) |>
+  filter(Gebäudekategorie == "EFH")
+
+# Reshape the data from wide to long format
+df_long <- Heizkoeffizienten_BL %>%
+  pivot_longer(cols = c(`2016`, `2018`, `2020`), names_to = "Year", values_to = "HEPI")
+
+# Plot the line plot
+ggplot(df_long, aes(x = Construction_Period, y = HEPI, color = Year, group = Year)) +
+  geom_line() +
+  labs(x = "Construction Period", 
+       y = "HEPI",
+       color = "Year") +
+  scale_y_continuous(limits = c(0, 150))  +
+  theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
+```
+
+In the last step of the method, the HEC of the buildings where no measured data is available will be measured. In doing so, @eq-hepi is reversed in order to obtain the HEC:
+
+$$
+\begin{aligned}
+HEC = \frac{HEPI * ERA}{e}
+&= \frac{HEPI*{GFA*n_{floors}}}{e}
+\end{aligned}
+$$ {#eq-hec-final}
+
+where:
+
+-   e = Efficiency factor of the installation for heat generation
+
+-   ERA = Energy reference area in square meters
+
+-   GFA = Gross floor area
+
+-   n~floors~ = Number of floors
 
 ## Terminology {#sec-terminology}
 
-Energy always passes through different stages between the first extraction and final consumption (e.g. distrbution, storage). From a high-level perspective, we can differentiate between four stages as illustrated in @fig-energy-stages . Between the different stages, there are always losses through transformation to the next stage.
+Energy always passes through different stages between the first extraction and final consumption (e.g. distribution, storage). From a high-level perspective, we can differentiate between four stages as illustrated in @fig-energy-stages . Between the different stages, there are always losses through transformation to the next stage.
 
-[![Stages of the energy chain (Source: OurWorldinData.org)](figures/02-energy_terms.png){#fig-energy-stages}](https://ourworldindata.org/energy-definitions)
+[![Stages of the energy chain ](figures/02-energy_terms.png){#fig-energy-stages}](https://ourworldindata.org/energy-definitions)
 
-In the context of this master thesis, we only focus on the last two stages: final energy and useful energy. As defined by the United Nations @departmentofeconomicandsocialaffairsstatisticsdivision2018 [p. 55] , final energy consumption "refers to all fuel and energy delivered to users for both their energy and non-energy uses". While there exist various uses of energy, we exclusively focus on the use of heat generation.
+In the context of this master thesis, we only focus on the last two stages: final energy and useful energy. As defined by the United Nations @departmentofeconomicandsocialaffairsstatisticsdivision2018 [p.55], final energy consumption *"refers to all fuel and energy delivered to users for both their energy and non-energy uses"*. While there exist various uses of energy, we exclusively focus on the use of heat generation in the context of this study.
 
 The data used for modelling contains the amount natural gas delivered by the provider to the building and therefore does not take into account potential losses due to the inefficiencies of heating appliances. In the context of @fig-energy-stages, this corresponds to the stage of final energy.
 
-The available data allows to determine the useful energy for heating. Thus, the target variables HEC and HEPI as defined in the @sec-research-questions are referring to the useful energy of a building.
+As outlined in @sec-current-method, the current method uses the age of the heat generating installation for estimating the losses between final energy and useful energy. However the final estimation of the HEC refers to the final energy as shown in @eq-hec-final. In line with current approach as well as other approaches (e.g. @gubser2022), HEC always refers to the final energy consumption in the context of this thesis.
 
-| Col1 | Col2 | Col3 |
-|------|------|------|
-|      |      |      |
-|      |      |      |
-|      |      |      |
+## Evaluation metrics {#sec-evaluation-metrics}
+
+For evaluation and comparison of machine learning models, there exist a variety of metrics. In the field of energy research, the most commonly used metrics are the following (see for example @amasyali2018, @wenninger2021, @manfren2022):
+
+-   Root mean squared error (RMSE)
+-   Mean absolute error (MAE)
+-   Mean absolute percentage error (MAPE)
+-   R-Squared ($R²$)
+-   Coefficient of variation (CV) of RMSE
+
+In the following, we will present the mathematical formula and a short explanation of the metrics that were used for evaluation. In addition to the metrics mentioned above, we also used the absolute percentage error (APE) aggregated on the level of municipalities.
+
+**RMSE**
+
+The Root mean squared error (RMSE) is a measure of the differences between predicted and actual values. It is calculated by taking the square root of the mean of the squared differences between predicted and actual values. The formula for RMSE is given as:
+
+$$ RMSE = \sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y_i})^2} $$ {#eq-rmse}
+
+where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values and $n$ represents the number of samples.
+
+**MAE**
+
+The Mean absolute error (MAE) is another measure of the differences between predicted and actual values. Unlike RMSE, it is not squared, so it is less sensitive to outliers. It is calculated as the average of the absolute differences between predicted and actual values. The formula for MAE is given as:
+
+$$ MAE = \frac{1}{n} \sum_{i=1}^{n} \left| y_i - \hat{y_i} \right| $$ {#eq-mae}
+
+where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values and $n$ represents the number of samples.
+
+**MAPE**
+
+The Mean absolute percentage error (MAPE) is a measure of the differences between predicted and actual values as a percentage. It is calculated as the average of the absolute differences between predicted and actual values, expressed as a percentage of the actual values. The formula for MAPE is given as:
+
+$$ MAPE = \frac{100}{n} \sum_{i=1}^{n} \left| \frac{y_i - \hat{y_i}}{y_i} \right| $$ {#eq-mape}
+
+where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values and $n$ represents the number of samples.
+
+**R-Squared**
+
+$R²$ is a measure of the goodness of fit of a linear regression model. It is calculated as the ratio of explained variance to total variance. A higher R-Squared value indicates that a larger proportion of the variance in the dependent variable is explained by the independent variables. The formula for R-Squared is given as:
+
+$$ R^2 = 1 - \frac{\sum_{i=1}^{n} (y_i - \hat{y_i})^2}{\sum_{i=1}^{n} (y_i - \bar{y})^2} $$ {#eq-r2}
+
+where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values, $\bar{y}$ represents the mean of the actual values, and $n$ represents the number of samples.
+
+**CV(RMSE)**
+
+CV(RMSE) is normalized measure of the RMSE. It divides the RMSE by the mean of the observed values and therefore allows interpreting the RMSE in relation to the mean of the target variable. The formula is given as:
+
+$$
+CV(RMSE) = \frac{\sqrt{\frac{1}{n} \sum_{i=1}^{n} (y_i - \hat{y_i})^2}}{\frac{1}{n} \sum_{i=1}^{n} y_i}
+$$ {#eq-cv-rmse}
+
+where $y_i$ represents the actual values, $\hat{y_i}$ represents the predicted values and $n$ represents the number of samples.
+
+As it becomes obvious, RMSE and MAE are scale dependent metrics and are in the case of the present thesis expressed in kWh/year. These metrics are useful for comparing different algorithms on the same train and test data and will be used for the model exploration step as defined in @fig-workflow-step-1. MAPE, $R²$ and CV(RMSE) on the other hand are relative and scale independent metrics. Thus, these three metrics are of particular interest when it comes to comparing the model results on different data subsets (see @fig-workflow-step-2).
+
+**Aggregated APE**
+
+The aggregated APE shows the relative error of the predictions in comparison to the actual values on a aggregated level. In this study, the APE was used to evaluate the percentage error on the level of a municipality. It is defined by the following formula:
+
+$$
+{Aggregated\ APE} = 1 - \frac{\sum \text{Predicted}}{\sum \text{Actual}}
+$$ {#eq-agg-error}
+
+## Model explainability techniques {#sec-model-explainability-techniques}
+
+In @tbl-bottom-up-approaches, we have seen that a major of black-box model is their limited interpretability and lack of detailed explanation how a certain prediction is made. In this thesis however, it seems particularly important to also include considerations about model explainability since we are carrying out the study in the public sector context. The current discussion on decision-making based on Articifial Intelligence (AI) highlights the need for transparent and explainable models (see for example @wilson2022 or @wolf2020 on this topic). In the context of this thesis, we will use the following two concepts for model explainability:
+
+**Variable importance analysis (VIA)**
+
+VIA is a technique to measure the importance of each predictor variable of a given model. The more the prediction of a model relies on specific variable, the more important this variable is considered for the model. As @wei2015 point out, a wide range of VIA measures exist, depending on the research field and also on the used algorithm. In our case, we rely on the approach used by the H~2~O library as defined in @h2o.ai2023.
+
+**Shapley Additive explanations (SHAP)**
+
+SHAP is a method based on cooperative game theory that helps to increase transparency and interpretability of black-box models [@trevisan2022]. It was introduced by [@lundberg] in 2017. While VIA only provides insights about feature importance on a global level, SHAP can also deliver local explanation by calculating feature importance on the level of a individual prediction. Similar to VIA, we use the SHAP implementation of the H~2~O library as defined in @h2o.ai2023.

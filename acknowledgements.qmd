@@ -1,12 +1,13 @@
 # Acknowledgements {.unnumbered}
 
-I would like to thank my cat.
+I would like to express my gratitude to all the persons who have supported my in one way or the other throughout the completion of this thesis.
 
+First and foremost, I would like to thank my supervisors, Philipp Schütz and Christoph Plattner, for their expertise and continuous support. Their advice and constructive feedback have been crucial during process this thesis.
 
+Furthermore, i would also like to thank Esther Lindner and Sarah Schneeberger from the HSLU team *Competence Centre Thermal Energy Storage (CC TES)*. Their inputs and feedback have been for the project.
 
-```{=html}
-<!-- 
-The following line is required to re-set page numbering after preliminary material in the pdf output. Do not remove
--->
-```
-\clearpage\pagenumbering{arabic}\setcounter{page}{0}
+I am also grateful to Corinne Hügli and Ines Brunner for their understanding and flexibility, allowing me to find a good balance between my work commitments and writing this thesis.
+
+I would like to express to my family for all their support. All of you have been a constant source of motivation throughout this thesis.
+
+Lastly, I want to give special thanks to Edna, Your love, support, and understanding have carried me throughout the process of writing this thesis. I love you!

@@ -148,14 +148,19 @@ models_by_building_class <- lapply(names(data_by_building_class), function(name)
   aggregated_error_best_model <- 1 - sum(test_preds$predict)/sum(test_preds$hec)
   
   # Return the AutoML results
-  return(list(building_class = df_name, 
-              aml_results = aml_results, 
-              train_metrics = leaderboard, 
-              test_metrics = all_metrics_hec_subset_building_class, 
-              aggregated_error_curr_method = aggregated_error_curr_method,
-              aggregated_error_best_model = aggregated_error_best_model,
-              test_preds = test_preds,
-              algo_best_model = best_model@algorithm))
+  results <- list(name = name,
+                  aml_results = aml_results,
+                  train_metrics = leaderboard,
+                  test_metrics = all_metrics_hec_subset_building_class,
+                  aggregated_error_curr_method = aggregated_error_curr_method,
+                  aggregated_error_best_model = aggregated_error_best_model,
+                  test_preds = test_preds,
+                  algo_best_model = best_model@algorithm)
+  
+  # Save the results to a file
+  saveRDS(results, paste0("models/subset_building_class/results_", name, "_",   Sys.Date(),".rds"))
+  
+  return(results)
 })
 
 # Combine metrics of each subset into one data frame
@@ -163,7 +168,7 @@ subset_building_class_train_metrics <- map_dfr(models_by_building_class, ~ .x$tr
 subset_building_class_test_metrics <- map_dfr(models_by_building_class, ~ .x$test_metrics)
 
 # Combine aggregated errors
-building_class <- map_dfr(models_by_building_class, ~ data.frame(building_class = .x$building_class))
+building_class <- map_dfr(models_by_building_class, ~ data.frame(building_class = .x$name))
 aggregated_error_curr_method <- map_dfr(models_by_building_class, ~ data.frame(aggregated_error_curr_method = .x$aggregated_error_curr_method))
 aggregated_error_best_model <- map_dfr(models_by_building_class, ~ data.frame(aggregated_error_best_model = .x$aggregated_error_best_model))
 
@@ -172,7 +177,8 @@ aggregated_errors_building_class <- building_class |>
   bind_cols(aggregated_error_curr_method)
 
 # save to rds
-saveRDS(models_by_building_class, paste0("models/models_by_building_class_", Sys.Date(), ".rds"))
+saveRDS(models_by_building_class, paste0("models/subset_building_class/models_", Sys.Date(), ".rds"))
+
 
 
 

@@ -2,15 +2,15 @@ library(future)
 
 # Define the subset scripts
 subset_scripts <- c(
-  "04-aml-subset-building-class.R",
-  "04-aml-subset-municipality.R",
-  "04-aml-subset-construction-period.R",
-  "04-aml-subset-cluster.R"
+  #"04-aml-subset-building-class.R",
+  "04-aml-subset-municipality.R"
+  #"04-aml-subset-construction-period.R",
+  #"04-aml-subset-cluster.R"
 
 )
 
 # Define the runtimes for each subset script
-runtimes <- c(10, 600, 600, 600)  # Adjust the runtimes as needed
+runtimes <- c(1800)  # Adjust the runtimes as needed
 
 # Create a list to store the futures
 futures <- list()

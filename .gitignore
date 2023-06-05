@@ -5,6 +5,8 @@
 .Rprofile
 .Renviron
 *.log
+*.rdx
+*.rdb
 
 gpt_q_and_a.qmd
 modelling_code_only.R

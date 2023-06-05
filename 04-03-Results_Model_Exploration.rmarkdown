@@ -1,0 +1,438 @@
+## Modelling {#sec-modelling}
+
+
+```{r}
+#| label: load-libs
+#| include: false
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
+               rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
+               vip, shapviz, DALEXtra, ranger, kernlab, kknn)
+
+```
+
+```{r}
+#| label: load-data
+#| include: false
+
+energy_modelling <- read_rds("data/energy_modelling.rds")
+```
+
+
+### Results Step 1: Comparing different models {#sec-model-exploration}
+
+According to the modelling workflow defined in @sec-modelling-worflow, the first step of the modelling process focuses on the exploration of different models. To do so, we run the algorithms defined in @sec-algorithms manually but also with automated machine learning (AutoML)[^04-03-results_model_exploration-1]. We here present the results of the manual application of the algorithms, followed by the results obtained from the AutoML approach.
+
+[^04-03-results_model_exploration-1]: For automated machine learning, the open-source AutoML library of H20 was used via interface (see also https://h2o.ai/platform/h2o-automl/).
+
+
+```{r}
+#| label: train-test-split
+#| include: false
+
+#> select variables for modelling
+
+         
+#> Set the random number stream using `set.seed()` so that the results can be 
+#> reproduced later. 
+set.seed(501)
+
+#> Save the split information for an 80/20 split of the data
+energy_split <- initial_split(energy_modelling, 
+                              prop = 0.5, 
+                              strata = hec)
+energy_split
+
+
+#> Creating train and test set
+energy_train <- training(energy_split)
+energy_test  <-  testing(energy_split)
+
+
+#> Creating a validation set (20% of training data)
+set.seed(234)
+energy_validation <- validation_split(energy_train,
+                                      prop = 0.90,
+                                      strata = hec)
+
+dim(energy_train)
+dim(energy_validation)
+
+# creating folds for cross validation
+set.seed(1502)
+energy_folds <- 
+   vfold_cv(energy_train, strata = hec, repeats = 3)
+```
+
+
+### Preprocessing Recipes
+
+In the preprocessing, we apply the following:
+
+-   Remove multicollinearity: Predictor variables that have a correlation above +/- 0.8 will me removed
+-   Normalize numeric variables
+-   Log-transform numeric variables
+-   Create dummy variables from all nominal variables
+
+
+```{r}
+#| label: preprocessing-base-recipe-hec
+#| include: false
+
+# Specify basic recipe (applicable to all models)
+recipe_base_hec <- recipe(hec ~ .,
+                          data = energy_train) |> 
+   step_select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents, 
+         num_floors, 
+         building_area_m2, 
+         gross_floor_area_m2, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         solar_system, 
+         solar_system_usage, 
+         solar_system_area_m2, 
+         photovoltaic_system, 
+         photovoltaic_system_power_kw, 
+         municipality_code, 
+         building_class, 
+         construction_year, 
+         coordinate_e, 
+         coordinate_n, 
+         num_dwellings, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         retrofit_investment_costs,
+         stand_alone,
+         hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method) |>
+  # remove variables from predictors that are only used for info or later comparison 
+  update_role(egid, hepi, hepi_pred_current_method, hec_pred_current_method, new_role = "id") |>
+  # Create dummy variables for nominal predictors
+  step_dummy(all_nominal()) |>
+  # Remove variables that contain only one value
+  step_zv(all_numeric_predictors()) |>
+  # Impute means for variables with NA
+  step_impute_mean(num_residents) |>
+  step_impute_mean(year_of_installation)
+
+recipe_base_hec
+```
+
+```{r}
+#| label: preprocessing-base-recipe-hec-norm
+#| include: false
+
+#> Some models (notably neural networks, KNN, and support vector machines) require predictors that have been centered and scaled, so some model workflows will require recipes with these preprocessing steps. For other models, a traditional response surface design model expansion (i.e., quadratic and two-way interactions) is a good idea.
+#> https://www.tmwr.org/workflow-sets.html
+
+recipe_base_hec_norm <- recipe_base_hec |>
+  step_normalize(all_numeric_predictors())
+
+recipe_base_hec_norm
+```
+
+```{r}
+#| label: preprocessing-base-recipe-hec-poly
+#| include: false
+
+# Add polynomials and interaction
+recipe_base_hec_poly <- 
+   recipe_base_hec_norm |> 
+   step_poly(all_numeric_predictors()) |> 
+   step_interact(~ all_numeric_predictors():all_numeric_predictors())
+
+recipe_base_hec_poly
+```
+
+
+### Defining models
+
+
+```{r}
+#| label: model-definition
+#| include: false
+
+# MLR model
+lm_basic_spec <- 
+   linear_reg() |> 
+   set_engine("lm")
+
+# MLR glmnet spec
+lm_glmnet_spec <- 
+   linear_reg(penalty = tune(), mixture = tune()) |> 
+   set_engine("glmnet")
+
+# decision tree
+dt_spec <- 
+   decision_tree() |> 
+   set_engine("rpart") |> 
+   set_mode("regression")
+
+# k nearest neighbour
+knn_spec <-
+   nearest_neighbor(neighbors = tune(), dist_power = tune(), weight_func = tune()) |>
+   set_engine("kknn") |>
+   set_mode("regression")
+
+# random forest
+rf_spec <- rand_forest() |>
+  set_engine("ranger") |>
+  set_mode("regression")
+
+# xgboost
+xgb_spec <- 
+   boost_tree(tree_depth = tune(), learn_rate = tune(), loss_reduction = tune(), 
+              min_n = tune(), sample_size = tune(), trees = tune()) |> 
+   set_engine("xgboost") |> 
+   set_mode("regression")
+
+# svm radial
+svm_r_spec <-
+   svm_rbf(cost = tune(), rbf_sigma = tune()) |>
+   set_engine("kernlab") |>
+   set_mode("regression")
+
+# svm poly
+svm_p_spec <-
+ svm_poly(cost = tune(), degree = tune()) |>
+ set_engine("kernlab") |>
+ set_mode("regression")
+
+
+# articifial neural net
+nnet_spec <- 
+   mlp(hidden_units = tune(), penalty = tune(), epochs = tune()) |> 
+   set_engine("nnet", MaxNWts = 2600) |> 
+   set_mode("regression")
+
+  
+```
+
+
+### Define workflows
+
+#### Workflow for nonlinear models
+
+
+```{r}
+#| label: workflow-definition-normalized
+#| include: false
+
+#> this workflow is for nonlinear models that require the predictors to be in the same units
+
+normalized <- 
+   workflow_set(
+      preproc = list(normalized = recipe_base_hec_norm), 
+      models = list(neural_network = nnet_spec, 
+                    SVM_radial = svm_r_spec, 
+                    SVM_poly = svm_p_spec, 
+                    KNN = knn_spec)
+   )
+
+normalized
+```
+
+
+#### Workflow with only basic preprocessing
+
+
+```{r}
+#| label: workflow-definition-basic
+#| include: false
+
+#> this workflow is for models that do not need normalizing
+
+no_pre_proc <- 
+   workflow_set(
+      preproc = list(simple = recipe_base_hec), 
+      models = list(lm_basic = lm_basic_spec, 
+                    random_forest = rf_spec, 
+                    xgboost = xgb_spec
+                    )
+   )
+
+no_pre_proc
+```
+
+
+#### Models with non linear terms and interactions
+
+
+```{r}
+#| label: workflow-definition-with-features
+#| include: false
+
+with_features <- 
+   workflow_set(
+      preproc = list(full_quad = recipe_base_hec_poly), 
+      models = list(lm_glmnet = lm_glmnet_spec, KNN = knn_spec)
+   )
+```
+
+
+#### Combine all workflows
+
+
+```{r}
+#| label: combine-workflows
+#| include: false
+
+all_workflows <- 
+   bind_rows(no_pre_proc, normalized) |> 
+   # Make the workflow ID's a little more simple: 
+   mutate(wflow_id = gsub("(simple_)|(normalized_)", "", wflow_id))
+
+all_workflows
+```
+
+
+### Tuning
+
+
+```{r}
+#| label: hyperparameter-tuning
+#| include: false
+
+#> Almost all of the members of all_workflows contain tuning parameters. To evaluate their performance, we can use the standard tuning or resampling functions (e.g., tune_grid() and so on). The workflow_map() function will apply the same function to all of the workflows in the set; the default is tune_grid()
+
+
+grid_ctrl <-
+   control_grid(
+      save_pred = TRUE,
+      parallel_over = "everything",
+      save_workflow = FALSE
+   )
+
+
+# define cluster for parallel computing
+num_cores <- detectCores() - 1  
+registerDoParallel(cores=num_cores)  
+cl <- makeForkCluster(num_cores) 
+
+
+# run grid tuning
+grid_results <-
+   all_workflows |>
+   workflow_map(
+      seed = 1503,
+      resamples = energy_folds,
+      grid = 10,
+      control = grid_ctrl,
+      verbose = TRUE
+   )
+
+
+stopCluster(cl)  
+```
+
+```{r}
+#| label: grid-results
+#| include: false
+
+
+#> load grid results that have been trained before
+grid_results <- read_rds("output/grid_results.rds")
+
+autoplot(
+   grid_results,
+   rank_metric = "rmse",  # <- how to order models
+   metric = "rmse",       # <- which metric to visualize
+   select_best = TRUE     # <- one point per workflow
+) +
+   geom_text(aes(y = mean - 1/2, label = wflow_id), angle = 90, hjust = 1) +
+   #lims(y = c(3.5, 9.5)) +
+   theme(legend.position = "none") +
+   ylim(10000, 60000) +
+   ggtitle("Benchmark") +
+   ylab("RMSE")
+```
+
+
+### Model evaluation {#sec-model-evaluation}
+
+
+```{r}
+#| label: metrics-current-approach
+#| include: false
+
+energy_train_current_method <- energy_train |>
+  dplyr::inner_join(energy_modelling, by = c("egid"), suffix = c("", "_y")) |>
+  dplyr::select(egid, survey_year, hec, hepi, hepi_pred_current_method, hec_pred_current_method, heated_area_m2)
+
+custom_metrics <- metric_set(rmse, mape, mae, rsq)
+
+energy_train_metrics_current_method <- energy_train_current_method |>
+  custom_metrics(hec, hec_pred_current_method)
+
+energy_train_metrics_current_method
+
+
+results_train_hec_current_method <- energy_train |> 
+   ggplot(aes(x = hec, y = hec_pred_current_method)) + 
+   geom_abline(color = "gray50", lty = 2) + 
+   geom_point(alpha = 0.5) + 
+   coord_obs_pred() + 
+   labs(x = "Observed HEC", y = "Predicted HEC")
+
+results_train_hec_current_method
+```
+
+
+### Final model {#sec-final-model}
+
+
+```{r}
+best_model_xgboost <- 
+   grid_results |> 
+   extract_workflow_set_result("xgboost") |> 
+   select_best(metric = "rmse")
+
+best_model_xgboost
+
+test_results_xgboost <- 
+   grid_results |> 
+   extract_workflow("xgboost") |> 
+   finalize_workflow(best_model_xgboost) |> 
+   last_fit(split = energy_split)
+
+
+```
+
+```{r}
+collect_metrics(test_results_xgboost)
+
+test_results_xgboost |> 
+   collect_predictions() |> 
+   ggplot(aes(x = hec, y = .pred)) + 
+   geom_abline(color = "gray50", lty = 2) + 
+   geom_point(alpha = 0.5) + 
+   coord_obs_pred() + 
+   labs(x = "observed", y = "predicted")
+
+```
+
+
+### Save models
+
+
+```{r}
+#| label: save-models
+#| include: false
+xgboost_wf <- extract_workflow(test_results_xgboost)
+
+readr::write_rds(test_results_xgboost, "models/xgboost_wf")
+```
+
+
+## AutoML
+

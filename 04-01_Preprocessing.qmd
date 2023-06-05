@@ -269,7 +269,7 @@ To calculate the HEC for each building, we use the @eq-hec introduced in Chapter
 energy_clean_07 <- energy_clean_06 |>
   filter(energy_consumed_measured_mwh > 0 & !is.na(energy_consumed_measured_mwh)) |>
   mutate(efficiency_of_installation = if_else(is.na(efficiency_of_installation), 0.85, efficiency_of_installation),
-    hec = ((energy_consumed_measured_mwh*efficiency_of_installation) + energy_production_solar_mwh - energy_consumed_hot_water_mwh)*1000,
+    hec = (energy_consumed_measured_mwh + energy_production_solar_mwh - energy_consumed_hot_water_mwh)*1000,
          hepi = hec/heated_area_m2)
 
 energy_clean_07 |>
@@ -592,18 +592,18 @@ table(energy_clean_10$photovoltaic_system)
 ### Handling NA's
 
 ```{r}
-energy_clean_11 <- energy_clean_10 |>
-  mutate(retrofit_investment_costs = if_else(is.na(retrofit_investment_costs), 0, retrofit_investment_costs),
-         photovoltaic_system_power_kw = if_else(is.na(photovoltaic_system_power_kw), 0, photovoltaic_system_power_kw),
-         solar_system_usage = fct_explicit_na(solar_system_usage),
-         solar_system_area_m2 = if_else(is.na(solar_system_area_m2), 0, solar_system_area_m2),
-         energy_usage_of_installation = fct_explicit_na(energy_usage_of_installation))
-
-summary(energy_clean_11$retrofit_investment_costs)
-summary(energy_clean_11$photovoltaic_system_power_kw)
-summary(energy_clean_11$solar_system_usage)
-summary(energy_clean_11$solar_system_area_m2)
-summary(energy_clean_11$energy_usage_of_installation)
+energy_clean_11 <- energy_clean_10 
+#   mutate(retrofit_investment_costs = if_else(is.na(retrofit_investment_costs), 0, retrofit_investment_costs),
+#          photovoltaic_system_power_kw = if_else(is.na(photovoltaic_system_power_kw), 0, photovoltaic_system_power_kw),
+#          solar_system_usage = fct_explicit_na(solar_system_usage),
+#          solar_system_area_m2 = if_else(is.na(solar_system_area_m2), 0, solar_system_area_m2),
+#          energy_usage_of_installation = fct_explicit_na(energy_usage_of_installation))
+# 
+# summary(energy_clean_11$retrofit_investment_costs)
+# summary(energy_clean_11$photovoltaic_system_power_kw)
+# summary(energy_clean_11$solar_system_usage)
+# summary(energy_clean_11$solar_system_area_m2)
+# summary(energy_clean_11$energy_usage_of_installation)
 ```
 
 ## Drop unused levels
@@ -637,7 +637,11 @@ To make sure that the values of the current method are correct, we recalculate t
 ```{r}
 energy_clean_13 <- energy_clean_12 |>
   dplyr::mutate(hepi_pred_current_method = heating_coefficient_estimated,
-                hec_pred_current_method = heating_coefficient_estimated*heated_area_m2)
+                hec_pred_current_method = heating_coefficient_estimated*heated_area_m2/efficiency_of_installation)
+
+sum(energy_clean_13$hec_pred_current_method)/1000000
+sum(energy_clean_13$energy_consumed_estimated_mwh)/1000
+sum(energy_clean_13$energy_consumed_measured_mwh)/1000
 ```
 
 
@@ -754,7 +758,10 @@ energy_clean_17 <- energy_clean_16 |>
     above_65 = male_65_69 + male_70_74 + male_75_79 + male_80_84 + male_85_89 + male_90plus + female_65_69 + female_70_74 + female_75_79 + female_80_84 + female_85_89 + female_90plus,
          elderly_ratio = above_65 / total_pop,
     below_15 = male_0_4 + male_5_9 + male_10_14 + female_0_4 + female_5_9 + female_10_14,
-    youth_ratio = below_15 / total_pop)
+    youth_ratio = below_15 / total_pop) |>
+  # remove cases where total pop is not correct for some reasons
+  mutate(youth_ratio = if_else(youth_ratio > 1, NA_real_, youth_ratio),
+         elderly_ratio = if_else(elderly_ratio > 1, NA_real_, elderly_ratio))
 
 
 
@@ -805,6 +812,17 @@ energy_clean_18 <- energy_clean_17 |>
 
 summary(energy_clean_18$year_of_installation)
 ```
+
+```{r}
+energy_clean_18 |>
+  summarise(hec_gwh = sum(hec)/1000000,
+            energy_consumed_measured_gwh = sum(energy_consumed_measured_mwh)/1000,
+            energy_consumed_estimated_gwh = sum(energy_consumed_estimated_mwh)/1000,
+            hec_pred_current_method_gwh = sum(hec_pred_current_method)/1000000,
+            hot_water_gwh = sum(energy_consumed_hot_water_kwh)/1000000,
+            energy_production_solar_gwh = sum(energy_production_solar_kwh, na.rm = T)/1000000)
+```
+
 
 ## Save data
 

@@ -8,26 +8,23 @@ book:
   submitted: 2023
   date: "today"
   chapters:
-    - index.qmd
-    - abstract.qmd
-    - declaration.qmd
-    - acknowledgements.qmd
-    #- 00-list-of-abbreviations
-    - 01-Introduction.qmd
-    - 02-TheoreticalBackground.qmd
-    - 03-Methodology.qmd
-    - 04-02_Descriptive_Statistics.qmd
-    #- 04-03-Results_Model_Exploration.qmd
-    #- 04-04_Results-Model_Subsets.qmd
-    - 04-05-Results_Model_Sensitivity_Analysis.qmd
-    - 05-Discussion_Conclusion.qmd
-    - 99-references.qmd
+  - 00-management-summary.qmd
+  - index.qmd
+  - 00-list-of-abbrevations.qmd
+  - 01-Introduction.qmd
+  - 02-TheoreticalBackground.qmd
+  - 03-Methodology.qmd
+  - 04-Results.qmd
+  - 05-Discussion_Conclusion.qmd
+  - acknowledgements.qmd
+  #- 99-references.qmd
+  - declaration.qmd
   appendices:
-    - 05-appendix.qmd
+  - 05-appendix.qmd
   references: references.qmd
 
 bibliography: references.bib
-csl: csl/apa.csl
+csl: apa.csl
 lot: true
 lof: true
 
@@ -37,6 +34,10 @@ format:
     title-block-banner: cover.png
   pdf:
     keep-tex: false
+    toc-depth: 2
+    toc: true
+    # template-partials:
+    #   - before-body.tex
 
 prefer-html: true
 number-sections: true
@@ -48,6 +49,8 @@ knitr:
     R.options:
       knitr.graphics.auto_pdf: true
 
+
+
 # global definition of code chunk execution
 execute:
   eval: true
@@ -55,10 +58,13 @@ execute:
   include: true
   cache: true
   warning: false
+  message: false
   
   
 # definiing location of figure and table captures
 fig-cap-location: bottom
 tbl-cap-location: bottom
 
-# font
+extensions:
+  - _extensions/_extension.yml
+

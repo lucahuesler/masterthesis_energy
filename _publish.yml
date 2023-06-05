@@ -2,3 +2,7 @@
   quarto-pub:
     - id: bc551a28-2d35-4306-812e-201f0c771bf1
       url: 'https://quartopub.com/sites/lucahuesler/estimating-the-heat-energy-use-of-residential-buildings'
+- source: project
+  quarto-pub:
+    - id: 60994178-755f-49e8-b67b-2977f024b12e
+      url: 'https://quartopub.com/sites/lucahuesler/httpslucahueslerquartopubmaster-thesis'

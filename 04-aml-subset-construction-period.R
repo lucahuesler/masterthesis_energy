@@ -98,7 +98,7 @@ models_by_construction_period <- lapply(names(data_by_construction_period), func
   aml_results <- run_h2o_automl(target = "hec", 
                                 predictors = predictors_without_social, 
                                 data = train, 
-                                runtime = 10)
+                                runtime = 600)
   
   # Get the leaderboard for this subset
   leaderboard <- h2o.get_leaderboard(aml_results$aml, extra_columns = "algo") |>
@@ -145,14 +145,19 @@ models_by_construction_period <- lapply(names(data_by_construction_period), func
   aggregated_error_best_model <- 1 - sum(test_preds$predict)/sum(test_preds$hec)
   
   # Return the AutoML results
-  return(list(construction_period = df_name, 
-              aml_results = aml_results, 
-              train_metrics = leaderboard, 
-              test_metrics = all_metrics_hec_subset_construction_period, 
-              aggregated_error_curr_method = aggregated_error_curr_method,
-              aggregated_error_best_model = aggregated_error_best_model,
-              test_preds = test_preds,
-              algo_best_model = best_model@algorithm))
+  results <- list(construction_period = name,
+                  aml_results = aml_results,
+                  train_metrics = leaderboard,
+                  test_metrics = all_metrics_hec_subset_building_class,
+                  aggregated_error_curr_method = aggregated_error_curr_method,
+                  aggregated_error_best_model = aggregated_error_best_model,
+                  test_preds = test_preds,
+                  algo_best_model = best_model@algorithm)
+  
+  # Save the results to a file
+  saveRDS(results, paste0("models/subset_construction_period/results_", name, "_",   Sys.Date(),".rds"))
+  
+  return(results)
 })
 
 # Combine metrics of each subset into one data frame

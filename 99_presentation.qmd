@@ -50,7 +50,17 @@ library(htmltools)
 #| include: false
 
 energy_modelling <- read_delim("data/energy_modelling.csv")
-auto_ml_results <- read_csv("models/auto_ml_models/all_hec_metrics_20230408.csv")
+all_hec_metrics <- read_csv("models/auto_ml_models/all_hec_metrics_20230408.csv") 
+all_hec_metrics <- all_hec_metrics |>
+  rename(Algorithm = Algorithm...2,
+         algo = Algorithm...7)
+
+
+
+all_hepi_metrics <- read_csv("models/auto_ml_models/all_hepi_metrics_20230408.csv")
+all_hepi_subset_survey_year_metrics <- read_csv("models/auto_ml_models/all_metrics_hepi_subset_survey_year.csv")
+all_hepi_subset_building_class_metrics <- read_csv("models/auto_ml_models/all_metrics_hepi_subset_building_class.csv")
+
 hec_aml_leaderboard_all <- read_csv("models/auto_ml_models/hec_aml_leaderboard_all_2023-05-07.csv")
 grid_results <- read_rds("output/grid_results.rds")
 
@@ -425,8 +435,9 @@ retrofit_per_year <- energy_modelling |>
   scale_y_continuous(expand = c(0, 0), limits = c(0, 1000)) +
   xlab("Year of completion") +
   ylab("Number of buildings") +
-  scale_fill_discrete(name = "Retrofit type")
-  
+  scale_fill_discrete(name = "Retrofit type") +
+  theme(legend.position = c(0.85, 0.9))
+
   
 retrofit_per_year
 ```
@@ -528,35 +539,87 @@ Evaluation of models tried so far:
 
 # AutoML (with h2o)
 
-## Results Step 1
+## Recap
 
-Train models with three different settings of variable selection:
+Since last meeting:
 
--   With all predicotors
+-   Integrated if a building is stand alone or not (binary)
+
+-   Integrated STATPOP indicators
+
+    -   Youth ratio (below 15)
+
+    -   Elderly ratio (above 65)
+
+    -   Ratio of 1 person households
+
+    -   Ratio of residence less than 1 year
+
+    -   Ratio of foreigners
+
+## Recap II
+
+Modelling: Focus on Auto ML (h2o)
+
+-   Results better
+
+-   Training with different predictor variables ([Step 1](https://lucahuesler.quarto.pub/estimating-the-heat-energy-use-of-residential-buildings/#/modelling-strategy))
+
+-   Training on subsets ([Step 2](https://lucahuesler.quarto.pub/estimating-the-heat-energy-use-of-residential-buildings/#/modelling-strategy-1))
+
+## Results: Influence of new variables
+
+Train models with four different settings of variable selection:
+
+-   With all predictors
 
 -   Without retrofit predictor
 
 -   Without social indicators (youth ratio, elderly ratio, etc.)
 
-## Evaluation (on training set)
+-   Without variable for "stand alone"
 
-Top 10 models on (based on RMSE):
+## Results: Influence of new variables
+
+Top 10 models (based on RMSE **train**): What variable selection performs best?
 
 ```{r}
+#| include: false
 
 hec_aml_leaderboard_all %>%
   arrange(rmse) %>%
   ungroup() |>
   slice_head(n = 10) %>%
   select(approach, algo, rmse, mae, rmsle) |>
-  knitr::kable(format = "html", digits = 2)
-
-
+  mutate_if(is.numeric, round, 2) |>
+  DT::datatable()
 ```
+
+![](figures/presentation/hec_aml_leaderboard_train.png)
+
+## Results: Influence of new variables
+
+Top 10 models (based on RMSE **test**): What variable selection performs best?
+
+```{r}
+#| include: false
+
+all_hec_metrics %>%
+  select(-Algorithm) |>
+  rename(Algorithm =algo) |>
+  arrange(RMSE) %>%
+  ungroup() |>
+  slice_head(n = 10) %>%
+  select(Approach, Algorithm, R_squared, RMSE, MAE, MAPE) |>
+  mutate_if(is.numeric, round, 2) |>
+  DT::datatable()
+```
+
+![](figures/presentation/hec_aml_leaderboard_test.png)
 
 ## Observations
 
--   Best three models (RMSE) are without social indicators. Hypothesis: They do not improve the model because they are on hectare level.
+-   Best three models (RMSE) are without retrofit, stand alone or social indicators. Hypothesis social indicators: They do not improve the model because they are on hectare level.
 
 -   Model perfomance gets worse when removing retrofit information.
 
@@ -564,15 +627,17 @@ hec_aml_leaderboard_all %>%
 
 ## Metrics of best model per algorithm (on test)
 
+::: columns
+::: {.column width="60%"}
 Target = HEC in kWh/year
 
 ```{r}
 options(scipen = 999)
-auto_ml_results <- auto_ml_results %>%
+all_hec_metrics_clean <- all_hec_metrics %>%
   mutate(Algorithm = if_else(Algorithm == "Based on HEPI", "Current Approach", Algorithm))
 
 # best rmse per algorithm
-best_rmse_per_algo <- auto_ml_results %>%
+best_rmse_per_algo <- all_hec_metrics_clean %>%
   group_by(Algorithm) %>%
    dplyr::slice_min(order_by = RMSE, n = 1) |>
    arrange(RMSE)
@@ -603,31 +668,12 @@ p <- ggplot(best_rmse_per_algo_long, aes(x = Algorithm, y = Value, fill = Algori
 
 p
 ```
+:::
 
-## Detailed results (all models)
+::: {.column width="40%"}
+-   With exception of GLM, all models perform better than current approach
 
-```{r}
+-   XGBoost shows best values for all metrics, but not very big differences of the first 3
+:::
+:::
 
-DT::datatable(auto_ml_results)
-```
-
-# Next steps
-
-## Run models on subsets of data
-
-Can we achieve a higher accuracy by running the models on more homogenous subsets of the data?
-
--   Differentiating by survey year (Erhebungsjahr)
--   Differentiating by building class
--   Differentiating by municipality
-
-## Integration of socio-economic factors
-
-STATPOP data can deliver information about :
-
--   Age distribution
--   Gender distribution
--   Duration of residence
--   Ratio of swiss/foreign population
-
-## 

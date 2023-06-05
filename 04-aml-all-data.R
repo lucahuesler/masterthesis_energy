@@ -4,10 +4,9 @@
 ### Prepare
 
 library(h2o)
-library(tidymodels)
 library(tidyverse)
 source("auto_ml_functions.R")
-h2o.init()
+h2o.init(max_mem_size = "8G")
 
 # read data
 energy_modelling <- read_rds("data/energy_modelling.rds") |>
@@ -24,8 +23,6 @@ energy_modelling <- read_rds("data/energy_modelling.rds") |>
          building_class, 
          construction_year, 
          meters_above_sealevel, 
-         energy_production_solar_mwh, 
-         energy_consumed_hot_water_mwh,
          retrofitted,
          hdd,
          foreign_ratio,
@@ -53,7 +50,7 @@ predictors_without_social <- predictors_hec_all[-which(predictors_hec_all %in% c
 
 predictors_hec_without_standalone <- predictors_hec_all[-which(predictors_hec_all == "stand_alone")]
 
-predictors_basic <- predictors_without_social[-which(predictors_without_social %in% c("meters_above_sealevel","energy_production_solar_mwh","energy_consumed_hot_water_mwh","retrofitted", "stand_alone", "survey_year", "municipality_name", "energy_usage_of_installation"))]
+predictors_basic <- predictors_without_social[-which(predictors_without_social %in% c("efficiency_of_installation", "meters_above_sealevel", "retrofitted", "stand_alone", "survey_year", "municipality_name", "energy_usage_of_installation"))]
 
 
 variable_selections <- list(
@@ -64,9 +61,9 @@ variable_selections <- list(
   predictors_basic = predictors_basic
 )
 
-models <- lapply(names(variable_selections), function(name) {
+models <- lapply(names(variable_selections)[[3]], function(name) {
   predictors <- variable_selections[[name]]
-  
+  print(variable_selections[[name]])
   # Prepare data
   df <- energy_modelling %>%
     select(egid, 
@@ -82,8 +79,6 @@ models <- lapply(names(variable_selections), function(name) {
            building_class, 
            construction_year, 
            meters_above_sealevel, 
-           energy_production_solar_mwh, 
-           energy_consumed_hot_water_mwh,
            retrofitted,
            hdd,
            foreign_ratio,
@@ -105,7 +100,7 @@ models <- lapply(names(variable_selections), function(name) {
   aml_results <- run_h2o_automl(target = "hec",
                                 predictors = predictors,
                                 data = train,
-                                runtime = 5000)
+                                runtime = 3600)
   
   # Get the leaderboard for this variable selection
   leaderboard <- h2o.get_leaderboard(aml_results$aml, extra_columns = "algo") |>
@@ -139,6 +134,9 @@ models <- lapply(names(variable_selections), function(name) {
   # Retrieve the best model
   best_model <- h2o.get_best_model(aml_results$aml)
   
+  # save best model
+  h2o.saveModel(best_model, path = "models/all_data/best_model")
+  
   # Predict with the best model
   best_model_predictions <- h2o.predict(best_model, test)
   
@@ -152,14 +150,20 @@ models <- lapply(names(variable_selections), function(name) {
   aggregated_error_best_model <- 1 - sum(test_preds$predict) / sum(test_preds$hec)
   
   # Return the AutoML results
-  return(list(variable_selection = name,
-              aml_results = aml_results,
-              train_metrics = leaderboard,
-              test_metrics = all_metrics,
-              aggregated_error_curr_method = aggregated_error_curr_method,
-              aggregated_error_best_model = aggregated_error_best_model,
-              test_preds = test_preds,
-              algo_best_model = best_model@algorithm))
+  results <- list(variable_selection = name,
+                  aml_results = aml_results,
+                  train_metrics = leaderboard,
+                  test_metrics = all_metrics,
+                  aggregated_error_curr_method = aggregated_error_curr_method,
+                  aggregated_error_best_model = aggregated_error_best_model,
+                  test_preds = test_preds,
+                  algo_best_model = best_model@algorithm)
+  
+  # Save the results to a file
+  saveRDS(results, paste0("models/all_data/results_", name, "_",   Sys.Date(),".rds"))
+  
+  return(results)
+  
 })
 
 # Combine metrics and aggregated errors for all variable selections

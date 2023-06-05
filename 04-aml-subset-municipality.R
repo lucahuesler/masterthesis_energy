@@ -4,10 +4,9 @@
 ### Prepare
 
 library(h2o)
-library(tidymodels)
 library(tidyverse)
 source("auto_ml_functions.R")
-h2o.init()
+h2o.init(max_mem_size = "8G")
 
 # read data
 energy_modelling <- read_rds("data/energy_modelling.rds") |>
@@ -82,13 +81,13 @@ ggplot(municipality_analysis, aes(x = municipality_name, y = mean_hepi)) +
   theme_bw()
 
 
-
+  
 ### Fit & predict
 
 all_metrics_hec_subset_municipality <- data.frame()
 
 # Run AutoML for each municipality separately
-models_by_municipality <- lapply(names(data_by_municipality), function(name) {
+models_by_municipality <- lapply(names(data_by_municipality[11:15]), function(name) {
   
   # Get the name of the current element in the list
   df_name <- name
@@ -145,7 +144,7 @@ models_by_municipality <- lapply(names(data_by_municipality), function(name) {
   aml_results <- run_h2o_automl(target = "hec", 
                                 predictors = predictors_without_social, 
                                 data = train, 
-                                runtime = 120)
+                                runtime = 1800)
   
   # Get the leaderboard for this subset
   leaderboard <- h2o.get_leaderboard(aml_results$aml, extra_columns = "algo") |>
@@ -191,14 +190,19 @@ models_by_municipality <- lapply(names(data_by_municipality), function(name) {
   aggregated_error_best_model <- 1 - sum(test_preds$predict)/sum(test_preds$hec)
   
   # Return the AutoML results
-  return(list(municipality = df_name, 
-              aml_results = aml_results, 
-              train_metrics = leaderboard, 
-              test_metrics = all_metrics_hec_subset_municipality, 
-              aggregated_error_curr_method = aggregated_error_curr_method,
-              aggregated_error_best_model = aggregated_error_best_model,
-              test_preds = test_preds,
-              algo_best_model = best_model@algorithm))
+  results <- list(name = name,
+                  aml_results = aml_results,
+                  train_metrics = leaderboard,
+                  test_metrics = all_metrics_hec_subset_municipality,
+                  aggregated_error_curr_method = aggregated_error_curr_method,
+                  aggregated_error_best_model = aggregated_error_best_model,
+                  test_preds = test_preds,
+                  algo_best_model = best_model@algorithm)
+  
+  # Save the results to a file
+  saveRDS(results, paste0("models/subset_municipality/results_", name, "_",   Sys.Date(),".rds"))
+  
+  return(results)
 })
 
 
@@ -208,7 +212,7 @@ subset_municipality_train_metrics <- map_dfr(models_by_municipality, ~ .x$train_
 subset_municipality_test_metrics <- map_dfr(models_by_municipality, ~ .x$test_metrics)
 
 # Combine aggregated errors
-municipality <- map_dfr(models_by_municipality, ~ data.frame(municipality = .x$municipality))
+municipality <- map_dfr(models_by_municipality, ~ data.frame(municipality = .x$name))
 aggregated_error_curr_method <- map_dfr(models_by_municipality, ~ data.frame(aggregated_error_curr_method = .x$aggregated_error_curr_method))
 aggregated_error_best_model <- map_dfr(models_by_municipality, ~ data.frame(aggregated_error_best_model = .x$aggregated_error_best_model))
 
@@ -217,6 +221,7 @@ aggregated_errors_municipality <- municipality |>
   bind_cols(aggregated_error_curr_method)
 
 # save to rds
-saveRDS(models_by_municipality, paste0("models/models_by_municipality_", Sys.Date(), ".rds"))
+datetime <- format(Sys.time(), "%Y-%m-%d %H:%M")
+saveRDS(models_by_municipality, paste0("models/subset_municipality/models_", datetime, ".rds"))
 
 

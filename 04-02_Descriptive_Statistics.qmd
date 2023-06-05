@@ -9,53 +9,131 @@ In this chapter, the results of our analysis will be presented. In a first step,
 if (!require(pacman)) install.packages("pacman")
 pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
                rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
-               vip, shapviz, DALEXtra, gtsummary)
+               vip, shapviz, DALEXtra, gtsummary, knitr)
 
 ```
 
 ```{r}
 #| label: load-data
-#| include: false
+#| include: true
 
-energy_modelling <- read_rds("data/energy_modelling.rds")
+energy_modelling <- read_rds("data/energy_modelling.rds")  |> 
+  select(egid, 
+          hepi, 
+          hec, 
+          survey_year, 
+          num_residents_mean, 
+          heated_area_m2,
+         building_area_m2,
+          year_of_installation, 
+          efficiency_of_installation, 
+          energy_usage_of_installation,
+          solar_system_area_m2,
+          municipality_name,
+          municipality_code,
+          building_class, 
+          construction_year,
+          construction_period,
+          num_floors,
+          num_dwellings,
+          meters_above_sealevel, 
+          energy_production_solar_mwh, 
+          energy_consumed_hot_water_mwh,
+          retrofitted,
+          hdd,
+          foreign_ratio,
+          household_1_person_ratio,
+          elderly_ratio,
+          youth_ratio,
+          residence_less_1_year_ratio,
+          hepi_pred_current_method,
+          hec_pred_current_method,
+          stand_alone)
 ```
 
 ## Descriptive statistics {#sec-descriptive-statistics}
 
-To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data. The final dataset for modelling is the result of joining data from different sources that are provided in @sec-data-description. Furthermore, we applied several filters that are outlined in @sec-data-prep.
+To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data. The final dataset for modelling is the result of joining data from different sources that are provided in @sec-data-description. Furthermore, we applied several filters that are outlined in @sec-data-prep. Following the modelling workflow defined in @sec-modelling-workflow, we here provide the following:
 
-The final dataset for modelling contains `r nrow(energy_modelling)` observations (gas-heated buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. The buildings are distributed over 20 municipalities of the Canton of Basel-Landschaft.
+-   Summary statistics of all variables used for modelling
+
+-   Exploratory analysis of the target variables HEC and HEPI
+
+-   Exploratory analysis of the variables that are used for model training on subsets: Building class, municipality and construction period (see step 2 in @sec-modelling-workflow).
+
+### Summary statistics overview
+
+The final dataset for modelling contains `r nrow(energy_modelling)` observations (gas-heated buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-summary-stats-numeric provides summary statistics for all numeric variables of the modelling data.
 
 ```{r}
-#| label: fig-buildings-per-municipality
-#| tbl-cap: "Number of buildings per municipality."
+#| label: tbl-summary-stats-numeric
+#| tbl-cap: "Summary statistics of numeric variables."
 #| tbl-cap-location: bottom
-#| warning: false
 
-energy_modelling %>%
-  count(entrance_municipality_name, name = "n_obs") %>%
-  arrange(n_obs) %>%
-  ggplot(aes(x = n_obs, y = reorder(entrance_municipality_name, n_obs))) +
-  geom_col(fill = "#0072B2") +
-  labs(title = "Number of observations per municipality",
-       x = "Number of buildings",
-       y = "Municipality") +
-  theme_minimal()
+# Select all numeric variables
+numeric_vars <- energy_modelling %>%
+  select_if(is.numeric) |>
+  select(- c(egid, hepi_pred_current_method, hec_pred_current_method))
 
+# Compute summary statistics for numeric variables
+summary_table_numeric <- numeric_vars %>%
+  skim() %>%
+  select(skim_variable, complete_rate, numeric.p0, numeric.p25, numeric.p50, numeric.p75, numeric.p100) %>%
+  rename("Variable Name" = skim_variable, 
+         "Complete Rate" =  complete_rate,
+         "Min" = numeric.p0, 
+         "25%" = numeric.p25,
+         "50%" = numeric.p50, 
+         "75%" = numeric.p75, 
+         "Max" = numeric.p100) %>%
+  mutate(`Variable Name` = gsub("_", " ", `Variable Name`)) %>%
+  mutate(`Variable Name` = tools::toTitleCase(tolower(`Variable Name`))) %>%
+  mutate(`Complete Rate` = sprintf("%.2f", `Complete Rate`)) %>%
+  as.data.frame()
+
+# Generate the table using knitr::kable with adjusted digits
+summary_table_numeric_kable <- summary_table_numeric %>%
+  kable(booktabs = TRUE, digits = case_when(summary_table_numeric > 0 & summary_table_numeric < 1 ~ 2,
+                                            TRUE ~ 0))
+
+# Print the summary table
+summary_table_numeric_kable
 
 ```
 
-```{r}
-#| label: n-municipalities
-#| echo: false
+@tbl-summary-stats-categorical shows the categorical variables of the modelling data.
 
-#> Calculations of numbers and indicators for easier use as inline code in text.
-n_municipalities <- n_distinct(energy_modelling$municipality_code)
+```{r}
+#| label: tbl-summary-stats-categorical
+#| tbl-cap: "Summary statistics of categorical variables."
+#| tbl-cap-location: bottom
+
+# Select all categorical variables
+categorical_vars <- energy_modelling %>%
+  select_if(is.factor)
+
+# Compute summary statistics for categorical variables
+summary_table_categorical <- categorical_vars %>%
+  skim() %>%
+  select(skim_variable, n_missing, factor.n_unique, factor.top_counts) %>%
+  rename("Variable Name" = skim_variable, 
+         "Missing Values" = n_missing,
+         "Levels" = factor.n_unique,
+         "Top Counts" = factor.top_counts) %>%
+  mutate(`Variable Name` = gsub("_", " ", `Variable Name`)) %>%
+  mutate(`Variable Name` = tools::toTitleCase(tolower(`Variable Name`))) %>%
+  as.data.frame()
+
+# Generate the table using knitr::kable
+summary_table_categorical_kable <- summary_table_categorical %>%
+  kable(booktabs = TRUE)
+
+summary_table_categorical_kable
 ```
 
 ### Target variables {#sec-target-variables}
 
-As outlined in Chapter @sec-methodology, we will use both HEC and HEPI as target variables. @tbl-obs-per-year shows that the means of HEC and HEPI are both decreasing between 2016 and 2020.
+As outlined in Chapter @sec-methodology, HEC and HEPI are used as target variables. @tbl-obs-per-year shows that the means of HEC and HEPI are both decreasing between 2016 and 2020.
 
 ```{r}
 #| label: tbl-obs-per-year
@@ -68,7 +146,7 @@ obs_per_year <- energy_modelling |>
   dplyr::rename("Survey Year" = survey_year) |>
   dplyr::summarise(Count = n(),
                    "Mean HEPI (kWh/m2/year)" = mean(hepi),
-                   "Mean HEC (GWh/year)" = mean(hec)) |>
+                   "Mean HEC (GWh/year)" = mean(hec)/1000) |>
   knitr::kable(booktabs = TRUE, digits = 1)
 
 obs_per_year
@@ -81,7 +159,6 @@ obs_per_year
 #| warning: false
 #| eval: false
 
-library(ggplot2)
 
 energy_modelling |>
   filter(building_class == 1110) |>
@@ -102,52 +179,6 @@ energy_modelling %>%
   labs(x = "Municipality", y = "HEPI (kWh/m2/year)") +
   theme(axis.text.x = element_text(angle = 45, vjust = 0.5))
 
-```
-
-```{r}
-#| label: tbl-summary-stats-numeric
-#| tbl-cap: "Summary statistics of numeric variables."
-#| tbl-cap-location: bottom
-
-
-summary_table_numeric <- energy_modelling |>
-  select(construction_year, num_floors, stand_alone, num_dwellings, num_residents_mean, meters_above_sealevel, hdd, energy_production_solar_mwh) |>
-  skim()
-
-# select columns of interest
-summary_table_numeric <- summary_table_numeric |>
-  select(skim_variable, complete_rate, numeric.p0, numeric.p25, numeric.p50, numeric.p75, numeric.p100) |>
-  rename("Name" = skim_variable, 
-         "Complete rate" =  complete_rate,
-         "Min" = numeric.p0, 
-         "25%" = numeric.p25,
-         "50%" = numeric.p50, 
-         "75%" = numeric.p75, 
-         "Max" = numeric.p100) |>
-  as.data.frame() |>
-  knitr::kable(booktabs = TRUE, digits = 1)
-
-summary_table_numeric
-```
-
-```{r}
-#| label: tbl-summary-stats
-#| tbl-cap: "Summary statistics of modelling input data."
-#| tbl-cap-location: bottom
-
-summary_stats_numeric <- energy_modelling |>
-  select(- c(Q1, Q2, Q3, Q4)) |>
-  skim() |>
-  yank("numeric") |>
-  knitr::kable(booktabs = TRUE, digits = 1)
-
-
-energy_modelling |> 
-  select(entrance_municipality_name , construction_period) |>
-  tbl_summary(by = construction_period) |>
-  add_n() |>
-  bold_labels() %>%
-  modify_spanning_header(all_stat_cols() ~ "**Chemotherapy Treatment**")
 ```
 
 ### Retrofitting
@@ -265,7 +296,60 @@ retrofit_plot_2018_2020
 retrofit_plot_2016_2020
 ```
 
-### Geographical distribution
+### Variables used for subset modelling
+
+#### Building class
+
+#### Construction period
+
+#### Municipalities
+
+The buildings are distributed over 20 municipalities of the Canton of Basel-Landschaft. As shown in @fig-map-bl, the 20 municipalities are distributed around the city of Basel and mostly
+
+```{r}
+#| label: fig-map-bl
+#| tbl-cap: "Geographical distribution of the data"
+#| tbl-cap-location: bottom
+#| warning: false
+
+# Load shapefile data for Basel-Landschaft
+bl_shapefile <- st_read("data/shapefile_bl/generalisierte_gemeindegrenzen_bl.shp")
+
+# Perform data manipulation and aggregation
+energy_n_obs <- energy_modelling %>%
+  count(municipality_code, municipality_name, name = "n_obs") %>%
+  arrange(n_obs) %>%
+  mutate(municipality_name = factor(municipality_name, levels = unique(municipality_name)))
+
+data_with_shapes <- bl_shapefile |> 
+  mutate(GMDNR = as.factor(GMDNR)) |>
+  left_join(energy_n_obs, by = c("GMDNR" = "municipality_code"))
+
+# Create the choropleth map
+ggplot(data_with_shapes) +
+  geom_sf(aes(fill = n_obs, geometry = geometry)) +
+  geom_sf_text(aes(label = municipality_name), color = "black", size = 3, nudge_y = 0.05) +
+  scale_fill_distiller(palette = "YlOrRd", direction = 1, na.value = NA, name = "Number of Observations") +
+  theme_void() +
+  theme(legend.position = "bottom")
+```
+
+```{r}
+#| label: fig-buildings-per-municipality
+#| tbl-cap: "Number of buildings per municipality."
+#| tbl-cap-location: bottom
+#| warning: false
+
+energy_modelling %>%
+  count(municipality_name, name = "n_obs") %>%
+  arrange(n_obs) %>%
+  ggplot(aes(x = n_obs, y = reorder(municipality_name, n_obs))) +
+  geom_col(fill = "#0072B2") +
+  labs(title = "Number of observations per municipality",
+       x = "Number of buildings",
+       y = "Municipality") +
+  theme_minimal()
+```
 
 ```{r}
 #| label: indicators-municipalities
@@ -285,7 +369,7 @@ In this section, we will have a closer look at the characteristics of the `r n_m
 #> Filter to relevant buildings for modelling
 
 summary_table <- energy_modelling |>
-  group_by(entrance_municipality_name, building_class) |>
+  group_by(municipality_name, building_class) |>
   summarise(n = n()) |>
   pivot_wider(names_from = building_class, 
               values_from = n)
@@ -301,8 +385,8 @@ summary_table
 plot_boxplot <- function(df, y_axis) {
   y_axis <- sym(y_axis)
   df |>
-    mutate(class = fct_reorder(entrance_municipality_name, !!y_axis, .fun='median')) |>
-    ggplot( aes(x=reorder(entrance_municipality_name, !!y_axis), y=!!y_axis, fill=entrance_municipality_name)) + 
+    mutate(class = fct_reorder(municipality_name, !!y_axis, .fun='median')) |>
+    ggplot( aes(x=reorder(municipality_name, !!y_axis), y=!!y_axis, fill=municipality_name)) + 
       geom_boxplot() +
       xlab("class") +
       theme(legend.position="none") +
@@ -313,7 +397,7 @@ plot_boxplot <- function(df, y_axis) {
 #> Creating boxplots for different input variables
 boxplot_construction_year <- plot_boxplot(energy_modelling, "construction_year")
 boxplot_building_area_m2 <- plot_boxplot(energy_modelling, "building_area_m2")
-boxplot_num_residents <- plot_boxplot(energy_modelling, "num_residents")
+boxplot_num_residents <- plot_boxplot(energy_modelling, "num_residents_mean")
 boxplot_hepi <- plot_boxplot(energy_modelling, "hepi")
 
 ```
@@ -343,7 +427,7 @@ boxplot_construction_year
 
 energy_modelling |>
   filter(building_class == 1110) |>
-  ggplot(aes(x = hepi, y = entrance_municipality_name, fill = after_stat(x))) +
+  ggplot(aes(x = hepi, y = municipality_name, fill = after_stat(x))) +
   geom_density_ridges_gradient(scale = 5, rel_min_height = 0.02) +
   scale_fill_viridis(name = "HEPI (kWh/m2/year)", option = "C") +
   labs(title = 'HEPI per municipality') +

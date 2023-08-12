@@ -8,7 +8,7 @@
 *.rdx
 *.rdb
 
-gpt_q_and_a.qmd
+
 modelling_code_only.R
 99_presentation.html
 /.quarto/
@@ -16,6 +16,7 @@ modelling_code_only.R
 .DS_Store
 
 /_book/
+/models
 /data
 /index_cache/
 /01-Introduction_cache/

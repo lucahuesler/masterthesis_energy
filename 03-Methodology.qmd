@@ -7,7 +7,7 @@ This chapter provides a description of the data sources in @sec-data-description
 The finel dataset that we use for modelling is the result of merging information from various sources. In comparison to the current approach, we include information from further data sources (see @sec-data-prep). The following @tbl-data-sources provides a overview of the data sources used for the project.
 
 | **Data**                               | **Spatial resolution**  | **Temporal resolution** | **Source**                                                                                                                                                                                                                                                                                              |
-|---------------------|----------------------|------------------|--------------------------------------------|
+|----------------------------------------|-------------------------|-------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Building characteristics               | Building                | Yearly                  | [Cantonal RBD](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                                                                                                                      |
 | Energy consumption                     | Building                | Yearly                  | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                                                                                  |
 | Inhabitants per building               | Building                | Quarterly               | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                                                                              |
@@ -16,17 +16,17 @@ The finel dataset that we use for modelling is the result of merging information
 | Elevation information                  | Raster grid (10x10 m)   | 2021                    | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm "https://api3.geo.admin.ch/services/sdiservices.html#height") |
 | Building floor plan[^03-methodology-1] | Building                | Daily                   | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                                                                             |
 
-: Overview of data sources {#tbl-data-sources}
+: Overview of data sources. {#tbl-data-sources}
 
-[^03-methodology-1]: The building floor plan servers as basis to calculate the distance to the next building and therby extract the information if a building is stand-alone or directly connected to another buidling.
+[^03-methodology-1]: The building floor plan served as basis to calculate the distance to the next building and thereby extract the information if a building is stand-alone or directly connected to another building.
 
-The building information data from the RBD and energy consumption was directly extracted from the database of the cantonal energy statistics to ensure the same data basis as the current approach. Thus, these two datasets were already joined and cleaned during the process of the energy statistics and enhanced with infromation from further sources (e.g. information from the database of the cantonal inspection of combustion systems).[^03-methodology-2]
+The building information data from the RBD and energy consumption was directly extracted from the database of the cantonal energy statistics to ensure the same data basis as the current approach. Thus, these two datasets were already joined and cleaned during the process of the energy statistics and enhanced with information from further sources (e.g. information from the database of the cantonal inspection of combustion systems).[^03-methodology-2]
 
 [^03-methodology-2]: For further information, see @statistischesamtdeskantonsbasel-stadt2017. The report provides a detailed description of the data sources that are joined with the data from the RBD in the cantonal energy statistics.
 
 The data on inhabitants, the retrofit information as well as the building floor plan contained the Swiss Building Identification Number (EGID) that serves as unique identifier to match the information with the RBD data.
 
-In the case of the elevation information and demographic characteristics, the data was added by spatial joins. The elevation information was retrieved from the digital elevation model provided by swisstopo via Application Programming Interface (API). By using the building coordinates, the elevation (meters above sealevel) of each building was retrieved from the API[^03-methodology-3]. The demographic characteristics from STATPOP were only available at an aggregated level of a hectare grid. In order to match the information to the RBD data, the two datasets were spatially joined and all buildings within a hectare grid cell were assigned the corresponding attributes from STATPOP[^03-methodology-4].
+In the case of the elevation information and demographic characteristics, the data was added by spatial joins. The elevation information was retrieved from the digital elevation model provided by swisstopo via Application Programming Interface (API). By using the building coordinates, the elevation (meters above sea level) of each building was retrieved from the API[^03-methodology-3]. The demographic characteristics from STATPOP were only available at an aggregated level of a hectare grid. In order to match the information to the RBD data, the two datasets were spatially joined and all buildings within a hectare grid cell were assigned the corresponding attributes from STATPOP[^03-methodology-4].
 
 [^03-methodology-3]: See the [code on Github](https://github.com/lucahuesler/masterthesis_energy/blob/322bcd41c13024d0d5b23a189ad75e3ecdfc4d26/helpers/helper_functions.R#L5 "Github") for details.
 
@@ -38,7 +38,7 @@ Finally, the building floor plan was again matched by the EGID and then used to 
 
 In order to address the research questions defined in @sec-research-questions, a suitable methodology is required. The Cross-Industry Standard Process for Data Mining (CRISP-DM, see @fig-crisp-dm) offers conceptual framework that was originally designed for the field of data mining by @wirth2000, but also serves as a guideline for many data science projects [@hotz2022].
 
-![CRISP-DM Diagram [@hotz2022]](figures/03-CRISP-DM.png){#fig-crisp-dm fig-align="center" width="60%"}
+![CRISP-DM Diagram [@hotz2022].](figures/03-CRISP-DM.png){#fig-crisp-dm fig-align="center" width="60%"}
 
 Inspired by the CRISP-DM process model, we define the following methodological steps for our use case:
 
@@ -51,7 +51,7 @@ Inspired by the CRISP-DM process model, we define the following methodological s
 
 It is important to note however that we did not follow the above steps in a linear manner. Usually, after creating a first set of models, the evaluation leads to new insights that result in additional feature engineering steps or even a reframing of the initial problem understanding. Accordingly, as shown in @fig-modelling-process, numerous models were developed and evaluated throughout the modelling process.
 
-![A schematic for the typical modeling process [@silge2023a].](figures/03-fig-modelling-process.png){#fig-modelling-process width="80%"}
+![A schematic for the typical modeling process [@silge2023].](figures/03-fig-modelling-process.png){#fig-modelling-process width="80%"}
 
 In the following subsections, we will discuss the steps listed above in the context of the present study.
 
@@ -67,12 +67,16 @@ This step involves the collection of the data, assessing its quality and also id
 
 Based on the findings of the data exploration, the data was then prepared for modelling. In a first step, this consisted in the integration of the different datasets into one dataset that can be used for modelling (see @sec-data-description). In the following, we conducted several data transformation steps that we will illustrate in the following.
 
+------------------------------------------------------------------------
+
 **Integration of new variables**
 
 In comparison to the current approach, we integrated the following additional predictor variables based on the sources that are listed in section @sec-data-description:
 
 1.  **Number of inhabitants:** The current approach uses the number of inhabitants at the end of each survey year as a basis. However as stated in @sec-problem-definition, this does not account for changes during the year or vacancies of a building. Thus, we recalculated the variable by using quarterly population data and determining the mean number of inhabitants for the respective year.
+
 2.  **Social indicators:** Based on the STATPOP dataset, we calculated the following indicators:[^03-methodology-5]
+
     1.  Ratio of foreign population
 
     2.  Ratio of one person households
@@ -82,9 +86,14 @@ In comparison to the current approach, we integrated the following additional pr
     4.  Youth ratio (as defined by @oecd2023a)
 
     5.  Ratio of persons that are residents for less than one year.
+
 3.  **Retrofit:** Based on the retrofit datasets, we integrated a binary variable that contains the information if a building has been retrofitted between 2009 and 2020.
-4.  **Elevation:** From the DEM, we added a variable that contains the meters above seavel for each building.
-5.  **Building connectivity:** Based on the buiding floor plan, we calculated the distance to the next building for each building and subsequently created a binary variable that indicates whether a building is detached or attached to another building.
+
+4.  **Elevation:** From the DEM, we added a variable that contains the meters above sea level for each building.
+
+5.  **Building connectivity:** Based on the building floor plan, we calculated the distance to the next building for each building and subsequently created a binary variable that indicates whether a building is detached or attached to another building.
+
+    ------------------------------------------------------------------------
 
 [^03-methodology-5]: The list of social indicators should not be considered as exhaustive. The idea here was to examine the potential influence of social factors on modeling energy consumption. Thus, we selected the STATPOP variables that seemed to have the most direct influence on energy consumption based on literature and domain knowledge.
 
@@ -92,7 +101,9 @@ In comparison to the current approach, we integrated the following additional pr
 
 During data exploration, we found that most variables of the dataset indicate a good quality level and we did not detect high numbers of missing values (see @sec-descriptive-statistics). However, in some specific cases we had to take a decision on how to deal with missing values. This is particular true for the variables of the variables *construction year* and *energy usage* of the heating installation. For the construction year of the heating installation, we decided to do a mean imputation for missing values. In the case of energy usage of the heating installation however, this was not possible as it is a factor variable containing the information if the heating system is used for DHW, space heating (SH) or both. Thus, we here encoded missing values as an explicit factor level (*"missing"*).
 
-It is worth noting that some imputation was already conducted during the energy statistics survey. To calculate the variable *heated area*, mean imputation was used in case of missing values for the number of floors (see @statistischesamtdeskantonsbasel-stadt2017a).
+It is worth noting that some imputation was already conducted during the energy statistics survey. To calculate the variable *heated area*, mean imputation was used in case of missing values for the number of floors (see @statistischesamtdeskantonsbasel-stadt2017).
+
+------------------------------------------------------------------------
 
 **Filtering**
 
@@ -100,48 +111,50 @@ As a last step of the data preparation, it was necessary to apply several filter
 
 -   Only residential buildings in accordance with our research questions
 -   Only buildings with a HEPI between 20 and 300 kWh/m²: This filter was introduced as way of handling outliers for the HEPI. In case of very high or very low values for the HEPI, it is not easy to determine whether the values are correct or the result of a error in the underlying variables[^03-methodology-6].
--   Only buildings where the energy usage of the installation is used for SH exlusively or for DHW and SH together. However as mentioned above, due to the high number of missing values, we also included buildings where this information was absent.
+-   Only buildings where the energy usage of the installation is used for SH exclusively or for DHW and SH together. However as mentioned above, due to the high number of missing values, we also included buildings where this information was absent.
 
 [^03-methodology-6]: For example, it is often the case that a heating installation is providing SH to more than one building. However, this information is not always available and will result in a low HEPI as the heated area is too small. Another known source of error is the number of floors of a building that is used to calculate the heated area.
 
 ### Modelling {#sec-modelling}
 
-In this step of the CRISP-DM process, we defined the approaches and workflow for modelling the HEC. As it was not clear from the beginning which approach and algorithm will lead to the best results, our modelling process started with an explorative phase where different approaches and algorithms were tested and compared. Based on this results, we then conducted a second modelling phase that focused on training the algorithms on more homogenous subsets of the data. The last step of the modelling process then was dedicated to the model explainability. In the following @sec-modelling-approaches, we introduce two different approaches that were used during the exploration phase. Section @sec-modelling-workflow presents the modelling workflow in detail.
+In this step of the CRISP-DM process, we defined the approaches and workflow for modelling the HEC. As it was not clear from the beginning which approach and algorithm will lead to the best results, our modelling process started with an explorative phase where different approaches and algorithms were tested and compared. Based on this results, we then conducted a second modelling phase that focused on training the algorithms on more homogeneous subsets of the data. The last step of the modelling process then was dedicated to the model explainability. In the following @sec-modelling-approaches, we introduce two different approaches that were used during the exploration phase. Section @sec-modelling-workflow presents the modelling workflow in detail.
 
 #### Modelling approaches {#sec-modelling-approaches}
 
 The model exploration was conducted in two different ways: First, a custom approach was used. Here, the algorithms, preprocessing steps and also hyperparameter tuning was manually specified[^03-methodology-7]. This offers a high level of control and flexibility. During the custom approach, we trained the model with the following algorithms: MLR, KNN, linear SVM, radial SVM, polynomial SVM, XGBoost and ANN. For hyperparamter tuning, a regular grid search approach with 5-fold cross-validation was used[^03-methodology-8].
 
-[^03-methodology-7]: The custom approach was implemented with [tidymodels](https://www.tidymodels.org/). Tidymodels is a collection of R-packages for modeling and machine learning.
+[^03-methodology-7]: The custom approach was implemented with [tidymodels](https://www.tidymodels.org/). Tidymodels is a collection of R-packages for modeling and machine learning [@kuhn2023].
 
 [^03-methodology-8]: See the chapter on [grid search](https://www.tmwr.org/grid-search.html "tidymodels grid search") in @silge2023 for details.
 
-Second, we made use of automated machine learning (AutoML)[^03-methodology-9]. The AutoML approach takes care of data preprocessing, feature engineering and model selection. Thus, this approach requires much less manual work throughout the modelling process. However, there is also less control and transparency troughout the modelling process and more time has to be invested in the subsequent model understanding and explainability.
+Second, we made use of automated machine learning (AutoML)[^03-methodology-9]. The AutoML approach takes care of data preprocessing, feature engineering and model selection. Thus, this approach requires much less manual work throughout the modelling process. However, there is also less control and transparency throughout the modelling .process and more time has to be invested in the subsequent model understanding and explainability.
 
-[^03-methodology-9]: For automated machine learning, the open-source [AutoML library of H20](https://h2o.ai/platform/h2o-automl/) was used.
+[^03-methodology-9]: For automated machine learning, the open-source AutoML library of [H~2~0](https://h2o.ai/platform/h2o-automl/) was used [@fryda2023].
 
 #### Modelling workflow {#sec-modelling-workflow}
 
 The modelling workflow was guided by the research questions as defined in @sec-research-questions and consisted of three steps: First, all the available buildings after applying the filters defined in @sec-data-prep were used for modelling. Based on this dataset, we trained the models with the custom approach as well as with the AutoML approach and evaluated and compared the results on the train set based on the metrics defined in @sec-evaluation-metrics[^03-methodology-10]. In this step, we also explored different selections of predictor variables in order to evaluate the influence of specific predictors (e.g. retrofit). @fig-workflow-step-1 provides an overview of this first step of the modelling workflow.
 
-[^03-methodology-10]: A ratio of 0.75/0.25 was used for splitting the data into train and test set. This counts for all the subesequent modelling steps as well.
+[^03-methodology-10]: A ratio of 0.75/0.25 was used for splitting the data into train and test set. This counts for all the subsequent modelling steps as well.
 
-![Model exploration (step 1)](figures/03-workflow-step-1.png){#fig-workflow-step-1 fig-align="center" width="70%"}
+![Model exploration (step 1).](figures/03-workflow-step-1.png){#fig-workflow-step-1 fig-align="center" width="70%"}
 
 {{< pagebreak >}}
 
-The second step of the modelling workflow then focused on the subquestions RQ1.1 and RQ1.2 @sec-research-questions: Can we achieve a higher accuracy than the current approach and does the models perform better if we train on more homogeneous subsets of data? We here used the approach with the best performance in step one and divided the dataset into different subsets: By building class, by municipality, by construction period and by survey year. Again, the models were then evaluated based on the metrics defined in @sec-evaluation-metrics. As we here modeled subsets that have different underlying distributions of the HEC, the relative metrics of MAPE (@eq-mape) and CV (@eq-cv-rmse) were used for comparison. Furthermore, we calculated the aggregated error (@eq-agg-error) on municipality level in order to compare it with the error of the current approach.
+The second step of the modelling workflow then focused on the sub-questions RQ1.1 and RQ1.2 @sec-research-questions: Can we achieve a higher accuracy than the current approach and does the models perform better if we train on more homogeneous subsets of data? We here used the approach with the best performance in step one and divided the dataset into different subsets: By building class, by municipality, by construction period and by survey year. Again, the models were then evaluated based on the metrics defined in @sec-evaluation-metrics. As we here modeled subsets that have different underlying distributions of the HEC, the relative metrics of MAPE (@eq-mape) and CV (@eq-cv-rmse) were used for comparison. Furthermore, we calculated the aggregated error (@eq-agg-error) on municipality level in order to compare it with the error of the current approach.
 
-![Modelling on subsets (step 2)](figures/03-workflow-step-2.png){#fig-workflow-step-2 fig-align="center" width="70%"}
+![Modelling on subsets (step 2).](figures/03-workflow-step-2.png){#fig-workflow-step-2 fig-align="center" width="70%"}
+
+\newpage
 
 Finally, the last step of the modelling workflow focused on RQ2.1 and RQ2.1: What influence do the additionally integrated predictor variables have on the model? Thus, this last step focused on model understanding and explainability. To answer these questions, we used the approaches defined in @sec-model-explainability-techniques: A analysis of the variable importance was carried out to evaluate the predictive power of the individual predictor variables. Furthermore, the approach of Shapley Additive Explanations (SHAP) was used to gain more detailed insights on the level of individual predictions.
 
-![Model understanding (step 3)](figures/03-workflow-step-3.png){#fig-workflow-step-3 fig-align="center" width="70%"}
+![Model understanding (step 3).](figures/03-workflow-step-3.png){#fig-workflow-step-3 fig-align="center" width="70%"}
 
-### Evaluation {#sec-evaluation-metrics}
+### Evaluation {#sec-evaluation}
 
 The evaluation in the first step of the modelling workflow consisted on the comparison of the metrics on the train data between the custom approach and the AutoML approach. Based on this, the evaluation in the further stages of the workflow was carried out by using the metrics defined in @sec-evaluation-metrics on the test set.
 
 ### Model deployment
 
-The model deployment is not part of this master thesis. However, discuss the results of the work with the relevant stakeholders in the Cantons of Basel-Landschaft and Basel-Stadt and discuss whether and how the models will be incorporated into the future cantonal energy statistics.
+The model deployment is not part of this master thesis. However, we will discuss the results of the work with the relevant stakeholders in the Cantons of Basel-Landschaft and Basel-Stadt and evaluate whether and how the models will be incorporated into the future cantonal energy statistics.

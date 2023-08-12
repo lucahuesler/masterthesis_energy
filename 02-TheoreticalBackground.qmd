@@ -4,11 +4,11 @@ This chapter provides the theoretical background of the thesis: After introducin
 
 ## Building energy quantification methods {#sec-building-energy-estimation-methods}
 
-Building energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector [@yu2022]. While we focus exclusively on estimating heat energy in this thesis, it is important to note that energy estimation methods can also include other energy usages suchs as cooling, electricity or DHW. On a general level, the relevant literature differs between top-down and bottom-up approaches (@deb2021; @bourdeau2019; @yu2022). We shortly introduce both approaches here, but since we aim at developing estimation models at the level of individual buildings, we consider bottom-up approaches as more relevant in the context of this study.
+Building energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector [@yu2022]. While we focus exclusively on estimating heat energy in this thesis, it is important to note that energy estimation methods can also include other energy usages such as cooling, electricity or DHW. On a general level, the relevant literature differs between top-down and bottom-up approaches [@deb2021; @bourdeau2019; @yu2022]. We shortly introduce both approaches here, but since we aim at developing estimation models at the level of individual buildings, we consider bottom-up approaches as more relevant in the context of this study.
 
 ### Top-down approaches {#sec-top-down-approaches}
 
-Top-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. A typcial example for a top-down approach in Switzerland is presented by [@leaeymann2014]: The study uses the national energy statistics of Switzerland to estimate energy consumption on cantonal level. While for some cantons, the results of the study fit quite well with the data published by the cantons, in other cases the authors observed significant differences (e.g. Basel-Stadt). Top-down approaches can be suitable for large-scale planning, but they often do not provide adequate results as the spatial resolution becomes finer (such as municipality, neighbourhood, buidling level).
+Top-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. A typical example for a top-down approach in Switzerland is presented by [@eymann2014]: The study uses the national energy statistics of Switzerland to estimate energy consumption on cantonal level. While for some cantons, the results of the study fit quite well with the data published by the cantons, in other cases the authors observed significant differences (e.g. Basel-Stadt). Top-down approaches can be suitable for large-scale planning, but they often do not provide adequate results as the spatial resolution becomes finer (such as municipality, neighborhood, building level).
 
 It is worth nothing however, that top-down approaches can offer a good way for cases where no fine-grained data is available. As noted by @guo2022, this is the case in many developing countries.
 
@@ -16,13 +16,13 @@ It is worth nothing however, that top-down approaches can offer a good way for c
 
 Bottom-up approaches on the other hand use the information of individual buildings as starting point. In earlier stages of building energy modelling, the research focused mainly on physics-based or *white-box* models, where the models try to simulate the energy use of a building by the use of physical conditions and parameters. As indicated by the name of *white-box models*, these models are usually very good in terms of explainability [@yu2022].
 
-With the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called *black-box models* became more and more popular (@yu2022, @bourdeau2019, @dong2016). Typically, there are three groups of independent variables in black-box models [@yu2022]:
+With the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called *black-box models* became more and more popular [@yu2022; @bourdeau2019; @dong2016]. Typically, there are three groups of independent variables in black-box models [@yu2022]:
 
-1.  Socio-economic parameters (e.g. occupant behaviour)
+1.  Socio-economic parameters (e.g. occupant behavior)
 2.  Weather parameters
 3.  Building parameters
 
-In the modelling process, black-box models usually rely on machine learning algorithms. Among the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN). However in recent research, tree-based methods like random forest (RF) or gradient boost machines (GBM) have shown promising results (@deb2021, @olu-ajayi2022, @gubser2022).
+In the modelling process, black-box models usually rely on machine learning algorithms. Among the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN). However in recent research, tree-based methods like random forest (RF) or gradient boost machines (GBM) have shown promising results [@deb2021; @olu-ajayi2022; @gubser2022].
 
 There are also different examples, where white-box and black-box models are combined - so-called *hybrid* or grey-box models. Hybrid models seek to eliminate the weaknesses and combine the strengths of white and black-box models [@chalal2016].
 
@@ -62,7 +62,7 @@ At it's core, the current method of the cantonal energy statistics uses a bottom
 
 [^02-theoreticalbackground-1]: The Canton of Basel-Landschaft maintains a cantonal RBD since 2006. In addition to the federal RBD, the cantonal register contains additional information about the energy system of the buildings (e.g. if a building is equipped with a solar installation). For a full list of the additional variables in the cantonal RBD, see [appendix 1](https://bl.clex.ch/frontend/annex_document_dictionaries/14611) of the regulation on the cantonal RBD [@regierungsratdeskantonsbasel-landschaft2021].
 
-The measured gas consumption represents the total annual amount of energy in kWh that the energy provider delivers to the building. This englobes DWH as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows:
+The measured gas consumption represents the total annual amount of energy in kWh that the energy provider delivers to the building. This englobes DHW as well as HEC and in some cases also energy used for cooking. However, for the estimation of HEC, only the energy consumption that flows into the space heating should be considered. Thus, the gas consumption is adjusted as follows:
 
 $$
 \begin{aligned}
@@ -101,15 +101,15 @@ where:
 
 -   n~floors~ = Number of floors
 
-[^02-theoreticalbackground-2]: The method uses an efficiency factor of 0.85 for installations that are older than 2000 and an efficiency factor of 0.95 for installations that were built after 2000 [@statistischesamtdeskantonsbasel-stadt2017a].
+[^02-theoreticalbackground-2]: The method uses an efficiency factor of 0.85 for installations that are older than 2000 and an efficiency factor of 0.95 for installations that were built after 2000 [@statistischesamtdeskantonsbasel-stadt2017].
 
-As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate the average HEPI for each building category (single-family house or multi-family house) and period of construction. The following @fig-hepi-energy-stats shows the average HEPI per construction period for single-family houses in 2016, 2018 and 2020.
+As the ERA is generally not available, it is approximated on the basis of GFA multiplied by the number of floors. @eq-hepi is applied to all gas-heated buildings in the canton in order to calculate the average HEPI for each building category (single-family house or multi-family house) and period of construction. The following @fig-hepi-energy-stats shows the average HEPI per construction period for single-family houses (SFH) in 2016, 2018 and 2020.
 
 ```{r}
 #| label: fig-hepi-energy-stats
 #| cap-location: bottom
 #| warning: false
-#| fig-cap: HEPI in kWh/m2*year by survey year and construction period.
+#| fig-cap: HEPI of SFH in kWh/m2*year by survey year and construction period.
 
 library(tidyverse)
 Heizkoeffizienten_BL <-  read_csv("data/Heizkoeffizienten_BL.csv")
@@ -156,17 +156,17 @@ where:
 
 Energy always passes through different stages between the first extraction and final consumption (e.g. distribution, storage). From a high-level perspective, we can differentiate between four stages as illustrated in @fig-energy-stages . Between the different stages, there are always losses through transformation to the next stage.
 
-[![Stages of the energy chain ](figures/02-energy_terms.png){#fig-energy-stages}](https://ourworldindata.org/energy-definitions)
+[![Stages of the energy chain .](figures/02-energy_terms.png){#fig-energy-stages}](https://ourworldindata.org/energy-definitions)
 
 In the context of this master thesis, we only focus on the last two stages: final energy and useful energy. As defined by the United Nations @departmentofeconomicandsocialaffairsstatisticsdivision2018 [p.55], final energy consumption *"refers to all fuel and energy delivered to users for both their energy and non-energy uses"*. While there exist various uses of energy, we exclusively focus on the use of heat generation in the context of this study.
 
 The data used for modelling contains the amount natural gas delivered by the provider to the building and therefore does not take into account potential losses due to the inefficiencies of heating appliances. In the context of @fig-energy-stages, this corresponds to the stage of final energy.
 
-As outlined in @sec-current-method, the current method uses the age of the heat generating installation for estimating the losses between final energy and useful energy. However the final estimation of the HEC refers to the final energy as shown in @eq-hec-final. In line with current approach as well as other approaches (e.g. @gubser2022), HEC always refers to the final energy consumption in the context of this thesis.
+As outlined in @sec-current-method, the current method uses the age of the heat generating installation for estimating the losses between final energy and useful energy. However the final estimation of the HEC refers to the final energy as shown in @eq-hec-final. In line with the current approach as well as other approaches (e.g. [@gubser2022]), HEC always refers to the final energy consumption in the context of this thesis.
 
 ## Evaluation metrics {#sec-evaluation-metrics}
 
-For evaluation and comparison of machine learning models, there exist a variety of metrics. In the field of energy research, the most commonly used metrics are the following (see for example @amasyali2018, @wenninger2021, @manfren2022):
+For evaluation and comparison of machine learning models, there exist a variety of metrics. In the field of energy research, the most commonly used metrics are the following (see for example [@amasyali2018; @wenninger2021; @manfren2022]):
 
 -   Root mean squared error (RMSE)
 -   Mean absolute error (MAE)
@@ -230,12 +230,12 @@ $$ {#eq-agg-error}
 
 ## Model explainability techniques {#sec-model-explainability-techniques}
 
-In @tbl-bottom-up-approaches, we have seen that a major of black-box model is their limited interpretability and lack of detailed explanation how a certain prediction is made. In this thesis however, it seems particularly important to also include considerations about model explainability since we are carrying out the study in the public sector context. The current discussion on decision-making based on Articifial Intelligence (AI) highlights the need for transparent and explainable models (see for example @wilson2022 or @wolf2020 on this topic). In the context of this thesis, we will use the following two concepts for model explainability:
+In @tbl-bottom-up-approaches, we have seen that a major of black-box model is their limited interpretability and lack of detailed explanation how a certain prediction is made. In this thesis however, it seems particularly important to also include considerations about model explainability since we are carrying out the study in the public sector context. The current discussion on decision-making based on Artificial Intelligence (AI) highlights the need for transparent and explainable models (see for example @wilson2022 or @wolf2020 on this topic). In the context of this thesis, we will use the following two concepts for model explainability:
 
 **Variable importance analysis (VIA)**
 
-VIA is a technique to measure the importance of each predictor variable of a given model. The more the prediction of a model relies on specific variable, the more important this variable is considered for the model. As @wei2015 point out, a wide range of VIA measures exist, depending on the research field and also on the used algorithm. In our case, we rely on the approach used by the H~2~O library as defined in @h2o.ai2023.
+VIA is a technique to measure the importance of each predictor variable of a given model. The more the prediction of a model relies on specific variable, the more important this variable is considered for the model. As @wei2015 point out, a wide range of VIA measures exist, depending on the research field and also on the used algorithm. In our case, we rely on the approach used by the H~2~O library (see @h2o.ai2023a).
 
 **Shapley Additive explanations (SHAP)**
 
-SHAP is a method based on cooperative game theory that helps to increase transparency and interpretability of black-box models [@trevisan2022]. It was introduced by [@lundberg] in 2017. While VIA only provides insights about feature importance on a global level, SHAP can also deliver local explanation by calculating feature importance on the level of a individual prediction. Similar to VIA, we use the SHAP implementation of the H~2~O library as defined in @h2o.ai2023.
+SHAP is a method based on cooperative game theory that helps to increase transparency and interpretability of black-box models [@trevisan2022]. It was first introduced by [@lundberg2017]. While VIA only provides insights about feature importance on a global level, SHAP can also deliver local explanation by calculating feature importance on the level of a individual prediction. Similar to VIA, we use the SHAP implementation of the H~2~O library (see @murphy2022).

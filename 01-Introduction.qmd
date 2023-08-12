@@ -16,11 +16,11 @@ The {#rmd-basics} text after the chapter declaration will allow us to link throu
 
 ## General Background {#sec-general-background}
 
-According to the latest report of the Intergovernmental Panel on Climate Change (IPCC) *"human activities, principally through emissions of greenhouse gases, have unequivocally caused global warming, with global surface temperature reaching 1.1°C above 1850--1900 in 2011--2020."* [@mukherji2023, p.4]. Global warming is happening at accelerated speed and its consequences become increasingly visible. The building sector is one of the main contributors to global greenhouse gas emissions [@zhong2021]. This is especially true for Switzerland, where the building sector contributes approximately 25.8% of the country's total emissions [@federalofficefortheenvironment2023a].
+According to the latest report of the Intergovernmental Panel on Climate Change (IPCC) *"human activities, principally through emissions of greenhouse gases, have unequivocally caused global warming, with global surface temperature reaching 1.1°C above 1850--1900 in 2011--2020."* [@mukherji2023, p.4]. Global warming is happening at accelerated speed and its consequences become increasingly visible. The building sector is one of the main contributors to global greenhouse gas emissions [@zhong2021]. This is especially true for Switzerland, where the building sector contributes approximately 25.8% of the country's total emissions [@federalofficefortheenvironment2023].
 
-By signing the United Nations Paris agreement, Switzerland committed to reducing its emissions by half until 2030 compared to the level of 1990 [@federalofficefortheenvironment2023b]. Furthermore, the Federal Council decided in 2019 that Switzerland aims for the so-called *net zero target* and thereby should reduce its emissions to net zero by 2050 [@federalofficefortheenvironment2019a][^01-introduction-1].
+By signing the United Nations Paris agreement, Switzerland committed to reducing its emissions by half until 2030 compared to the level of 1990 [@federalofficefortheenvironment2023a]. Furthermore, the Federal Council decided in 2019 that Switzerland aims for the so-called *net zero target* and thereby should reduce its emissions to net zero by 2050 [@federalofficefortheenvironment2019].[^01-introduction-1]
 
-[^01-introduction-1]: As defined by @federalofficefortheenvironment2023d, the net zero target means that "*from 2050 Switzerland aims to emit no more greenhouse gases into the atmosphere than can be captured and stored in natural and technological sinks ('net zero emissions').*"
+[^01-introduction-1]: As defined by the @federalofficefortheenvironment2023b, the net zero target means that "*from 2050 Switzerland aims to emit no more greenhouse gases into the atmosphere than can be captured and stored in natural and technological sinks ('net zero emissions').*"
 
 On June 13th 2021, Switzerland voted on the *Federal Act on the Reduction of Greenhouse Gas Emissions (CO~2~ Act)*. The Act also included measures concerning the building sector: For new buildings and for changes of the heating system in older buildings, the installation of non-renewable heating systems would no longer be allowed [@federalofficefortheenvironment2021]. However, the CO~2~ Act was rejected by the Swiss electorate [@bundeskanzlei2023]. This result also had consequences for the energy policies of the Cantons. As stated in the newest version of the Cantonal Energy Planning Report of Basel-Landschaft, the rejection of the CO~2~ Act increased the pressure on the Cantons to take action, particularly in the building sector [@regierungsratdeskantonsbasel-landschaft2022]. According to Switzerland's long-term climate strategy, the Cantons are responsible for reducing the emissions of the building sector in order to meet the the country's net zero target [@federalcouncilofswitzerland2021].
 
@@ -35,7 +35,7 @@ The current legally valid version of the cantonal energy law defines in [§ 2 (1
 3.  In the building sector, the heating demand for **new buildings** should be reduced to an average of 20 kilowatt hours (kWh) per square meter of energy reference area (ERA) per year by 2030.
 4.  In the building sector, the non-renewable heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of ERA per year by 2050.
 
-However, the latest version of the energy planning report reviewed these targets for compatibility with the net-zero target. The report states that the first and third goal above are not compatible with the net zero target [@regierungsratdeskantonsbasel-landschaft2022]. As a result of this finding, the cantonal government submitted a proposal on behalf of the cantonal parliament (german: Landratsvorlage) in which the two goals are adapted as follows [@regierungsratdeskantonsbasel-landschaft2022b]:
+However, the latest version of the energy planning report reviewed these targets for compatibility with the net-zero target. The report states that the first and third goal above are not compatible with the net zero target [@regierungsratdeskantonsbasel-landschaft2022]. As a result of this finding, the cantonal government submitted a proposal on behalf of the cantonal parliament (german: Landratsvorlage) in which the two goals are adapted as follows [@regierungsratdeskantonsbasel-landschaft2022a]:
 
 1.  The end energy consumption in the canton, excluding mobility, should be reduced by **70%** by 2050 compared to 2000 (6,500 GWh).
 2.  In the building sector, the heating demand for **existing buildings** should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050[^01-introduction-2].
@@ -44,13 +44,13 @@ However, the latest version of the energy planning report reviewed these targets
 
 To achieve the above mentioned goals, the cantonal building stock has to be transformed fundamentally. In 2020, two thirds of about 65'000 residential buildings in the canton were heated by fossil energy sources [@statistischesamtdeskantonsbasel-landschaft2022]. As shown in @fig-heat-energy-sources-2020, the share buildings heated by non-renewable energy sources is particularly high for buildings built before 1980.
 
-![Residential buildings by heat energy source and construction period, as of 2020 [@statistischesamtdeskantonsbasel-landschaft2022]](figures/01-et-mix-wohngebaeude.png){#fig-heat-energy-sources-2020 fig.pos="h" fig-align="center" width="80%"}
+![Residential buildings by heat energy source and construction period, as of 2020 [@statistischesamtdeskantonsbasel-landschaft2022].](figures/01-et-mix-wohngebaeude.png){#fig-heat-energy-sources-2020 fig.pos="h" fig-align="center" width="80%"}
 
 Against this background, it's clear that a fundamental change of heating systems is necessary to achieve the national and cantonal climate goals, particularly the net zero target. According to the latest energy planning report, around 1000 heating systems per year change to renewable sources through the cantonal subsidies program *Baselbieter Energiepaket* [@regierungsratdeskantonsbasel-landschaft2022]. However, the heating system replacement rate should be around 1500 buildings per year on average to achieve 100% renewable heating of the building sector by 2050.
 
 ## Problem definition {#sec-problem-definition}
 
-To track progress towards an emission-free building sector, it's crucial to have robust and reliable data. The cantonal energy statistics serves this purpose and acts as a central data basis for evaluating and measuring the impact of the cantonal energy policy as well as energy planning at the cantonal and municipal levels [@statistischesamtdeskantonsbasel-landschaft2022c].
+To track progress towards an emission-free building sector, it's crucial to have robust and reliable data. The cantonal energy statistics serves this purpose and acts as a central data basis for evaluating and measuring the impact of the cantonal energy policy as well as energy planning at the cantonal and municipal levels [@statistischesamtdeskantonsbasel-landschaft2022a].
 
 The Canton of Basel-Landschaft conducts a energy statistics already since 1990[^01-introduction-3]. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measured data is available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings using energy sources not connected to a grid - such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for 2020, about 40% of the total annual energy consumption was based on estimations [@statistischesamtdeskantonsbasel-landschaft2022b].
 
@@ -84,13 +84,13 @@ Consequently, we here formulate the following two main research questions:
 
 -   ***RQ2:** What predictors are the most important for the prediction of HEC?*
 
-By emphasizing on RQ1, we formulate the following sub questions:
+By emphasizing on RQ1, we formulate the following sub-questions:
 
 -   ***RQ1.1:** Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings compared to the current approach?*
 
 -   ***RQ1.2:** Can we improve the predictions through feature engineering (e.g. adding new predictor variables) or by training models on different data subsets?*
 
-With regard to RQ2, we are specifically interested in features of the input data that are not yet considered in the current approach. Thus, we here formulate the following sub questions:
+With regard to RQ2, we are specifically interested in features of the input data that are not yet considered in the current approach. Thus, we here formulate the following sub-questions:
 
 -   ***RQ2.1:** What importance can be attributed to retrofit features in the final model?*
 

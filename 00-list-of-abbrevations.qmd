@@ -1,7 +1,7 @@
 # List of Abbreviations {.unnumbered}
 
 | **Abbreviation** | **Definition**                                         |
-|------------------|--------------------------------------------------------|
+|------------------|-----------------------------------------------------|
 | **AutoML**       | Automated Machine Learning                             |
 | **ANN**          | Artificial neural network                              |
 | **API**          | Automatic Programming Interface                        |
@@ -34,6 +34,6 @@
 | **SFH**          | Single-Family House                                    |
 | **SHAP**         | Shapley Additive Explanations                          |
 | **STA BL**       | Cantonal Office of Statistics Basel-Landschaft         |
-| **STATPOP**      | Population and Housholds Statistics                    |
+| **STATPOP**      | Population and Households Statistics                   |
 | **VIA**          | Variable importance analysis                           |
 | **XGB**          | Extreme Gradient Boosting                              |

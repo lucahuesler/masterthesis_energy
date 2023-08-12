@@ -8,39 +8,37 @@ book:
   submitted: 2023
   date: "today"
   chapters:
-  - 00-management-summary.qmd
   - index.qmd
   - 00-list-of-abbrevations.qmd
+  - 00-management-summary.qmd
   - 01-Introduction.qmd
   - 02-TheoreticalBackground.qmd
   - 03-Methodology.qmd
   - 04-Results.qmd
   - 05-Discussion_Conclusion.qmd
-  - acknowledgements.qmd
-  #- 99-references.qmd
-  - declaration.qmd
-  appendices:
-  - 05-appendix.qmd
+  appendices: 
+  - 06-appendix.qmd
   references: references.qmd
 
 bibliography: references.bib
-csl: apa.csl
+csl: csl/apa.csl
 lot: true
 lof: true
+
+linkcolor: "Navy"
+urlcolor: "Navy"
 
 format:
   html:
     theme: cosmo
     title-block-banner: cover.png
   pdf:
-    keep-tex: false
-    toc-depth: 2
     toc: true
-    # template-partials:
-    #   - before-body.tex
+    number-sections: true
+    colorlinks: true
+    link-citations: true
 
 prefer-html: true
-number-sections: true
 
 knitr:
   opts_chunk: 
@@ -65,6 +63,4 @@ execute:
 fig-cap-location: bottom
 tbl-cap-location: bottom
 
-extensions:
-  - _extensions/_extension.yml
 

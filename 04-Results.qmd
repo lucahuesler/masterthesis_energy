@@ -1,0 +1,1611 @@
+# Results {#sec-results}
+
+In this chapter, the results of our analysis will be presented. @sec-descriptive-statistics provides the descriptive statistics and exploratory analysis of the data used for modelling. In @sec-model-results, we will present and compare the results of the different models in the order of the modelling workflow defined in @sec-modelling-workflow. Finally, @sec-results-model-explainability will focus on the results of the model explainability techniques (VIA and SHAP).
+
+```{r}
+#| label: load-libs
+#| include: false
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
+               rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
+               vip, shapviz, DALEXtra, gtsummary, knitr, h2o, ranger, kernlab) #kknn)
+
+source("auto_ml_functions.R")
+```
+
+```{r}
+#| label: load-data
+#| include: true
+
+energy_modelling <- read_rds("data/energy_modelling.rds")  |> 
+  select(egid, 
+          hepi, 
+          hec, 
+          survey_year, 
+          num_residents_mean, 
+          heated_area_m2,
+         building_area_m2,
+          year_of_installation, 
+          efficiency_of_installation, 
+          energy_usage_of_installation,
+          solar_system_area_m2,
+          municipality_name,
+          municipality_code,
+          building_class, 
+          construction_year,
+          construction_period,
+          num_floors,
+          num_dwellings,
+          meters_above_sealevel, 
+          energy_production_solar_mwh, 
+          energy_consumed_hot_water_mwh,
+          retrofitted,
+         retrofit_investment_costs,
+         retrofit_project_name,
+         retrofit_year_completion,
+          hdd,
+          foreign_ratio,
+          household_1_person_ratio,
+          elderly_ratio,
+          youth_ratio,
+          residence_less_1_year_ratio,
+          hepi_pred_current_method,
+          hec_pred_current_method,
+          stand_alone)
+```
+
+## Descriptive statistics {#sec-descriptive-statistics}
+
+To gain a first overview of the data that we use for modelling, we here present the summary statistics and visual exploration of the data. The final dataset for modelling is the result of joining data from different sources that are provided in @sec-data-description. Furthermore, we applied several filters that are outlined in @sec-data-prep. We first present a summary statistics overview of all variables used for modelling, followed by a exploratory analysis. Specifically, we will have a closer look at the characteristics of the 20 municipalities that are represented in the data. Exploring characteristics and potential differences on the municipal level can sustain the modelling process by providing insights into the distribution and variability of energy consumption patterns among different municipalities.
+
+------------------------------------------------------------------------
+
+**Summary statistics overview**
+
+The final dataset for modelling contains `r nrow(energy_modelling)` observations (gas-heated buildings). As we consider data from the years 2016, 2018 and 2020, one building can be present in the dataset three times at maximum. @tbl-summary-stats-numeric provides the summary statistics for all numeric variables. Only the mean number of residents and the social indicators based on STATPOP do contain missing values (with complete rates between 0.97 and 0.99). The distribution of the heated area shows that the dataset contains very small as well as very large buildings ranging from only 35 m^2^ up to 44502 m^2^ with a median value of 207 m^2^.
+
+```{r}
+#| label: tbl-summary-stats-numeric
+#| tbl-cap: "Summary statistics of numeric variables."
+#| tbl-cap-location: bottom
+
+# Select all numeric variables
+numeric_vars <- energy_modelling %>%
+    select(egid, 
+           hepi, 
+           hec, 
+           survey_year, 
+           num_residents_mean, 
+           heated_area_m2, 
+           year_of_installation, 
+           efficiency_of_installation, 
+           energy_usage_of_installation, 
+           municipality_name, 
+           building_class, 
+           construction_year, 
+           meters_above_sealevel, 
+           retrofitted,
+           hdd,
+           foreign_ratio,
+           household_1_person_ratio,
+           elderly_ratio,
+           youth_ratio,
+           residence_less_1_year_ratio,
+           hepi_pred_current_method,
+           hec_pred_current_method,
+           stand_alone) |>
+  select_if(is.numeric) |>
+  select(- c(egid, hepi_pred_current_method, hec_pred_current_method))
+
+# Define the new column names
+# Define the new column names
+new_colnames <- c("HEPI (kWh/m2*year)" = "hepi",
+                  "HEC (kWh/year)" = "hec",
+                  "Mean number of residents" = "num_residents_mean",
+                  "Heated area (m2)" = "heated_area_m2",
+                  "Year of installation" = "year_of_installation",
+                  "Efficiency of installation" = "efficiency_of_installation",
+                  "Construction year" = "construction_year",
+                  "Meters above sea level" = "meters_above_sealevel",
+                  "Heating degree days" = "hdd",
+                  "Foreign resident ratio" = "foreign_ratio",
+                  "Ratio of households with one person" = "household_1_person_ratio",
+                  "Elderly resident ratio" = "elderly_ratio",
+                  "Youth resident ratio" = "youth_ratio",
+                  "Ratio of residents less than 1 year" = "residence_less_1_year_ratio")
+
+# Rename the column names of the data frame
+numeric_vars <- numeric_vars %>%
+  rename(!!!new_colnames)
+
+# Compute summary statistics for numeric variables
+summary_table_numeric <- numeric_vars %>%
+  skim() %>%
+  select(skim_variable, n_missing, complete_rate, numeric.p0, numeric.p25, numeric.p50, numeric.p75, numeric.p100) %>%
+  rename("Variable Name" = skim_variable, 
+         "Missing Values" =  n_missing,
+         "Complete Rate" = complete_rate,
+         "Min" = numeric.p0, 
+         "25%" = numeric.p25,
+         "50%" = numeric.p50, 
+         "75%" = numeric.p75, 
+         "Max" = numeric.p100) %>%
+  mutate(`Variable Name` = gsub("_", " ", `Variable Name`)) %>%
+  mutate(across(-`Variable Name`, ~ifelse(`Max` <= 1, sprintf("%.2f", .), sprintf("%.0f", .)))) %>%
+  mutate(`Complete Rate` = sprintf("%.2f", as.numeric(`Complete Rate`))) %>%
+  as.data.frame()
+
+
+# Generate the table using knitr::kable with adjusted digits
+summary_table_numeric_kable <- summary_table_numeric %>%
+  kable(booktabs = TRUE)
+
+# Print the summary table
+summary_table_numeric_kable
+```
+
+@tbl-summary-stats-categorical shows the categorical variables used for modelling. The categorical variables do not contain any missing values. The survey year contains the three levels *2016*, *2020* and *2018*. The variables *Retrofitted* and *Stand Alone* are binary variables containing levels *no* and yes (0 and 1, respectively). In the case of case of the *Municipality Name* and *Construction Period*, the levels are represented by the respective municipality or construction period.
+
+```{r}
+#| label: tbl-summary-stats-categorical
+#| tbl-cap: "Summary statistics of categorical variables."
+#| tbl-cap-location: bottom
+
+# Select all categorical variables
+categorical_vars <- energy_modelling %>%
+  select_if(is.factor) %>%
+  select(- c(municipality_code, energy_usage_of_installation))
+
+
+# Compute summary statistics for categorical variables
+summary_table_categorical <- categorical_vars %>%
+  skim() %>%
+  select(skim_variable, n_missing, factor.n_unique) %>%
+  rename("Variable Name" = skim_variable,
+         "Levels" = factor.n_unique,
+         "Missing Values" = n_missing) %>%
+  mutate(`Variable Name` = gsub("_", " ", `Variable Name`)) %>%
+  mutate(`Variable Name` = tools::toTitleCase(tolower(`Variable Name`))) %>%
+  as.data.frame()
+
+# Generate the table using knitr::kable
+summary_table_categorical_kable <- summary_table_categorical %>%
+  kable(booktabs = TRUE)
+
+summary_table_categorical_kable
+```
+
+------------------------------------------------------------------------
+
+**Explorative analysis**
+
+@tbl-obs-per-year shows the mean of HEPI and the total HEC in GWh per year for the survey years of 2016, 2018 and 2020. We can observe that both the mean HEPI and the total HEC is decreasing from 2016 to 2020.
+
+```{r}
+#| label: tbl-obs-per-year
+#| tbl-cap: "Number of buildings per survey year."
+#| tbl-cap-location: bottom
+#| warning: false
+
+obs_per_year <- energy_modelling |>
+  dplyr::group_by(survey_year) |>
+  dplyr::rename("Survey Year" = survey_year) |>
+  dplyr::summarise(Count = n(),
+                   "Mean HEPI (kWh/m2/year)" = mean(hepi),
+                   "Total HEC (GWh/year)" = sum(hec)/1000000) |>
+  knitr::kable(booktabs = TRUE, digits = 1)
+
+obs_per_year
+```
+
+The buildings are located in 20 different municipalities of the Canton Basel-Landschaft. @fig-buildings-per-municipality shows the number of buildings per municipality. The three municipalities Reinach, Allschwil and Muttenz contain more than 5000 observations each and count together for about one third of the all buildings. On the other hand, we also observe the presence of smaller municipalities like Schönenbuch, Pfeffingen and Augst that only count a few hundert buildings in the dataset.
+
+```{r}
+#| label: fig-buildings-per-municipality
+#| fig-cap: "Number of buildings per municipality."
+#| fig-cap-location: bottom
+#| warning: false
+
+energy_modelling %>%
+  count(municipality_name, name = "n_obs") %>%
+  arrange(n_obs) %>%
+  ggplot(aes(x = n_obs, y = reorder(municipality_name, n_obs))) +
+  geom_col(fill = "steelblue") +
+  labs(x = "Number of buildings",
+       y = "Municipality") 
+```
+
+```{r}
+#| label: boxplot-municipality
+#| include: false
+
+#> basic function
+plot_boxplot <- function(df, y_axis) {
+  y_axis <- sym(y_axis)
+  df |>
+    mutate(class = fct_reorder(municipality_name, !!y_axis, .fun='median')) |>
+    ggplot( aes(x=reorder(municipality_name, !!y_axis), y=!!y_axis, fill=municipality_name)) + 
+      geom_boxplot() +
+      xlab("class") +
+      theme(legend.position="none") +
+      xlab("") +
+      labs(paste0(y_axis," per municipality")) +
+      coord_flip()
+}
+#> Creating boxplots for different input variables
+boxplot_construction_year <- plot_boxplot(energy_modelling, "construction_year")
+boxplot_building_area_m2 <- plot_boxplot(energy_modelling, "building_area_m2")
+boxplot_num_residents <- plot_boxplot(energy_modelling, "num_residents_mean")
+boxplot_hepi <- plot_boxplot(energy_modelling, "hepi")
+boxplot_hec <- plot_boxplot(energy_modelling, "hec")
+
+overview <- energy_modelling |> group_by(municipality_name) |> 
+  summarise(mean_hepi = mean(hepi),
+             mean_hec = mean(hec),
+             median_hepi = median(hepi),
+             median_hepi = median(hepi))
+
+```
+
+@fig-municipality-hepi provides a boxplot of the HEPI per municipality. The median values of HEPI range from 77.0 kWh/m^2^\*year (Liestal) up to 94.0 kWh/m^2^\*year (Münchenstein).
+
+```{r}
+#| label: fig-municipality-hepi
+#| fig-cap: "Boxplot of HEPI per municipality."
+
+
+boxplot_hepi +
+  labs(y = "HEPI")
+
+```
+
+In @tbl-hec-hepi-per-municipality the mean and median values of HEPI and HEC are summarized for each municipality. Again, we observe that there are clear differences in the distributions of HEPI and HEC among the municipalities.
+
+```{r}
+#| label: tbl-hec-hepi-per-municipality
+#| tbl-cap: "Mean and median values of HEC and HEPI per municipality."
+#| tbl-cap-location: bottom
+#| warning: false
+
+overview <- energy_modelling |> group_by(municipality_name) |>
+  rename(Municipality = municipality_name) |>
+  summarise(`Mean HEPI` = mean(hepi),
+            `Median HEPI` = median(hepi),
+             `Mean HEC` = mean(hec),
+             `Median HEC` = median(hec))
+
+overview |>
+  knitr::kable(booktabs = TRUE, digits = 1)
+```
+
+@fig-municipality-construction-year shows that there are also considerable differences in the age of the building stock between the municipalities. While in Schönenbuch, 50% of the buildings are built after 1996, the median construction year of Birsfelden is 1926.
+
+```{r}
+#| label: fig-municipality-construction-year
+#| fig-cap: "Boxplot of construction year per municipality."
+
+boxplot_construction_year +
+  labs(y = "Construction Year")
+
+```
+
+------------------------------------------------------------------------
+
+**Retrofit information**
+
+```{r}
+#| label: indicators-retrofit
+#| echo: false
+
+#> Calculations of numbers and indicators for easier use as inline code in text.
+
+n_retrofit <- energy_modelling |> filter(retrofitted == "Yes") |> nrow()
+
+n_retrofit_m01 <- energy_modelling |> 
+  filter(retrofitted == TRUE,
+         retrofit_investment_costs > 0) |> 
+  nrow()
+
+perc_retrofit <- round((n_retrofit / nrow(energy_modelling))*100,digits = 2)
+```
+
+With regard to retrofit information, we observe `r n_retrofit` buildings that could be matched with a retrofit measure. This represents `r perc_retrofit` % of all the buildings in the data that we used for modelling.
+
+The retrofit data considers retrofit measures that have been financially supported by the cantonal subsidies program (Baselbieter Energiepaket) since 2009. A first explorative way of analyzing the effect of retrofit measures consists in comparing the mean HEPI of retrofitted building and non-retrofitted buildings. @tbl-retrofit shows the mean HEPI per survey year and building class. For all years and building classes, the mean HEPI of retrofitted buildings is lower. Furthermore, a more important difference in average HEPI between retrofitted and non-retrofitted buildings can be observed for MFH (buildings with two or more apartments) over the course of all three years. This could potentially indicate that retrofit measures are more effective in terms of energy consumption reduction for MFH in comparison to SFH.
+
+```{r}
+#| label: tbl-retrofit
+#| tbl-cap: "Mean HEPI of retrofitted versus non-retrofitted buildings."
+#| tbl-cap-location: bottom
+
+retrofit_mean_hepi <- energy_modelling |>
+  dplyr::group_by(survey_year, building_class, retrofitted) |>
+  dplyr::rename("Survey Year" = survey_year) |>
+  dplyr::summarise("Mean HEPI (kWh/m2/year)" = mean(hepi)) |>
+  mutate(building_class = factor(building_class, 
+                                  levels = c("1110", "1121", "1122"), 
+                                  labels = c("Building with one apartment", 
+                                             "Building with two apartments", 
+                                             "Building with three or more apartments"))) |>
+  dplyr::rename("Building class" = building_class) |>
+  spread(retrofitted, `Mean HEPI (kWh/m2/year)`) |>
+  rename(`Retrofitted` = "Yes", `Not retrofitted` = "No") |>
+  mutate(`Difference in %` = 100 * (`Retrofitted` - `Not retrofitted`) / `Not retrofitted`) |>
+  knitr::kable(booktabs = TRUE, digits = 1) 
+
+retrofit_mean_hepi
+```
+
+\newpage
+
+## Model results {#sec-model-results}
+
+```{r}
+#| label: load-data-modelling
+#| include: false
+
+# custom modelling (tidymodels)
+custom_approach_train_results <- read_rds("output/grid_results.rds")
+
+# auto_ml resulsts all data
+list.files("models/all_data/")
+file_list <- list.files("models/all_data/", pattern = "*.rds", full.names = TRUE)
+aml_hec_all_data_models <- lapply(file_list, readRDS)
+
+# Combine metrics of each subset into one data frame
+aml_hec_all_data_train_metrics <- map_dfr(aml_hec_all_data_models, ~ .x$train_metrics)
+aml_hec_all_data_test_metrics <- map_dfr(aml_hec_all_data_models, ~ .x$test_metrics)
+
+```
+
+### Results of model exploration {#sec-results-of-model-exploration}
+
+According to the modelling workflow defined in @sec-modelling-workflow, the first step of the modelling process focuses on the exploration of different models by using the custom approach and the AutoML approach. We first compare the two approaches based on performance on the train data. @tbl-results-custom-approach shows the metrics of the algorithms used in the custom approach. In the case of the custom approach, *XGBoost* obtains the highest value for R^2^ and at the same time the lowest RMSE value. @tbl-results-test-automl-all-predictors shows the metrics of the models trained with the AutoML approach. Here, the *GBM* model provides the best results. Based on RMSE, we observe that the AutoML approach performs clearly better than the custom approach: For all AutoML models except *GLM*, the RMSE is lower than the RMSE of the custom approach models. Based on this findings during the model exploration, we decided to focus on the AutoML approach exclusively for the subsequent modelling steps.
+
+```{r}
+#| label: tbl-results-custom-approach
+#| tbl-cap: "Train metrics of custom approach."
+#| tbl-cap-location: bottom
+
+p <- autoplot(custom_approach_train_results,
+         rank_metric = "rmse",  # or whichever metric you want to rank by
+         metric = c("rmse", "rsq", "mae", "mape"),  # include all four metrics in the visualization
+         select_best = TRUE)
+
+
+
+train_metrics <- p$data
+
+custom_approach_train_metrics <- train_metrics %>%
+  pivot_wider(names_from = .metric, values_from = mean, values_fill = NA) %>%
+  select(wflow_id, rsq, rmse) |>
+  rename(Algorithm = wflow_id,
+         R2 = rsq,
+         RMSE = rmse) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "SVM_radial" ~ "SVM radial",
+    Algorithm == "xgboost" ~ "XGBoost",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "random_forest" ~ "RF",
+    Algorithm == "neural_network" ~ "Neural Network",
+    Algorithm == "SVM_poly" ~ "SVM polynomial",
+    Algorithm == "lm_basic" ~ "Linear regression",
+    TRUE ~ Algorithm)) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+  # Generate the PDF output using kable
+custom_approach_train_metrics_kable <- custom_approach_train_metrics %>%
+  knitr::kable(booktabs = TRUE)
+
+custom_approach_train_metrics_kable
+```
+
+```{r}
+#| eval: false
+
+set.seed(501)
+
+#> Save the split information for an 80/20 split of the data
+energy_split <- initial_split(energy_modelling, 
+                              prop = 0.75, 
+                              strata = hec)
+
+calculate_metrics <- function(grid_results) {
+  algorithms <- c("lm_basic", "xgboost", "neural_network", "SVM_radial", "SVM_poly", "KNN")
+  metrics <- c("rmse")
+  
+  result <- tibble(Algorithm = algorithms)
+  
+  for (metric in metrics) {
+    metric_values <- sapply(algorithms, function(algo) {
+      best_model <- grid_results |>
+        extract_workflow_set_result(algo) |>
+        select_best(metric = metric)
+      
+      workflow <- grid_results |>
+        extract_workflow(algo) |>
+        finalize_workflow(best_model) |>
+        last_fit(split = energy_split)
+      
+      metric_value <- workflow |> 
+        collect_metrics() |> 
+        filter(.metric == metric) |>
+        pull(.estimate)
+      
+      metric_value
+    })
+    
+    result <- result |> 
+      mutate(!!metric := metric_values)
+  }
+  
+  return(result)
+}
+
+
+custom_approach_metrics <- calculate_metrics(custom_approach_train_results)
+```
+
+```{r}
+#| label: tbl-results-train-automl-all-predictors
+#| tbl-cap: "Train metrics of AutoML approach."
+#| tbl-cap-location: bottom
+
+aml_hec_train_metrics_all_data <- bind_rows(
+  lapply(aml_hec_all_data_models, function(model) {
+    train_metrics <- model$train_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-train split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    train_metrics %>%
+      mutate(`Variable Selection` = variable_selection,
+             `n_test/ntrain` = paste0(n_test, "/", n_train))
+  })
+)
+
+
+tbl_aml_train <- aml_hec_train_metrics_all_data %>%
+  rename(Algorithm = algo, 
+         RMSE = rmse,
+         MAE = mae) |>
+  group_by(Algorithm) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, RMSE, MAE, `n_test/ntrain`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "StackedEnsemble" ~ "Stacked Ensemble",
+    Algorithm == "XGBoost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable
+tbl_aml_train_kable <- tbl_aml_train %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_aml_train_kable
+```
+
+------------------------------------------------------------------------
+
+**Results on test data with all predictors**
+
+@tbl-results-test-automl-all-predictors presents the results after performing the estimations on the test set using all predictors. In general, we observed that the values for RMSE and MAE are comparable to the values on the train data provided in @tbl-results-train-automl-all-predictors and thus did not detect any hint for overfitting on the train data. The *GBM* models showed the best overall performance, having the highest R^2^ value of 0.86 and the lowest RMSE (18796) and CV (0.64). When considering MAE and MAPE however, *DRF* and *Stacked Ensemble* perform slightly better. In this context, it is important to note that RMSE is more sensitive to outliers as it squares the errors before averaging. Thus, while *GBM* might provide better predictions for buildings with a very high HEC, the *Stacked Ensemble* or *DRF* potentially provide better results when the main focus is to minimize the average error.
+
+```{r}
+#| label: tbl-results-test-automl-all-predictors
+#| tbl-cap: "Test metrics of the best performing model per AutoML algorithm evaluated on RMSE."
+#| tbl-cap-location: bottom
+
+aml_hec_test_metrics_all_data <- bind_rows(
+  lapply(aml_hec_all_data_models, function(model) {
+    test_metrics <- model$test_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    test_metrics %>%
+      mutate(`Variable Selection` = variable_selection,
+             `ntrain/ntest` = paste0(n_train, "/", n_test))
+  })
+)
+
+
+tbl_aml_test <- aml_hec_test_metrics_all_data %>%
+  rename(Algorithm = Algorithm...2,
+         R2 = R_squared) |>
+  filter(Variable_Selection == "predictors_hec_all") |>
+  group_by(Algorithm) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable and kableExtra
+tbl_aml_test_kable <- tbl_aml_test %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_aml_test_kable
+```
+
+------------------------------------------------------------------------
+
+**Influence of variable selection**
+
+As a last step of the model exploration phase, we tested the performance with different variable selections (see @fig-workflow-step-1). Five different predictor selections were tested in this step:
+
+1.  All predictors as shown in @tbl-summary-stats-numeric and @tbl-summary-stats-categorical
+2.  Only a basic selection of predictors (number of residents, heated area, construction year of installation, building class, construction year of building and heating degree days).
+3.  All predictors without the retrofit variable
+4.  All predictors without the stand alone variable
+5.  All predictors without the social indicators (ratio of foreign residents, elderly ratio, youth ratio, ratio of residents less than 1 year)
+
+@tbl-results-test-automl-different-predictors compares the best performing model of each variable selection based on RMSE. For all variable selections, *GBM* showed the best performance in terms of RMSE (see also appendix @sec-appendix-variable-selections). Regarding the variable selections, the model without social indicators did provide the best results for all the metrics. This does not necessarily indicate that socio-economic factors have no influence on energy consumption. More likely, it shows that the spatial resolution of the input data is not precise enough to improve the performance of our model.
+
+Furthermore, we observed that the models without the retrofit variable and without the information if a building is connected to another building have a slightly higher RMSE than the model using all predictors. However, MAE and MAPE of these two selections were on a similar level as the model using all predictors. Although the model with only the basic predictors showed the poorest performance for all metrics, it is notable that only a basic set of six predictors still delivered a good performance. This indicates that these predictors are fundamental for predicting HEC.
+
+```{r}
+#| label: tbl-results-test-automl-different-predictors
+#| tbl-cap: "Comparing variable selections: Best perfomance for each variable selection based on RMSE."
+#| tbl-cap-location: bottom
+
+tbl_aml_test_diff_predictors <- aml_hec_test_metrics_all_data %>%
+  rename(Algorithm = Algorithm...2,
+         R2 = R_squared) |>
+  group_by(Variable_Selection) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Variable Selection`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm),
+    `Variable Selection` = case_when(
+    `Variable Selection` == "predictors_basic" ~ "Only basic predictors",
+    `Variable Selection` == "predictors_hec_all" ~ "All predictors",
+    `Variable Selection` == "predictors_hec_without_retrofit" ~ "Without retrofit variable",
+    `Variable Selection` == "predictors_hec_without_standalone" ~ "Without stand alone variable",
+    `Variable Selection` == "predictors_without_social" ~ "Without social indicators",
+    TRUE ~ `Variable Selection`)
+    ) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+# Generate the table using knitr::kable
+tbl_aml_test_diff_predictors_kable <- tbl_aml_test_diff_predictors %>%
+  knitr::kable(booktabs = TRUE)
+  
+
+tbl_aml_test_diff_predictors_kable
+```
+
+### Results on data subsets {#sec-subset-results}
+
+```{r}
+#| label: load-data-subsets
+#| include: false
+
+
+
+# # Define the subsets and corresponding RDS file names
+# subsets <- c("building_class", "municipality", "construction_period", "cluster")
+# file_names <- paste0("models/models_by_", subsets, "_", Sys.Date(), ".rds")
+# 
+# # Initialize a list to store the loaded models
+# loaded_models <- list()
+# 
+# # Iterate over the subsets and load the most recent RDS file for each subset
+# for (i in seq_along(subsets)) {
+#   subset <- subsets[i]
+#   file_name <- file_names[i]
+#   
+#   # Get the list of RDS files for the current subset
+#   model_files <- list.files("models/", pattern = paste0("models_by_", subset), full.names = TRUE)
+#   
+#   # Filter the list to exclude the files with the current date
+#   #model_files <- model_files[!grepl(paste0("_", Sys.Date()), model_files)]
+#   
+#   # Load the most recent RDS file for the current subset
+#   if (length(model_files) > 0) {
+#     most_recent_file <- model_files[length(model_files)]
+#     loaded_models[[subset]] <- readRDS(most_recent_file)
+#   } else {
+#     loaded_models[[subset]] <- NULL
+#   }
+# }
+# 
+# # Access the loaded models
+# models_by_building_class <- loaded_models$building_class
+# models_by_municipality <- loaded_models$municipality
+# models_by_construction_period <- loaded_models$construction_period
+# models_by_cluster <- loaded_models$cluster
+
+```
+
+This section presents the results of the second step of our modelling workflow, where different subsets of data were used to train the models. As a result of our findings in the previous step, we used the best performing variable selection and therefore excluded the social indicators for modelling on subsets. All the metrics shown in this section are referring to the respective test data. Although all metrics are provided in the following, it is important to note that the different subsets have different distributions of the HEC and absolute metrics cannot be directly compared. We therefore mainly focus on the relative metrics MAPE and CV for evaluation.
+
+------------------------------------------------------------------------
+
+**Building class subsets**
+
+```{r}
+#| label: load-data-subsets-building-class
+#| include: false
+
+
+# auto ml subset building class
+file_list <- list.files("models/subset_building_class", pattern = "results_*", full.names = TRUE)
+models_by_building_class <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_building_class_train_metrics <- map_dfr(models_by_building_class, ~ .x$train_metrics)
+subset_building_class_test_metrics <- map_dfr(models_by_building_class, ~ .x$test_metrics)
+```
+
+First, we focus on the results obtained by differentiating based on the building class. The initial dataset for modelling was divided into three subclasses: SFH, MFH with two apartments and MFH with three or more apartments. @tbl-results-single-family-houses illustrates the metrics for SFH, @tbl-results-mfh-2-flats for MFH with two apartments and finally @tbl-results-mfh-3-more-falts for MFH with three or more apartments. Although the best performing model differs for each building class, *Stacked Ensembles*, *GBM* and *XGB* showed similar results in all three cases.
+
+```{r}
+#| label: tbl-results-single-family-houses
+#| tbl-cap: "Test metrics of SFH."
+#| tbl-cap-location: bottom
+
+
+aml_hec_test_metrics_subset_building_class <- bind_rows(
+  lapply(models_by_building_class, function(model) {
+    test_metrics <- model$test_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    test_metrics %>%
+      mutate(`Building class` = Approach,
+             `ntrain/ntest` = paste0(n_train, "/", n_test)) 
+  })
+)
+
+aml_hec_test_metrics_subset_building_class <- aml_hec_test_metrics_subset_building_class |>
+    rename(Algorithm = Algorithm...2,
+           R2 = R_squared) 
+
+
+tbl_aml_test_sfh <- aml_hec_test_metrics_subset_building_class %>%
+  filter(`Building class` == 1110) |>
+  group_by(Algorithm, `Building class`) |>
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Building class`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  filter(Algorithm != "Current Approach") |>
+  arrange(MAPE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable and kableExtra
+tbl_aml_test_sfh_kable <- tbl_aml_test_sfh %>%
+  knitr::kable(fromat = "latex", booktabs = TRUE)
+
+tbl_aml_test_sfh_kable
+```
+
+```{r}
+#| label: tbl-results-mfh-2-flats
+#| tbl-cap: "Test metrics of MFH with two apartments."
+#| tbl-cap-location: bottom
+
+tbl_aml_test_mfh_2_apartments <- aml_hec_test_metrics_subset_building_class %>%
+  filter(`Building class` == 1121) |>
+  group_by(Algorithm, `Building class`) |>
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Building class`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  filter(Algorithm != "Current Approach") |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable and kableExtra
+tbl_aml_test_mfh_2_apartments_kable <- tbl_aml_test_mfh_2_apartments %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_aml_test_mfh_2_apartments_kable
+```
+
+```{r}
+#| label: tbl-results-mfh-3-more-falts
+#| tbl-cap: "Test metrics of MFH with three or more apartments."
+#| tbl-cap-location: bottom
+
+tbl_aml_test_mfh_3_more_apartments <- aml_hec_test_metrics_subset_building_class %>%
+  filter(`Building class` == 1122) |>
+  group_by(Algorithm, `Building class`) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Building class`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  filter(Algorithm != "Current Approach") |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable and kableExtra
+tbl_aml_test_mfh_3_more_apartments_kable <- tbl_aml_test_mfh_3_more_apartments %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_aml_test_mfh_3_more_apartments_kable
+```
+
+In @tbl-results-test-automl-different-predictors, the best model on all data reached a MAPE of 22.62 and a CV of 0.63. By modelling on building class subsets, we obtained a lower MAPE and CV values in all three cases as shown in @fig-mape-building-classes. In the case of SFH and MFH with two flats, the MAPE decreased to 17.65 and 15.62, respectively. For MFH with three or more flats, the best model showed a MAPE of 20.79. Thus, we can conclude that modelling on building class subsets could improve the results.
+
+```{r}
+#| label: fig-mape-building-classes
+#| fig-cap: "Comparison of MAPE for best model per building class."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each municipality
+best_mape_models <- aml_hec_test_metrics_subset_building_class %>%
+  group_by(`Building class`) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(aml_hec_test_metrics_all_data$MAPE)
+
+# Filter the row corresponding to the best MAPE when trained with all data
+best_mape_row <- aml_hec_test_metrics_all_data %>%
+  filter(MAPE == best_mape_all) |>
+  rename(Algorithm = Algorithm...8,
+         R2 = R_squared) |>
+  mutate(`Building class` = "Best MAPE all data") |>
+  select(-c(Algorithm...2, `Variable Selection`, Model)) |>
+  dplyr::arrange(Algorithm, `Building class`, R2, CV, MAPE, RMSE, MAE, `ntrain/ntest`) 
+
+best_mape_models <- best_mape_models |>
+  bind_rows(best_mape_row)
+  
+best_mape_models <- best_mape_models |>  
+  mutate(`Building class` = case_when(`Building class` == 1110 ~ "SFH",
+                                      `Building class` == 1121 ~ "MFH 2 apartments",
+                                      `Building class` == 1122 ~ "MFH 3+ apartments",
+                                      TRUE ~`Building class`))
+
+
+# Create a bar plot of the best MAPE values for each municipality
+ggplot(best_mape_models, aes(x = reorder(`Building class`, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = ifelse(best_mape_models$`Building class` == "Best MAPE all data", "#800020", "#4682B4")) +
+  labs(x = "Building class", y = "MAPE") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+#| label: fig-results-multi-family-houses-2-flats
+#| fig-cap: "Results of models trained on multi-family houses with two flats."
+#| fig-cap-location: bottom
+
+#plot_best_metrics(models_by_building_class[[2]])
+```
+
+```{r}
+#| label: fig-results-multi-family-houses-3-more--flats
+#| fig-cap: "Results of models trained on multi-family houses with two flats."
+#| fig-cap-location: bottom
+
+#plot_best_metrics(models_by_building_class[[3]])
+```
+
+------------------------------------------------------------------------
+
+**Municipality subsets**
+
+In the same way as with the building class, we also trained the models for each of the 20 municipalities. @tbl-results-test-municipality provides the results for each municipality. It's important to highlight that some municipalities, such as Augst and Pfeffingen, contain a relatively low number of observations. Typically, a larger number of observations guarantees more stability and reliability of the metrics. Therefore, the results for municipalities with fewer observations should be interpreted cautiously. Nevertheless, for providing a complete picture of the results, we decided to include these results as well. With regard to the algorithms, *GBM* and *XGB* provide the best values for MAPE and and CV for most municipalities.
+
+```{r}
+#| label: load-data-subsets-building-municipality
+#| include: false
+
+
+# auto ml subset municipality
+file_list <- list.files("models/subset_municipality", pattern = "results_*", full.names = TRUE)
+models_by_municipality <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_municipality_train_metrics <- map_dfr(models_by_municipality, ~ .x$train_metrics)
+subset_municipality_test_metrics <- map_dfr(models_by_municipality, ~ .x$test_metrics)
+```
+
+```{r}
+#| label: tbl-results-test-municipality
+#| tbl-cap: "Test metrics per municipality."
+#| tbl-cap-location: bottom
+
+
+aml_hec_test_metrics_subset_municipality <- bind_rows(
+  lapply(models_by_municipality, function(municipality) {
+  test_metrics <- municipality$test_metrics
+  municipality_name <- municipality$name
+  
+  n_test <- nrow(municipality$test_preds)
+  total_obs <- n_test * 4 
+  n_train <- round(total_obs * 0.75)
+  
+  test_metrics %>%
+    mutate(Municipality = municipality_name,
+           `ntrain/ntest` = paste0(n_train, "/", n_test))
+  
+}))
+
+
+aml_hec_test_metrics_subset_municipality <- aml_hec_test_metrics_subset_municipality |>
+    rename(Algorithm = Algorithm...2,
+           R2 = R_squared) 
+
+
+tbl_test_metrics_municipality <- aml_hec_test_metrics_subset_municipality %>%
+  group_by(Municipality) |>
+  arrange(CV) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Municipality, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  filter(Algorithm != "Current Approach") |>
+  arrange(MAPE)|> 
+  as.data.frame()
+  
+
+# Generate the table using knitr::kable
+tbl_test_metrics_municipality_kable <- tbl_test_metrics_municipality %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_test_metrics_municipality_kable
+```
+
+Similar to the results for the building class subsets, we generally observed better results for MAPE and CV compared to the results using all data. @fig-mape-municipalites compares the best model for each municipality with the best MAPE when using all data. As it becomes obvious, only the municipalities of Aesch and Birsfelden showed a higher MAPE than the best model using all data.
+
+```{r}
+#| label: fig-mape-municipalites
+#| fig-cap: "Comparison of MAPE for best model per municipality."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each municipality
+best_mape_models <- aml_hec_test_metrics_subset_municipality %>%
+  group_by(Municipality) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(aml_hec_test_metrics_all_data$MAPE)
+
+# Filter the row corresponding to the best MAPE when trained with all data
+best_mape_row <- aml_hec_test_metrics_all_data %>%
+  filter(MAPE == best_mape_all) |>
+  rename(Algorithm = Algorithm...8,
+         R2 = R_squared) |>
+  mutate(Municipality = "Best MAPE all data") |>
+  select(-c(Algorithm...2, `Variable Selection`, Model)) |>
+  dplyr::arrange(Algorithm, Municipality, R2, CV, MAPE, RMSE, MAE, `ntrain/ntest`)
+
+best_mape_models <- best_mape_models |>
+  bind_rows(best_mape_row)
+
+# Create a bar plot of the best MAPE values for each municipality
+ggplot(best_mape_models, aes(x = reorder(Municipality, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = ifelse(best_mape_models$Municipality == "Best MAPE all data", "#800020", "#4682B4")) +
+  labs(x = "Municipality", y = "MAPE") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+\newpage
+
+------------------------------------------------------------------------
+
+**Construction period subsets**
+
+In case of modelling on construction period subsets, the results were more heterogeneous: With regard to the algorithms, *GBM* and *Stacked Ensembles* indicated the best performance for almost all construction periods. Only for buildings that were built between *1946-1960*, *Deep Learning* outerperforms the other algorithms (see @tbl-results-test-construction-period).
+
+```{r}
+#| label: load-data-subsets-building-construction-period
+#| include: false
+
+# auto ml subset building class
+file_list <- list.files("models/subset_construction_period", pattern = "results_*", full.names = TRUE)
+models_by_construction_period <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_construction_period_train_metrics <- map_dfr(models_by_construction_period, ~ .x$train_metrics)
+subset_construction_period_test_metrics <- map_dfr(models_by_construction_period, ~ .x$test_metrics)
+```
+
+```{r}
+#| label: tbl-results-test-construction-period
+#| tbl-cap: "Test metrics per construction period."
+#| tbl-cap-location: bottom
+
+hec_test_metrics_construction_period <- bind_rows(
+  lapply(models_by_construction_period, function(construction_period) {
+  test_metrics <- construction_period$test_metrics
+  construction_period_name <- construction_period$name
+
+  n_test <- nrow(construction_period$test_preds)
+  total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+  n_train <- round(total_obs * 0.75)
+
+  test_metrics %>%
+    mutate(construction_period = construction_period_name,
+           `ntrain/ntest` = paste0(n_train, "/", n_test))
+
+}))
+
+
+hec_test_metrics_construction_period_agg <- hec_test_metrics_construction_period %>%
+    mutate(construction_period_label = case_when(
+    Approach == 8011 ~ "Before 1919",
+    Approach == 8012 ~ "1919-1945",
+    Approach == 8013 ~ "1946-1960",
+    Approach == 8014 ~ "1961-1970",
+    Approach == 8015 ~ "1971-1980",
+    Approach == 8016 ~ "1981-1985",
+    Approach == 8017 ~ "1986-1990",
+    Approach == 8018 ~ "1991-1995",
+    Approach == 8019 ~ "1996-2000",
+    Approach == 8020 ~ "2001-2005",
+    Approach == 8021 ~ "2006-2010",
+    Approach == 8022 ~ "2011-2015",
+    Approach == 8023 ~ "After 2016",
+    TRUE ~ "Unknown"
+  )) |>
+  rename(Algorithm =Algorithm...8,
+         R2 = R_squared,
+         `Construction Period` = construction_period_label) |>
+  group_by(`Construction Period`) |>
+  arrange(CV) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Construction Period`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  arrange(MAPE)|>
+  as.data.frame()
+
+# Generate the table using knitr::kable
+tbl_hec_test_metrics_construction_period_agg_kable <- hec_test_metrics_construction_period_agg %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_hec_test_metrics_construction_period_agg_kable
+```
+
+We do not observe a clear tendency for a better accuracy on either newer or older buildings: The construction periods *2011-2015*, *1981-1985* and *1986-1990* showed best accuracy in terms of MAPE (all around 16-17%). On the other hand, the best models for the periods *1946-1960*, *1996-2000* and *2016-2020* did reach a MAPE of around 30% and also rather high CV values. @fig-mape-construction-period shows that we obtain better MAPE results than the approach with all data for seven construction periods, while six construction periods have a higher MAPE value. Thus, we conclude that splitting the data into subsets by construction period does not necessarily lead to better results. However, we want to point out that the construction periods as defined in the RBD were used here[^04-results-1]. This classification of construction periods does not necessarily provide a adequate division with regard to the energy consumption of buildings and their insulation quality. Thus, another classification of construction periods may provide better results.
+
+[^04-results-1]: See the variable [GBAUP](https://www.housing-stat.ch/de/help/42.html#GBAUP) in the RBD feature catalog for details [@bundesamtfürstatistik2022].
+
+```{r}
+#| label: fig-mape-construction-period
+#| fig-cap: "Comparison of MAPE for best model per construction period."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each construction_period
+best_mape_models <- hec_test_metrics_construction_period_agg %>%
+  group_by(`Construction Period`) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(aml_hec_test_metrics_all_data$MAPE)
+
+
+# Create a column to identify the best model trained with all data
+best_mape_row <- aml_hec_test_metrics_all_data %>%
+  filter(MAPE == best_mape_all) |>
+  rename(Algorithm = Algorithm...8,
+         R2 = R_squared) |>
+  mutate(`Construction Period` = "Best MAPE all data") |>
+  select(-c(Algorithm...2, `Variable Selection`, Model)) |>
+  dplyr::arrange(Algorithm, `Construction Period`, R2, CV, MAPE, RMSE, MAE, `ntrain/ntest`)
+
+best_mape_models <- best_mape_models |>
+  bind_rows(best_mape_row)
+
+
+# Create a bar plot of the best MAPE values for each construction_period
+ggplot(best_mape_models, aes(x = reorder(`Construction Period`, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = ifelse(best_mape_models$`Construction Period` == "Best MAPE all data", "#800020", "#4682B4")) +
+  labs(x = "Construction period", y = "MAPE") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+------------------------------------------------------------------------
+
+**Survey year subsets**
+
+@tbl-results-single-survey-year lists the results for modelling on survey year subsets. *Deep Learning* is the best performing algorithm for 2016 and 2018, reaching a MAPE of about 30%. For 2020, *GBM* provides the best accuracy with a MAPE of about 34%. These MAPE values are clearly higher than the lowest MAPE obtained without subsetting, as shown in @fig-mape-survey-year. Thus, splitting the data into survey year subsets does not improve the accuracy of our models.
+
+```{r}
+#| label: load-data-subsets-survey-year
+#| include: false
+
+
+# auto ml subset survey year
+file_list <- list.files("models/subset_survey_year", pattern = "results_*", full.names = TRUE)
+models_by_survey_year <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_survey_year_train_metrics <- map_dfr(models_by_survey_year, ~ .x$train_metrics)
+subset_survey_year_test_metrics <- map_dfr(models_by_survey_year, ~ .x$test_metrics)
+```
+
+```{r}
+#| label: tbl-results-single-survey-year
+#| tbl-cap: "Test metrics per survey year."
+#| tbl-cap-location: bottom
+
+
+aml_hec_test_metrics_subset_survey_year <- bind_rows(
+  lapply(models_by_survey_year, function(model) {
+    test_metrics <- model$test_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    test_metrics %>%
+      mutate(`Survey year` = Approach,
+             `ntrain/ntest` = paste0(n_train, "/", n_test)) 
+  })
+)
+
+aml_hec_test_metrics_subset_survey_year <- aml_hec_test_metrics_subset_survey_year |>
+    rename(Algorithm = Algorithm...2,
+           R2 = R_squared) 
+
+
+tbl_aml_test_survey_year <- aml_hec_test_metrics_subset_survey_year %>%
+  group_by(`Survey year`) |>
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Survey year`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  filter(Algorithm != "Current Approach") |>
+  arrange(`Survey year`, MAPE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable and kableExtra
+tbl_aml_test_survey_year_kable <- tbl_aml_test_survey_year %>%
+  knitr::kable(fromat = "latex", booktabs = TRUE)
+
+tbl_aml_test_survey_year_kable
+```
+
+```{r}
+#| label: fig-mape-survey-year
+#| fig-cap: "Comparison of MAPE for best model per survey_year."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each survey_year
+best_mape_models <- tbl_aml_test_survey_year %>%
+  group_by(`Survey year`) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(aml_hec_test_metrics_all_data$MAPE)
+
+# Filter the row corresponding to the best MAPE when trained with all data
+best_mape_row <- aml_hec_test_metrics_all_data %>%
+  filter(MAPE == best_mape_all) |>
+  rename(Algorithm = Algorithm...8,
+         R2 = R_squared) |>
+  mutate(`Survey year` = "Best MAPE all data") |>
+  select(-c(Algorithm...2, `Variable Selection`, Model)) |>
+  dplyr::arrange(Algorithm, `Survey year`, R2, CV, MAPE, RMSE, MAE, `ntrain/ntest`)
+
+best_mape_models <- best_mape_models |>
+  bind_rows(best_mape_row)
+
+
+# Create a bar plot of the best MAPE values for each survey_year
+ggplot(best_mape_models, aes(x = reorder(`Survey year`, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = ifelse(best_mape_models$`Survey year` == "Best MAPE all data", "#800020", "#4682B4")) +
+  labs(x = "Survey Year", y = "MAPE") +
+  theme(axis.text.x = element_text())
+```
+
+```{r}
+#| label: tbl-results-test-cluster
+#| tbl-cap: "Test metrics per cluster."
+#| tbl-cap-location: bottom
+
+# hec_test_metrics_cluster <- bind_rows(
+#   lapply(models_by_cluster, function(cluster) {
+#   test_metrics <- cluster$test_metrics
+#   cluster_name <- cluster$name
+#   
+#   n_test <- nrow(cluster$test_preds)
+#   total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+#   n_train <- round(total_obs * 0.75)
+#   
+#   # calculating CV(RMSE)
+#   mean_hec <- mean(cluster$test_preds$hec)
+#   cv_rmse <- cluster$test_metrics$RMSE/mean_hec
+#   test_metrics %>%
+#     mutate(cluster = cluster_name,
+#            CV = cv_rmse,
+#            `ntrain/ntest` = paste0(n_train, "/", n_test))
+#   
+# }))
+# 
+# 
+# hec_test_metrics_cluster_agg <- hec_test_metrics_cluster %>%
+#   rename(Algorithm =Algorithm...7,
+#          R2 = R_squared,
+#          cluster = Approach) |>
+#   group_by(cluster) |>
+#   arrange(CV) %>%
+#   slice_head(n = 1) %>%
+#   ungroup() |>
+#   select(Algorithm, cluster, R2, CV, MAPE, RMSE, MAE, "ntrain/ntest") |>
+#   mutate_if(is.numeric, round, 2) |>
+#   arrange(RMSE)|> 
+#   as.data.frame()
+# 
+# # Generate the table using knitr::kable
+# tbl_hec_test_metrics_cluster_agg_kable <- hec_test_metrics_cluster_agg %>%
+#   knitr::kable(booktabs = TRUE)
+# 
+# tbl_hec_test_metrics_cluster_agg_kable
+```
+
+```{r}
+#| label: fig-mape-cluster
+#| fig-cap: "Comparison of MAPE for best model per cluster."
+#| fig-cap-location: bottom
+
+
+# # Filter the data to keep only the rows with the best MAPE for each cluster
+# best_mape_models <- hec_test_metrics_cluster_agg %>%
+#   group_by(cluster) %>%
+#   arrange(MAPE) %>%
+#   slice_head(n = 1) %>%
+#   ungroup()
+# 
+# # Determine the best MAPE when trained with all data
+# best_mape_all <- min(hec_aml_test_metrics$MAPE)
+# 
+# # Filter the row corresponding to the best MAPE when trained with all data
+# best_mape_row <- hec_aml_test_metrics %>%
+#   filter(MAPE == best_mape_all)
+# 
+# # Create a column to identify the best model trained with all data
+# best_mape_models$BestAll <- ifelse(best_mape_models$MAPE == best_mape_all, "Best All Data", "Other")
+# 
+# 
+# # Create a bar plot of the best MAPE values for each cluster
+# ggplot(best_mape_models, aes(x = reorder(cluster, MAPE), y = MAPE)) +
+#   geom_bar(stat = "identity", fill = "steelblue") +
+#   labs(x = "Cluster", y = "Best MAPE", title = "Best MAPE per cluster") +
+#   theme(axis.text.x = element_text(angle = 45, hjust = 1)
+
+```
+
+\newpage
+
+### Comparison with the current approach {#sec-comparison-current-approach}
+
+To allow comparison of the model results with the current approach, we calculated the metrics of the current approach for each of the respective test sets. @fig-comparison-current-approach compares the results of the AutoML approach with the metrics of the current approach on the test set. With exception of *GLM*, all the algorithms of the AutoML approach reached a higher accuracy than the current approach.
+
+```{r}
+#| label: fig-comparison-current-approach
+#| fig-cap: "Comparison of AutoML results with current approach."
+#| fig-cap-location: bottom
+
+options(scipen = 999)
+
+all_hec_metrics_clean <- aml_hec_test_metrics_all_data %>%
+  rename(Algorithm = Algorithm...2) |>
+  mutate(Algorithm = if_else(Algorithm == "Based on HEPI", "Current Approach", Algorithm))
+
+# best rmse per algorithm
+best_rmse_per_algo <- all_hec_metrics_clean %>%
+  group_by(Algorithm) %>%
+   dplyr::slice_min(order_by = MAPE, n = 1) |>
+   arrange(RMSE)
+
+# Create named vector of colors
+algorithm_colors <- c("GBM" = "#d73027", 
+                      "XGB" = "#f46d43", 
+                      "Deep Learning" = "#fdae61", 
+                      "DRF" = "#fee090", 
+                      "Stacked Ensemble" = "#e6f598",
+                      "Current Approach" = "#abd9e9",
+                      "GLM" = "#74add1")
+
+best_rmse_per_algo <- best_rmse_per_algo |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm))
+    
+# Reshape the data to long format
+best_rmse_per_algo_long <- pivot_longer(best_rmse_per_algo, cols = c("R_squared", "RMSE", "MAE", "MAPE"), names_to = "Metric", values_to = "Value")
+
+# Reorder the levels of Algorithm by the median of RMSE
+best_rmse_per_algo_long$Algorithm <- factor(best_rmse_per_algo_long$Algorithm, levels = levels(reorder(best_rmse_per_algo_long$Algorithm, best_rmse_per_algo_long$Value, median)))
+
+# Create the plot
+p <- ggplot(best_rmse_per_algo_long, aes(x = Algorithm, y = Value, fill = Algorithm)) +
+  geom_col(position = position_dodge()) +
+  facet_wrap(~ Metric, scales = "free_y") +
+  labs(x = NULL, y = "Value", fill = "") +
+  theme_bw() +
+  scale_fill_manual(values = algorithm_colors) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "none")
+
+p
+```
+
+In the context of municipal energy planning, it is important to also look at the aggregated error on the level of the municipality (see @eq-agg-error). The following @fig-comparison-aggregated-error-municipality compares the aggregated errors of the current approach and the AutoML approach on municipality level. Again, the best performing model was used for comparison (GBM on all data, without social predictors). A first important observation here is that the aggregated error on the whole test set is very low in both cases: While the current approach overestimates the total HEC by 1.5%, the GBM model underestimates the actual aggregated HEC of the test set by only 0.02%. For 11 out of the 20 municipalities, *GBM* predicts the HEC on municipal level more accurate than the current approach. For Arlesheim and Liestal, *GBM* showed the biggest improvements by lowering the error from over 10% to 0.03% (Arlesheim) and 1.09% (Liestal). For five municipalities, the error is on a comparable level for both approaches: Birsfelden, Binningen, Oberwil, Ettingen and Schönenbuch. Finally for the municipalities of Augst, Aesch, Lausen and Reinach, the current approach provides more accurate estimations of the HEC on municipal level (with an aggregated error more than one percentage point lower than *GBM*).
+
+In conclusion, the AutoML approach demonstrates higher accuracy than the current approach, with the exception of the *GLM* algorithm. The *GBM* model that we used for comparison of the aggregated error on municipal level provides better estimation results for the majority of municipalities. However, there are specific municipalities where the current approach performs better. In these cases, further analysis and adjustments are required to improve the predictions of the AutoML approach.
+
+```{r}
+#| label: fig-comparison-aggregated-error-municipality
+#| fig-cap: "Comparison of aggregated APE per municipality between AutoML and current approach."
+#| fig-cap-location: bottom
+
+
+# retrieve prediction df from best model
+test_preds <- aml_hec_all_data_models[[5]]$test_preds |> 
+  select(municipality_name, hec, hec_pred_current_method, predict) |>
+  mutate(error_current_method = hec - hec_pred_current_method,
+         error_best_model = hec - predict)
+
+aggregated_error_curr_method <- 1 - sum(test_preds$hec_pred_current_method)/sum(test_preds$hec)
+aggregated_error_best_model <- 1 - sum(test_preds$predict)/sum(test_preds$hec)
+
+agg_errors_municipality <- test_preds %>%
+  group_by(municipality_name) %>%
+  summarize(
+    n_observations = n(),
+    aggregated_error_curr_method = 1 - sum(hec_pred_current_method) / sum(hec),
+    aggregated_error_best_model = 1 - sum(predict) / sum(hec)
+  ) %>%
+  arrange(municipality_name)
+
+# Calculate overall aggregated error
+overall_agg_error <- data.frame(
+  municipality_name = "Overall",
+  aggregated_error_curr_method = 1 - sum(test_preds$hec_pred_current_method) / sum(test_preds$hec),
+  aggregated_error_best_model = 1 - sum(test_preds$predict) / sum(test_preds$hec)
+)
+
+# Append overall aggregated error to agg_errors
+agg_errors_municipality <- bind_rows(agg_errors_municipality, overall_agg_error)
+
+# Append columns with absolute errors
+agg_errors_municipality <- agg_errors_municipality %>%
+  mutate(abs_error_curr_method = abs(aggregated_error_curr_method),
+         abs_error_best_model = abs(aggregated_error_best_model))
+
+# Pivot the agg_errors dataframe
+agg_errors_pivot <- agg_errors_municipality %>%
+  pivot_longer(cols = c(abs_error_curr_method, abs_error_best_model),
+               names_to = "error_type",
+               values_to = "abs_error") |>
+  arrange(municipality_name, abs_error)
+
+
+# Create the bar plot
+ggplot(agg_errors_pivot, aes(x = municipality_name, y = abs_error, fill = error_type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Municipality",
+       y = "Aggregated error in %",
+       fill = "Error Type") +  # Modify the legend title
+  scale_fill_manual(values = c("steelblue", "#800020"),
+                    labels = c("AutoML best model", "Current approach")) +  # Change legend labels
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title = element_blank(),  # Remove default legend title
+        legend.position = c(0.85, 0.9),  # Adjust the legend position
+        legend.background = element_rect(fill = "transparent", color = NA))  +
+  scale_y_continuous(labels = scales::percent)  # Scale y-axis to percent
+
+```
+
+```{r}
+#| eval: false
+
+
+create_agg_error_df <- function(models_list, name_var = name) {
+  df <- models_list %>%
+    map_df(~ tibble(
+      name = .x[[name_var]],
+      aggregated_error_curr_method = .x$aggregated_error_curr_method,
+      aggregated_error_best_model = .x$aggregated_error_best_model
+    ))
+  
+  return(df)
+}
+
+
+agg_errors_building_class <- create_agg_error_df(models_by_building_class, name_var = "name")
+agg_errors_municipality <- create_agg_error_df(models_by_municipality, name_var = "name")
+agg_errors_construction_period <- create_agg_error_df(models_by_construction_period, name_var = "construction_period")
+agg_errors_survey_year <- create_agg_error_df(models_by_survey_year, name_var = "survey_year")
+
+agg_errors_building_class
+
+agg_errors_building_class <- tibble(
+  name = c("SFH", "MFH with 2 apartments", "MFH with 3+ apartments"),
+  aggregated_error_curr_method = c(0.0273, -0.0259, 0.0462),
+  aggregated_error_best_model = c(-0.00364, 0.0121, 0.00847)
+)
+
+
+
+```
+
+## Results of model explainability {#sec-results-model-explainability}
+
+According to the last step of the methodology, this section focuses on model explainability by presenting the results of the variable importance and SHAP analysis. For the purpose of model understanding, we used again the best performing model according to the results in @sec-results-of-model-exploration (*GBM* model trained on all data without the social indicators as predictors). Thus, the following analysis is not representative for all the previously presented models. Rather, it should serve as an illustrative example on providing insights for black-box models.
+
+------------------------------------------------------------------------
+
+**Variable importance**
+
+@fig-varimp-plot illustrates the scaled variable importance of the ten most important predictors of the GBM model.
+
+![Variable importance of the ten most important variables for GBM (trained on all data).](figures/04-varimp-plot.png){#fig-varimp-plot fig-align="center" width="80%"}
+
+```{r}
+#| include: false
+#| eval: false
+
+file_list <- list.files("models/all_data/", pattern = "*06-01.rds", full.names = TRUE)
+aml_all_without_social <- readRDS(file_list[1])
+
+library(h2o)
+sink("/dev/null")
+h2o.init()
+
+best_model_path <- list.files("models/all_data/best_model/", full.names = T)
+best_model <- h2o.loadModel("models/all_data/best_model/StackedEnsemble_AllModels_4_AutoML_2_20230602_165836")
+
+varimp_plot <- h2o.varimp_plot(best_model)
+```
+
+```{r}
+#| label: tbl-variable-importance
+#| tbl-cap: "Relative variable importance for best model on all data (GBM)."
+#| tbl-cap-location: bottom
+#| echo: false
+#| eval: false
+
+
+file_list <- list.files("models/all_data/", pattern = "*06-01.rds", full.names = TRUE)
+aml_all_without_social <- readRDS(file_list[1])
+best_model <- h2o.get_best_model(aml_all_without_social$aml_results$aml, criterion = "rmse")
+varimp_df <- h2o.varimp(best_model)
+
+varimp_df_kable <- varimp_df |>
+  select(variable, percentage) |>
+  rename(Variable = variable,
+         `Relative importance` = percentage)|>
+  mutate_if(is.numeric, round, 4) |>
+  kable(booktabs = TRUE)
+
+varimp_df_kable
+```
+
+Not surprisingly and in accordance with the observations made by @olu-ajayi2022, the heated area is clearly the most important predictor variable by contributing about 84% to the overall importance. The second important predictor is the municipality, which contributes about 7% to the overall importance. With regard to our research question RQ2.1 and RQ2.2, we can state that the retrofit predictor does not not appear in the ten most important predictors of this model. However, as shown in @tbl-retrofit, retrofitted buildings showed a lower HEPI for all building classes. Thus, the interpretation of this observation is not straight-forward and would need further investigation: While this could lead to the conclusion that retrofitting is not important in relation to the other predictors, it could also point out that different ways of preprocessing the retrofit information is needed (e.g. using the retrofit investment costs instead of a binary variable).
+
+------------------------------------------------------------------------
+
+**SHAP analysis**
+
+To gain insights on how a prediction of the model is composed, we used the SHAP values for local explanations. We here present two exemplary cases: First, we focus on a SFH as shown in @tbl-local-explanation-sfh. In that case, the predicted HEC value was about 5% lower than the actual HEC value.
+
+```{r}
+#| label: tbl-local-explanation-sfh
+#| tbl-cap: "Attributes of SFH in Aesch."
+#| tbl-cap-location: bottom
+
+file_list <- list.files("models/all_data/", pattern = "*06-01.rds", full.names = TRUE)
+aml_all_without_social <- readRDS(file_list[1])
+
+sfh_example <- aml_all_without_social$test_preds %>%
+  filter(egid == 390476) %>%
+  select(egid, heated_area_m2, municipality_name, num_residents_mean, survey_year, construction_year, stand_alone, meters_above_sealevel, year_of_installation, efficiency_of_installation, building_class, retrofitted, energy_usage_of_installation, hec, predict) %>%
+  rename(hec_actual = hec,
+         hec_predicted = predict) |>
+  mutate(across(everything(), as.character)) %>%
+  pivot_longer(cols = -egid,
+               names_to = "Variable",
+               values_to = "Value") |>
+  select(-egid)
+
+sfh_example <- sfh_example |>
+  kable(booktabs = TRUE)
+
+sfh_example
+
+mean_responses <- aml_all_without_social$test_preds %>%
+  group_by(heated_area_m2) %>%
+  summarise(mean_predicted_value = mean(predict, na.rm = TRUE))
+
+
+
+```
+
+@fig-shap-sfh shows the contributions of the most important predictor variables. The mean prediction of HEC in the test data was 29379 kWh/year. From @fig-shap-sfh, we can see that the value of 112 m^2^ for the variable *heated area* contributes about -16150 kWh/year to the prediction. The construction year of the building (1961) increases the prediction by +1460 kWh/year. Furthermore, we observe that information on retrofitting (non-retrofitted building) does only have a marginal effect on the model prediction (+148 kWh/year).
+
+```{r}
+#| label: fig-shap-sfh-code
+#| fig-cap: "SHAP local explanation for SFH."
+#| fig-cap-location: bottom
+#| message: false
+#| output: false
+# h2o.init()
+# local_explanation <- h2o.explain_row(best_model, as.h2o(aml_all_without_social$test_preds), row_index = 53)
+# 
+# # change title of the plot
+# local_explanation[1]$shap_explain_row$plots$GBM_grid_1_AutoML_16_20230601_165351_model_58$labels$title <- "SHAP explanation for GBM \nPrediction: 12772.8 kWh/year"
+# 
+# local_explanation
+```
+
+![SHAP analysis of SFH in Aesch.](figures/04-shap-sfh.png){#fig-shap-sfh fig-align="center" width="80%"}
+
+{{< pagebreak >}}
+
+In a second example, we investigated the SHAP values of a retrofitted building with a predicted HEC close to the mean prediction of 29379 kWh/year. The corresponding attributes of the building are listed in @tbl-local-explanation-mfh. In this case, the model underestimated the HEC by 8.4%. In @fig-shap-mfh, we observe a different picture of the SHAP values.
+
+```{r}
+#| label: tbl-local-explanation-mfh
+#| tbl-cap: "Attributes of MFH with two apartments in Binningen."
+#| tbl-cap-location: bottom
+
+mfh_example <- aml_all_without_social$test_preds %>%
+  filter(egid == 398085) %>%
+  select(egid, heated_area_m2, municipality_name, num_residents_mean, survey_year, construction_year, stand_alone, meters_above_sealevel, year_of_installation, efficiency_of_installation, building_class, retrofitted, energy_usage_of_installation, hec, predict) %>%
+  rename(hec_actual = hec,
+         hec_predicted = predict) |>
+  mutate(across(everything(), as.character)) %>%
+  pivot_longer(cols = -egid,
+               names_to = "Variable",
+               values_to = "Value") |>
+  select(-egid)
+
+mfh_example <- mfh_example |>
+  kable(booktabs = TRUE, digits = 1)
+
+mfh_example
+
+mean_responses <- aml_all_without_social$test_preds %>%
+  group_by(heated_area_m2) %>%
+  summarise(mean_predicted_value = mean(predict, na.rm = TRUE))
+```
+
+```{r}
+#| label: fig-shap-mfh-code
+#| fig-cap: "SHAP local explanation for SFH."
+#| fig-cap-location: bottom
+#| message: false
+#| output: false
+#| eval: false
+
+h2o.init()
+local_explanation <- h2o.explain_row(best_model, as.h2o(aml_all_without_social$test_preds), row_index = 2067)
+
+# change title of the plot
+local_explanation[1]$shap_explain_row$plots$GBM_grid_1_AutoML_16_20230601_165351_model_58$labels$title <- "SHAP explanation for GBM \nPrediction: 29422 kWh/year"
+
+local_explanation
+```
+
+![SHAP analysis of MFH with two apartments in Binningen](figures/04-shap-mfh.png){#fig-shap-mfh fig-align="center" width="80%"}
+
+Because the predicted HEC is very close to the mean prediction, the positive and negative contributions almost equalized each other. Again, the heated area contributed the most to the prediction. But interestingly, this negative contribution was almost equalized by the municipality (Binningen). This observation however is in line with the results of @tbl-hec-hepi-per-municipality: Binningen has one of the highest mean values for HEPI. Another important observation was the influence of two variables *stand alone* and *retrofitted*: In this example, the information that the building has been retrofitted clearly reduced the the prediction, while the fact that the building is not connected to another building increased prediction by about 1000 kWh/year.
+
+Based on this observations, we conclude that binary variables *retrofit* and *stand alone* may not have a big impact on the global level of the model predictions as shown with VIA. But on the level of individual buildings, these variables can clearly influence the model's prediction.

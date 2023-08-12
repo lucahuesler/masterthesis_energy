@@ -1,0 +1,650 @@
+## Model results {#sec-modelling}
+
+```{r}
+#| label: load-libs
+#| include: false
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, tidymodels, doParallel, skimr, plotly, sf, agua, gt,
+               rules, baguette, ggridges, viridis, hrbrthemes, finetune, ggrepel,
+               vip, shapviz, DALEXtra, ranger, kernlab, kknn)
+
+source("auto_ml_functions.R")
+```
+
+```{r}
+#| label: load-data
+#| include: false
+
+energy_modelling <- read_rds("data/energy_modelling.rds")
+
+# custom modelling (tidymodels)
+custom_approach_train_results <- read_rds("output/grid_results.rds")
+
+# auto_ml resulsts
+# auto ml subset building class
+list.files("models/all_data/")
+file_list <- list.files("models/all_data/", pattern = "*.rds", full.names = TRUE)
+aml_hec_all_data_models <- lapply(file_list, readRDS)
+
+# Combine metrics of each subset into one data frame
+aml_hec_all_data_train_metrics <- map_dfr(aml_hec_all_data_models, ~ .x$train_metrics)
+aml_hec_all_data_test_metrics <- map_dfr(aml_hec_all_data_models, ~ .x$test_metrics)
+
+```
+
+### Results of model exploration {#sec-model-exploration}
+
+According to the modelling workflow defined in @sec-modelling-worflow, the first step of the modelling process focuses on the exploration of various models.
+
+```{r}
+#| label: fig-results-custom-approach
+#| fig-cap: "Train metrics of custom approach."
+#| fig-cap-location: bottom
+
+
+#> reproduced later. 
+set.seed(501)
+
+#> Save the split information for an 80/20 split of the data
+energy_split <- initial_split(energy_modelling, 
+                              prop = 0.8, 
+                              strata = hec)
+
+calculate_metrics <- function(grid_results) {
+  algorithms <- c("lm_basic", "xgboost", "neural_network", "SVM_radial", "SVM_poly", "KNN")
+  metrics <- c("rmse")
+  
+  result <- tibble(Algorithm = algorithms)
+  
+  for (metric in metrics) {
+    metric_values <- sapply(algorithms, function(algo) {
+      best_model <- grid_results |>
+        extract_workflow_set_result(algo) |>
+        select_best(metric = metric)
+      
+      workflow <- grid_results |>
+        extract_workflow(algo) |>
+        finalize_workflow(best_model) |>
+        last_fit(split = energy_split)
+      
+      metric_value <- workflow |> 
+        collect_metrics() |> 
+        filter(.metric == metric) |>
+        pull(.estimate)
+      
+      metric_value
+    })
+    
+    result <- result |> 
+      mutate(!!metric := metric_values)
+  }
+  
+  return(result)
+}
+
+
+#custom_approach_metrics <- calculate_metrics(manual_grid_results)
+
+
+
+autoplot(custom_approach_train_results,
+         rank_metric = "rmse",  # or whichever metric you want to rank by
+         metric = c("rmse", "rsq", "mae", "mape"),  # include all four metrics in the visualization
+         select_best = TRUE)
+
+```
+
+```{r}
+#| label: tbl-results-train-automl-all-predictors
+#| tbl-cap: "Train metrics of AutoML approach."
+#| tbl-cap-location: bottom
+
+aml_hec_train_metrics_all_data <- bind_rows(
+  lapply(aml_hec_all_data_models, function(model) {
+    train_metrics <- model$train_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-train split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    train_metrics %>%
+      mutate(`Variable Selection` = variable_selection,
+             `n_test/ntrain` = paste0(n_test, "/", n_train))
+  })
+)
+
+
+tbl_aml_train <- aml_hec_train_metrics_all_data %>%
+  rename(Algorithm = algo, 
+         RMSE = rmse,
+         MAE = mae) |>
+  group_by(Algorithm) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, RMSE, MAE, `n_test/ntrain`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable
+tbl_aml_train_kable <- tbl_aml_train %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_aml_train_kable
+```
+
+By comparing the metrics on the train data, we can see that the AML apporoach performs better with regard to R2 and and also RMSE. While in the custom approach, the best model (XGboost) obtained values for R2 of 0.84 and for RMSE of 27169. In the AML approach, the best model (Stacked Ensemble) indicates an R2 of ... an RMSE of 17675. Based on this finding, predictions on the test set were done with the AML approach.
+
+**Test metrics**
+
+```{r}
+#| label: tbl-results-test-automl-all-predictors
+#| tbl-cap: "Test metrics of the best performing model per AML algorithm evaluated on RMSE."
+#| tbl-cap-location: bottom
+
+aml_hec_test_metrics_all_data <- bind_rows(
+  lapply(aml_hec_all_data_models, function(model) {
+    test_metrics <- model$test_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    test_metrics %>%
+      mutate(`Variable Selection` = variable_selection,
+             `ntrain/ntest` = paste0(n_train, "/", n_test))
+  })
+)
+
+
+tbl_aml_test <- aml_hec_test_metrics_all_data %>%
+  rename(Algorithm = Algorithm...2,
+         R2 = R_squared) |>
+  filter(Variable_Selection == "predictors_hec_all") |>
+  group_by(Algorithm) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm)) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+
+# Generate the PDF output using kable and kableExtra
+tbl_aml_test_kable <- tbl_aml_test %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_aml_test_kable
+```
+
+**Influence of predictor variables**
+
+```{r}
+#| label: tbl-results-test-automl-different-predictors
+#| tbl-cap: "Test metrics of AutoML approachby varying predictor variables."
+#| tbl-cap-location: bottom
+
+tbl_aml_test_diff_predictors <- aml_hec_test_metrics_all_data %>%
+  rename(Algorithm = Algorithm...2,
+         R2 = R_squared) |>
+  group_by(Algorithm, Variable_Selection) |>
+  arrange(RMSE) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(`Variable Selection`, Algorithm, R2, RMSE, MAE, MAPE, CV, `ntrain/ntest`) |>
+  mutate_if(is.numeric, round, 2) |>
+  mutate(Algorithm = case_when(
+    Algorithm == "stackedensemble" ~ "Stacked Ensemble",
+    Algorithm == "xgboost" ~ "XGB",
+    Algorithm == "gbm" ~ "GBM",
+    Algorithm == "drf" ~ "DRF",
+    Algorithm == "deeplearning" ~ "Deep Learning",
+    Algorithm == "Based on HEPI" ~ "Current Approach",
+    Algorithm == "glm" ~ "GLM",
+    TRUE ~ Algorithm),
+    `Variable Selection` = case_when(
+    `Variable Selection` == "predictors_basic" ~ "Only basic predictors",
+    `Variable Selection` == "predictors_hec_all" ~ "All predictors",
+    `Variable Selection` == "predictors_hec_without_retrofit" ~ "Without retrofit variable",
+    `Variable Selection` == "predictors_hec_without_standalone" ~ "Without stand alone variable",
+    `Variable Selection` == "predictors_without_social" ~ "Without social indicators",
+    TRUE ~ `Variable Selection`)
+    ) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+# Generate the table using knitr::kable
+tbl_aml_test_diff_predictors_kable <- tbl_aml_test_diff_predictors %>%
+  knitr::kable(booktabs = TRUE)
+  
+
+tbl_aml_test_diff_predictors_kable
+```
+
+### Results on data subsets {#sec-subset-results}
+
+```{r}
+#| label: load-data-subsets
+#| include: false
+
+
+# auto ml subset building class
+list.files("models/subset_building_class/")
+file_list <- list.files("models/subset_building_class", pattern = "*.rds", full.names = TRUE)
+models_by_building_class <- lapply(file_list, readRDS)
+
+
+# Define the subsets and corresponding RDS file names
+subsets <- c("building_class", "municipality", "construction_period", "cluster")
+file_names <- paste0("models/models_by_", subsets, "_", Sys.Date(), ".rds")
+
+# Initialize a list to store the loaded models
+loaded_models <- list()
+
+# Iterate over the subsets and load the most recent RDS file for each subset
+for (i in seq_along(subsets)) {
+  subset <- subsets[i]
+  file_name <- file_names[i]
+  
+  # Get the list of RDS files for the current subset
+  model_files <- list.files("models/", pattern = paste0("models_by_", subset), full.names = TRUE)
+  
+  # Filter the list to exclude the files with the current date
+  #model_files <- model_files[!grepl(paste0("_", Sys.Date()), model_files)]
+  
+  # Load the most recent RDS file for the current subset
+  if (length(model_files) > 0) {
+    most_recent_file <- model_files[length(model_files)]
+    loaded_models[[subset]] <- readRDS(most_recent_file)
+  } else {
+    loaded_models[[subset]] <- NULL
+  }
+}
+
+# Access the loaded models
+models_by_building_class <- loaded_models$building_class
+models_by_municipality <- loaded_models$municipality
+models_by_construction_period <- loaded_models$construction_period
+models_by_cluster <- loaded_models$cluster
+
+```
+
+In this section, we present the results of the second step of our modelling workflow, where different subsets of data were used to train the models.
+
+#### Building class subsets
+
+```{r}
+#| label: load-data-subsets-building-class
+#| include: false
+
+
+# auto ml subset building class
+list.files("models/subset_building_class/")
+file_list <- list.files("models/subset_building_class", pattern = "*.rds", full.names = TRUE)
+models_by_building_class <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_building_class_train_metrics <- map_dfr(models_by_building_class, ~ .x$train_metrics)
+subset_building_class_test_metrics <- map_dfr(models_by_building_class, ~ .x$test_metrics)
+```
+
+First, we focus on the results obtained by differentiating based on the building class. @fig-results-single-family-houses illustrates the metrics for single-family houses. In the case of single-family houses, *Stacked Ensemble* performs best for all metrics.
+
+```{r}
+#| label: fig-results-single-family-houses
+#| fig-cap: "Results of models trained on single-family houses"
+#| fig-cap-location: bottom
+
+#plot_best_metrics(models_by_building_class[[2]])
+```
+
+@fig-results-multi-family-houses-2-flats shows the metrics for multi-family houses with two apartments. Again, *Stacked Ensemble* performs best on all metrics, but closely followed by *GBM* and *XGBoost*.
+
+```{r}
+#| label: fig-results-multi-family-houses-2-flats
+#| fig-cap: "Results of models trained on multi-family houses with two flats."
+#| fig-cap-location: bottom
+
+#plot_best_metrics(models_by_building_class[[2]])
+```
+
+Finally, @fig-results-multi-family-houses-3-more--flats illustrates the resulting metrics for multi-family houses with three or more flats. In this case, *GBM* provides slightly better results for MAE and MAPE.
+
+```{r}
+#| label: fig-results-multi-family-houses-3-more--flats
+#| fig-cap: "Results of models trained on multi-family houses with two flats."
+#| fig-cap-location: bottom
+
+#plot_best_metrics(models_by_building_class[[3]])
+```
+
+#### Municipality subsets
+
+```{r}
+#| label: load-data-subsets-building-municipality
+#| include: false
+
+
+# auto ml subset building class
+list.files("models/subset_municipality/")
+file_list <- list.files("models/subset_municipality", pattern = "*.rds", full.names = TRUE)
+models_by_municipality <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_municipality_train_metrics <- map_dfr(models_by_municipality, ~ .x$train_metrics)
+subset_municipality_test_metrics <- map_dfr(models_by_municipality, ~ .x$test_metrics)
+```
+
+```{r}
+#| label: tbl-results-test-municipality
+#| tbl-cap: "Test metrics per municipality."
+#| tbl-cap-location: bottom
+
+hec_test_metrics_municipality <- bind_rows(
+  lapply(models_by_municipality, function(municipality) {
+  test_metrics <- municipality$test_metrics
+  municipality_name <- municipality$name
+  
+  n_test <- nrow(municipality$test_preds)
+  total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+  n_train <- round(total_obs * 0.75)
+  
+  # calculating CV(RMSE)
+  mean_hec <- mean(municipality$test_preds$hec)
+  cv_rmse <- municipality$test_metrics$RMSE/mean_hec
+  test_metrics %>%
+    mutate(Municipality = municipality_name,
+           CV = cv_rmse,
+           `ntrain/ntest` = paste0(n_train, "/", n_test))
+  
+}))
+
+
+
+hec_test_metrics_municipality_agg <- hec_test_metrics_municipality %>%
+  rename(Algorithm =Algorithm...7,
+         R2 = R_squared,
+         Municipality = Approach) |>
+  group_by(Municipality) |>
+  arrange(CV) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, Municipality, R2, CV, MAPE, RMSE, MAE, "ntrain/ntest") |>
+  mutate_if(is.numeric, round, 2) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+# Generate the table using knitr::kable
+tbl_hec_test_metrics_municipality_agg_kable <- hec_test_metrics_municipality_agg %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_hec_test_metrics_municipality_agg_kable
+```
+
+```{r}
+#| label: fig-mape-municipalites
+#| fig-cap: "Comparison of MAPE for best model per municipality."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each municipality
+best_mape_models <- hec_test_metrics_municipality_agg %>%
+  group_by(Municipality) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(hec_aml_test_metrics$MAPE)
+
+# Filter the row corresponding to the best MAPE when trained with all data
+best_mape_row <- hec_aml_test_metrics %>%
+  filter(MAPE == best_mape_all)
+
+# Create a column to identify the best model trained with all data
+best_mape_models$BestAll <- ifelse(best_mape_models$MAPE == best_mape_all, "Best All Data", "Other")
+
+
+# Create a bar plot of the best MAPE values for each municipality
+ggplot(best_mape_models, aes(x = reorder(Municipality, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = "Municipality", y = "Best MAPE", title = "Best MAPE by Municipality") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Construction period subsets
+
+```{r}
+#| label: load-data-subsets-building-construction-period
+#| include: false
+
+# auto ml subset building class
+list.files("models/subset_construction_period/")
+file_list <- list.files("models/subset_construction_period", pattern = "*.rds", full.names = TRUE)
+models_by_construction_period <- lapply(file_list, readRDS)
+
+
+# Combine metrics of each subset into one data frame
+subset_construction_period_train_metrics <- map_dfr(models_by_construction_period, ~ .x$train_metrics)
+subset_construction_period_test_metrics <- map_dfr(models_by_construction_period, ~ .x$test_metrics)
+```
+
+```{r}
+#| label: tbl-results-test-construction-period
+#| tbl-cap: "Test metrics per construction period."
+#| tbl-cap-location: bottom
+
+hec_test_metrics_construction_period <- bind_rows(
+  lapply(models_by_construction_period, function(construction_period) {
+  test_metrics <- construction_period$test_metrics
+  construction_period_name <- construction_period$name
+  
+  n_test <- nrow(construction_period$test_preds)
+  total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+  n_train <- round(total_obs * 0.75)
+  
+  # calculating CV(RMSE)
+  mean_hec <- mean(construction_period$test_preds$hec)
+  cv_rmse <- construction_period$test_metrics$RMSE/mean_hec
+  test_metrics %>%
+    mutate(construction_period = construction_period_name,
+           CV = cv_rmse,
+           `ntrain/ntest` = paste0(n_train, "/", n_test))
+  
+}))
+
+
+hec_test_metrics_construction_period_agg <- hec_test_metrics_construction_period %>%
+    mutate(construction_period_label = case_when(
+    Approach == 8011 ~ "Before 1919",
+    Approach == 8012 ~ "1919-1945",
+    Approach == 8013 ~ "1946-1960",
+    Approach == 8014 ~ "1961-1970",
+    Approach == 8015 ~ "1971-1980",
+    Approach == 8016 ~ "1981-1985",
+    Approach == 8017 ~ "1986-1990",
+    Approach == 8018 ~ "1991-1995",
+    Approach == 8019 ~ "1996-2000",
+    Approach == 8020 ~ "2001-2005",
+    Approach == 8021 ~ "2006-2010",
+    Approach == 8022 ~ "2011-2015",
+    Approach == 8023 ~ "After 2016",
+    TRUE ~ "Unknown"
+  )) |>
+  rename(Algorithm =Algorithm...7,
+         R2 = R_squared,
+         `Construction Period` = construction_period_label) |>
+  group_by(`Construction Period`) |>
+  arrange(CV) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, `Construction Period`, R2, CV, MAPE, RMSE, MAE, "ntrain/ntest") |>
+  mutate_if(is.numeric, round, 2) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+# Generate the table using knitr::kable
+tbl_hec_test_metrics_construction_period_agg_kable <- hec_test_metrics_construction_period_agg %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_hec_test_metrics_construction_period_agg_kable
+```
+
+```{r}
+#| label: fig-mape-construction-period
+#| fig-cap: "Comparison of MAPE for best model per construction period."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each construction_period
+best_mape_models <- hec_test_metrics_construction_period_agg %>%
+  group_by(`Construction Period`) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(hec_aml_test_metrics$MAPE)
+
+# Filter the row corresponding to the best MAPE when trained with all data
+best_mape_row <- hec_aml_test_metrics %>%
+  filter(MAPE == best_mape_all)
+
+# Create a column to identify the best model trained with all data
+best_mape_models$BestAll <- ifelse(best_mape_models$MAPE == best_mape_all, "Best All Data", "Other")
+
+
+# Create a bar plot of the best MAPE values for each construction_period
+ggplot(best_mape_models, aes(x = reorder(`Construction Period`, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = "Construction period", y = "Best MAPE", title = "Best MAPE per construction period") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+#### Clustering subsets
+
+```{r}
+#| label: tbl-results-test-cluster
+#| tbl-cap: "Test metrics per cluster."
+#| tbl-cap-location: bottom
+
+hec_test_metrics_cluster <- bind_rows(
+  lapply(models_by_cluster, function(cluster) {
+  test_metrics <- cluster$test_metrics
+  cluster_name <- cluster$name
+  
+  n_test <- nrow(cluster$test_preds)
+  total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+  n_train <- round(total_obs * 0.75)
+  
+  # calculating CV(RMSE)
+  mean_hec <- mean(cluster$test_preds$hec)
+  cv_rmse <- cluster$test_metrics$RMSE/mean_hec
+  test_metrics %>%
+    mutate(cluster = cluster_name,
+           CV = cv_rmse,
+           `ntrain/ntest` = paste0(n_train, "/", n_test))
+  
+}))
+
+
+hec_test_metrics_cluster_agg <- hec_test_metrics_cluster %>%
+  rename(Algorithm =Algorithm...7,
+         R2 = R_squared,
+         cluster = Approach) |>
+  group_by(cluster) |>
+  arrange(CV) %>%
+  slice_head(n = 1) %>%
+  ungroup() |>
+  select(Algorithm, cluster, R2, CV, MAPE, RMSE, MAE, "ntrain/ntest") |>
+  mutate_if(is.numeric, round, 2) |>
+  arrange(RMSE)|> 
+  as.data.frame()
+
+# Generate the table using knitr::kable
+tbl_hec_test_metrics_cluster_agg_kable <- hec_test_metrics_cluster_agg %>%
+  knitr::kable(booktabs = TRUE)
+
+tbl_hec_test_metrics_cluster_agg_kable
+```
+
+```{r}
+#| label: fig-mape-cluster
+#| fig-cap: "Comparison of MAPE for best model per cluster."
+#| fig-cap-location: bottom
+
+
+# Filter the data to keep only the rows with the best MAPE for each cluster
+best_mape_models <- hec_test_metrics_cluster_agg %>%
+  group_by(cluster) %>%
+  arrange(MAPE) %>%
+  slice_head(n = 1) %>%
+  ungroup()
+
+# Determine the best MAPE when trained with all data
+best_mape_all <- min(hec_aml_test_metrics$MAPE)
+
+# Filter the row corresponding to the best MAPE when trained with all data
+best_mape_row <- hec_aml_test_metrics %>%
+  filter(MAPE == best_mape_all)
+
+# Create a column to identify the best model trained with all data
+best_mape_models$BestAll <- ifelse(best_mape_models$MAPE == best_mape_all, "Best All Data", "Other")
+
+
+# Create a bar plot of the best MAPE values for each cluster
+ggplot(best_mape_models, aes(x = reorder(cluster, MAPE), y = MAPE)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(x = "Cluster", y = "Best MAPE", title = "Best MAPE per cluster") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+### Sensitivity analysis
+
+Brainstorming:
+
+First, show variable importance, but not so interesting as heated area is always most important. The show SHAP summary plot and then SHAP individual with 2-3 exemplary cases. Take best model with all data.
+
+```{r}
+#| label: fig-variable-importance
+#| fig-cap: "Variable importance plot."
+#| fig-cap-location: bottom
+#| include: false
+#| eval: false
+library(h2o)
+h2o.init()
+best_model <- h2o.get_best_model(aml_hec_all_data_models[[2]]$aml_results$aml, criterion = "RMSE")
+varimp_df <- h2o.varimp(best_model)
+View(varimp_df)
+varimp_plot <- h2o.varimp_plot(best_model)
+
+h2o.explain(best_model, as.h2o(aml_hec_all_data_models[[2]]$test_preds))
+
+h2o.explain_row(best_model, as.h2o(aml_hec_all_data_models[[2]]$test_preds), row_index = 4745)
+```

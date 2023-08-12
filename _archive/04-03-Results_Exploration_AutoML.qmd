@@ -1,0 +1,206 @@
+# Automated machine learning
+
+## Modelling with all data
+```{r}
+library(h2o)
+library(tidymodels)
+library(tidyverse)
+source("auto_ml_functions.R")
+```
+
+
+```{r}
+
+h2o.init()
+
+# prepare data
+energy_modelling <- read_rds("data/energy_modelling.rds")
+
+energy_modelling <- energy_modelling |>
+  select(egid, 
+         hepi, 
+         hec, 
+         survey_year, 
+         num_residents_mean, 
+         heated_area_m2, 
+         year_of_installation, 
+         efficiency_of_installation, 
+         energy_usage_of_installation, 
+         municipality_name, 
+         building_class, 
+         construction_year, 
+         coordinate_e, 
+         coordinate_n, 
+         num_dwellings, 
+         meters_above_sealevel, 
+         energy_production_solar_mwh, 
+         energy_consumed_hot_water_mwh,
+         retrofitted,
+         hdd,
+         hepi_pred_current_method,
+         hec_pred_current_method)
+
+
+# h2o split
+energy_modelling.h20 <- as.h2o(energy_modelling)
+energy_split <- h2o.splitFrame(energy_modelling.h20, seed = 1)
+train <- energy_split[[1]]
+test <- energy_split[[2]]
+```
+
+
+```{r}
+# variable selection
+vars <- names(energy_modelling)
+# predictor variables for HEC overall
+predictors_hec_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
+
+
+predictors_hec_without_retrofit <- predictors_hec_all[-which(predictors_hec_all == "retrofitted")]
+
+```
+
+```{r}
+# With complete data and all predictors
+hec_all_aml_results <- run_h2o_automl(target = "hec", 
+                                      predictors = predictors_hec_all, 
+                                      data = train, 
+                                      runtime = 20)
+
+
+hec_all_aml <- hec_all_aml_results$aml
+hec_all_aml_leaderboard <- hec_all_aml_results$leaderboard |>
+    as.data.frame() |>
+  mutate(approach = "HEC all predictors")
+
+
+# Without predictor "retrofitted"
+# hec_without_retrofit_aml_results <- run_h2o_automl(target = "hec",
+#                                                    predictors = predictors_hec_without_retrofit,
+#                                                    data = train,
+#                                                    runtime = 120)
+# 
+# 
+# hec_without_retrofit_aml <- hec_without_retrofit_aml_results$aml
+# hec_without_retrofit_aml_leaderboard <- hec_without_retrofit_aml_results$leaderboard |> 
+#   as.data.frame() |>
+#   mutate(approach = "HEC without retrofit")
+
+
+```
+
+```{r}
+
+aml_leaderboard <- hec_all_aml_leaderboard |>
+  bind_rows(hec_without_retrofit_aml_leaderboard)
+
+print(aml_leaderboard)
+  
+
+```
+## Best model
+
+```{r}
+hec_all_aml_best_model <- h2o.get_best_model(hec_all_aml)
+hec_all_aml_best_model_xgb <- h2o.get_best_model(hec_all_aml, algorithm = "xgboost")
+```
+
+
+## Prediction
+
+```{r}
+all_metrics <- data.frame()
+
+for (i in 1:nrow(aml_leaderboard)) {
+  
+  # Get the model id and algorithm for the current model
+  model_id <- as.character(aml_leaderboard[i, "model_id"])
+  algorithm <- as.character(aml_leaderboard[i, "algorithm"])
+  print(model_id)
+  
+  # Get the model from the H2O AutoML object
+  model <- h2o.getModel(model_id)
+  predictions <- h2o.predict(model, test)
+  
+  # Call the calc_metrics function to get the metrics
+  metrics <- calc_metrics(model, test, predictions)
+  
+  # Add the metrics to the data frame
+  all_metrics <- rbind(all_metrics, metrics)
+  
+  # remove duplicates
+  all_metrics <- all_metrics |>
+    dplyr::distinct() |>
+    dplyr::arrange(RMSE)
+    
+  
+  print(paste0(model_id, " done!"))
+}
+```
+
+## Explain models
+
+```{r}
+# preds <- h2o.predict(hec_all_aml_best_model_xgb, test)
+# h2o.explain_row(hec_all_aml_best_model_xgb, test, row_index = 10102)
+# 
+# h2o.explain(hec_all_aml_best_model, test)
+```
+
+# Modelling on subsets
+
+```{r}
+# Split the data by survey year
+data_by_survey_year <- split(energy_modelling, energy_modelling$survey_year)
+
+```
+
+```{r}
+# Run AutoML for each survey year separately
+models_by_survey_year <- lapply(data_by_survey_year, function(df) {
+  # Prepare data
+  df <- df %>%
+    select(egid, 
+           hepi, 
+           hec, 
+           survey_year, 
+           num_residents_mean, 
+           heated_area_m2, 
+           year_of_installation, 
+           efficiency_of_installation, 
+           energy_usage_of_installation, 
+           municipality_name, 
+           building_class, 
+           construction_year, 
+           coordinate_e, 
+           coordinate_n, 
+           num_dwellings, 
+           meters_above_sealevel, 
+           energy_production_solar_mwh, 
+           energy_consumed_hot_water_mwh,
+           retrofitted,
+           hdd,
+           hepi_pred_current_method,
+           hec_pred_current_method)
+  
+  # Split data
+  df_h2o <- as.h2o(df)
+  split <- h2o.splitFrame(df_h2o, seed = 1)
+  train <- split[[1]]
+  test <- split[[2]]
+  
+  # Run AutoML
+  vars <- names(df)
+  predictors_hec_all <- vars[-which(vars %in% c("egid", "hec", "hepi", "hec_pred_current_method", "hepi_pred_current_method"))]
+  
+  aml_results <- run_h2o_automl(target = "hec", 
+                                predictors = predictors_hec_all, 
+                                data = train, 
+                                runtime = 120)
+  
+  # Return results
+  return(aml_results$aml)
+})
+
+```
+

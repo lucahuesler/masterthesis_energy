@@ -1,22 +1,17 @@
 # Declaration of originality {.unnumbered}
 
-Master of Science (MScIDS) in Applied Information and Data Science 
- 
-The following declaration of originality must be signed by hand and included at the end of the Master's 
-Thesis:  
+Master of Science (MScIDS) in Applied Information and Data Science
 
-“The undersigned hereby declares that he or she 
-‒ wrote the work in question independently and without the help of any third party, 
-‒ has provided all the sources and cited the literature used, 
-‒ will protect the confidentiality interests of the client and respect the copyright regulations of 
-Lucerne University of Applied Sciences and Arts." 
+The following declaration of originality must be signed by hand and included at the end of the Master's Thesis:
 
-Date and signature 
+"The undersigned hereby declares that he or she ‒ wrote the work in question independently and without the help of any third party, ‒ has provided all the sources and cited the literature used, ‒ will protect the confidentiality interests of the client and respect the copyright regulations of Lucerne University of Applied Sciences and Arts."
 
-
+Date and signature
 
 .....................
 
-### Reproducibility statement
+------------------------------------------------------------------------
 
-This thesis is written using Quarto with renv [@renv] to create a reproducible environment. All materials (including the data sets and source files) required to reproduce this document can be found at the Github repository [`github.com/lucahuesler/masterthesis_energy`](https://github.com/lucahuesler/masterthesis_energy).
+# Reproducibility statement {.unnumbered}
+
+This thesis is written with the [R programming language](https://www.r-project.org/about.html) and [Quarto](https://quarto.org/). The R-package [renv](https://rstudio.github.io/renv/articles/renv.html "Introduction to renv") is used to create a reproducible environment. All materials that are not subject to data privacy regulations are publicly available at the [Github repository](https://github.com/lucahuesler/masterthesis_energy) of this thesis.

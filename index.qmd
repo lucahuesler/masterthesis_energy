@@ -1,28 +1,3 @@
-### Copyright notice {.unnumbered}
+# {.unlisted .unnumbered}
 
-© Luca Hüsler (2023).
-
-
-
-::: callout-warning
-This is a development version (work in progress...).
-:::
-
-```{r}
-#| label: install-packages
-#| include: false
-
-pacman::p_load(
-  skimr,        # get overview of data
-  tidyverse,    # data management + ggplot2 graphics 
-  tidymodels,   # machine learning
-  gtsummary,    # summary statistics and tests
-  janitor,      # adding totals and percents to tables
-  flextable,     # converting tables to pretty images
-  gptstudio,
-  plotly,
-  ggplot2,
-  sf
-  )
-
-```
+\setcounter{page}{1}

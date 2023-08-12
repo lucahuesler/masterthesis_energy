@@ -30,8 +30,9 @@
 #   write_delim("data/gwr_building_heights.csv", delim = ";")
 
 
-# renaming
+
 library(tidyverse)
+library(ggthemes)
 
 rename_statpop <- function(df){
   df <- df %>%
@@ -113,4 +114,128 @@ rename_statpop <- function(df){
            household_6_person = P06,
            household_plausibility = PI) |>
     rename_all(tolower)
+}
+
+
+library(ggplot2)
+
+create_residual_plot <- function(model_list, model_index, model_type) {
+  # Extract actual values and predicted values
+  actual <- model_list[[model_index]]$test_preds$hec
+  predicted <- model_list[[model_index]]$test_preds$predict
+  
+  # Calculate residuals
+  residuals <- actual - predicted
+  
+  # Create a data frame with the values
+  df <- data.frame(Actual = actual, Residuals = residuals)
+  
+  # Create the residual plot
+  p <- ggplot(df, aes(x = Actual, y = Residuals)) +
+    geom_point() +
+    geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+    xlab("Actual HEC") +
+    ylab("Residuals") +
+    ggtitle(paste0("", model_type, "")) +
+    scale_x_continuous(labels = label_number_auto()) +
+    scale_y_continuous(labels = label_number_auto()) +
+    theme(
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 10),
+      plot.title = element_text(size = 10)
+    )
+  
+  return(p)
+}
+
+
+library(ggplot2)
+library(scales)
+library(tidyr)
+
+create_density_plot <- function(model_list, model_index, model_type, logarithmic = FALSE) {
+  # Extract actual values and predicted values
+  actual <- model_list[[model_index]]$test_preds$hec
+  predicted <- model_list[[model_index]]$test_preds$predict
+  
+  # Create a data frame with the values
+  df <- data.frame(Actual = actual, Predicted = predicted)
+  
+  if (logarithmic) {
+    # Apply logarithmic transformation to the values
+    df <- df %>%
+      mutate(Actual = log(Actual),
+             Predicted = log(Predicted))
+    label <- "Log(HEC)"
+  } else {
+    label <- "HEC"
+  }
+  
+  title_label <- case_when(
+    model_type == "2016" ~ "2016",
+    model_type == "2018" ~ "2018",
+    model_type == "2020" ~ "2020",
+    model_type == "1110" ~ "SFH",
+    model_type == "1121" ~ "MFH 2 apartments",
+    model_type == "1122" ~ "MFH 3+ apartments",
+    model_type == "8011" ~ "Before 1919",
+    model_type == "8012" ~ "1919-1945",
+    model_type == "8013" ~ "1946-1960",
+    model_type == "8014" ~ "1961-1970",
+    model_type == "8015" ~ "1971-1980",
+    model_type == "8016" ~ "1981-1985",
+    model_type == "8017" ~ "1986-1990",
+    model_type == "8018" ~ "1991-1995",
+    model_type == "8019" ~ "1996-2000",
+    model_type == "8020" ~ "2001-2005",
+    model_type == "8021" ~ "2006-2010",
+    model_type == "8022" ~ "2011-2015",
+    model_type == "8023" ~ "After 2016",
+    TRUE ~ model_type
+  )
+  
+  # Combine actual and predicted values into a single column
+  df <- tidyr::gather(df, key = "Variable", value = "Value", Actual, Predicted)
+  
+  # Create the density plot with overlay
+  p <- ggplot(df, aes(x = Value, fill = Variable)) +
+    geom_density(alpha = 0.5) +
+    xlab(label) +
+    ylab("Density") +
+    ggtitle(paste0("", title_label, "")) +
+    theme(legend.title = element_blank(),
+          legend.position = c(0.9, 0.9),
+          legend.justification = c(1, 1),
+          legend.box.background = element_rect(color = "black", fill = "white")) +
+    scale_x_continuous(labels = comma) +
+    scale_y_continuous(labels = comma) +
+    coord_cartesian(xlim = c(0, 300000))  # Set the x-axis limits
+  
+  return(p)
+}
+
+create_actual_predicted_plot <- function(model_list, model_index, model_type) {
+  # Extract actual values and predicted values
+  actual <- model_list[[model_index]]$test_preds$hec
+  predicted <- model_list[[model_index]]$test_preds$predict
+  
+  # Create a data frame with the values
+  df <- data.frame(Actual = actual, Predicted = predicted)
+  
+  # Create the scatter plot of actual vs predicted
+  p <- ggplot(df, aes(x = Actual, y = Predicted)) +
+    geom_point() +
+    geom_abline(intercept = 0, slope = 1, linetype = "dashed", color = "red") +
+    xlab("Actual HEC") +
+    ylab("Predicted HEC") +
+    ggtitle(paste0("", model_type, "")) +
+    scale_x_continuous(labels = scales::comma) +
+    scale_y_continuous(labels = scales::comma) +
+    theme(
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 10),
+      plot.title = element_text(size = 10)
+    )
+  
+  return(p)
 }

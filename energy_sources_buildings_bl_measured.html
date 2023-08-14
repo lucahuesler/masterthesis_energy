@@ -1,0 +1,95 @@
+
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC '-//W3C//DTD XHTML 1.0 Strict//EN' 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd'>
+<html xml:lang="en" lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <script src="https://www.statistik.bl.ch/js/highcharts/ie_helpers.js"></script>
+    <script src="https://www.statistik.bl.ch/js/highcharts/highcharts.js"></script>
+    <script src="https://www.statistik.bl.ch/js/highcharts/highcharts-zf.js"></script>
+    <script src="https://www.statistik.bl.ch/js/highcharts/data.js"></script>
+    <script src="https://www.statistik.bl.ch/js/highcharts/exporting.js"></script>
+    <script src="https://www.statistik.bl.ch/js/highcharts/export-data.js"></script>
+
+    <style type="text/css">
+        #container {
+            height:650px;
+            width:1000px;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+
+<div id="container"></div>
+
+<pre id="data" style="display:none;">
+name,Anzahl
+Heizöl,21897
+Gas,21937
+Elektrizität,2079
+Holz,3269
+Wärmepumpe,9943
+Fernwärme,5247
+Übrige,110
+Unbekannt,1082
+</pre>
+
+<script type="text/javascript">
+    HighchartsZF.chart('container', {
+        chart: {
+            type: 'pie',
+            style: {fontFamily: 'arial'},
+            plotShadow: false,
+            margin: [80, 200, 160, 85]
+        },
+
+        hamburger: {
+            gotoCode: '8_2_2',				// falls auskommentiert, wird dieser Menüpunkt nicht angezeigt
+            exportCsv: true					// falls auskommentiert, wird dieser Menüpunkt nicht angezeigt
+        },
+        
+        csv: {
+            colorList: ['bl_grau', 'gelb', 'bl_grau', 'bl_grau', 'bl_grau', 'mint', 'bl_grau', 'bl_grau'],
+            raw: 'data'		// Hohle die Daten aus dem HTML Element 'data',
+        },
+
+        title: {
+            text: 'Wohngebäude nach Energieträger der Heizung 2020',
+            align: 'left', x: 0,
+            style: { "fontSize": "14px", "color": "#000000", fontWeight: 'bold' }
+        },
+
+        subtitle: {
+            text: 'Kanton Basel-Landschaft <br/>',
+            align: 'left', x: 0,
+            style: { "fontSize": "12px", "color": "#000000", fontWeight: 'normal' }
+        },
+
+        credits: {
+            text: 'Quelle: Energiestatistik<br/>Amt für Daten und Statistik BL',
+            href: "http://www.statistik.bl.ch",
+            style: { "fontSize": "11px" },
+            position: {align: 'left', x: 10, y: -20}
+        },
+
+        tooltip: {
+            headerFormat: '<b>{point.key}</b><br/>',
+            pointFormat: 'Anteil: {point.percentage:.1f}%<br/>Absolut: {point.y} Gebäude', 
+        },
+
+        plotOptions: {
+            pie: {
+                borderWidth: 0,         // Abstand (Pixel) zwischen den Kuchenstücke
+                dataLabels: {
+                    enabled: true,
+                    style: { fontWeight: 'normal', fontSize: '12px', color:'#000000' },
+                    format: '{point.name}: <br/>{point.percentage:.1f}%'
+                }
+            }
+        }
+    });
+</script>
+</body>
+</html>

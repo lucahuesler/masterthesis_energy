@@ -1,100 +1,324 @@
 [
   {
-    "objectID": "prelims/00--prelim.html",
-    "href": "prelims/00--prelim.html",
-    "title": "",
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#background-project-info",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#background-project-info",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Background: Project info",
+    "text": "Background: Project info\n\nGoal of the project: Explore potential of machine learning approaches for cantonal energy statistics\nCollaboration between the Canton of Basel-Landschaft and the Lucerne University of Applied Sciences: Master thesis at Master of Science in Applied Information and Data Science"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#background-why-estimating-the-energy-use",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#background-why-estimating-the-energy-use",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Background: Why estimating the energy use?",
+    "text": "Background: Why estimating the energy use?"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#background-why-estimating-the-energy-use-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#background-why-estimating-the-energy-use-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Background: Why estimating the energy use?",
+    "text": "Background: Why estimating the energy use?\n\n\n\nWe actually only have measured data for gas and district heating. For all the other sources of energy, we need to estimate the annual energy use."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#goals-research-questions",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#goals-research-questions",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Goals & Research questions",
+    "text": "Goals & Research questions\nIn the canton of Basel-Landschaft, energy statistics have been published since 1990."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#new-methodology-2010",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#new-methodology-2010",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "New Methodology (2010)",
+    "text": "New Methodology (2010)\nThe cantons of Basel-Landschaft and Basel-Stadt jointly developed a new methodology for energy statistics."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#benefits-of-new-methodology",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#benefits-of-new-methodology",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Benefits of New Methodology",
+    "text": "Benefits of New Methodology\n\nProvides estimates of heating energy consumption at the individual building level.\nUtilizes the register of buildings and dwellings.\nIncorporates measured gas consumption data."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#evolution-of-data-and-ml",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#evolution-of-data-and-ml",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Evolution of Data and ML",
+    "text": "Evolution of Data and ML\nSince 2010, new data sources and machine learning approaches have emerged."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#masters-thesis-collaboration",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#masters-thesis-collaboration",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Master’s Thesis Collaboration",
+    "text": "Master’s Thesis Collaboration\nA collaboration between the Canton of Basel-Landschaft and the Lucerne University of Applied Sciences."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#project-aim",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#project-aim",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Project Aim",
+    "text": "Project Aim\nEvaluate different machine learning models and analyze the predictive power of various input variables."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-strategy",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-strategy",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Modelling Strategy",
+    "text": "Modelling Strategy\nHow can we effectively screen and evaluate machine learning models?"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-screening",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-screening",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model Screening",
+    "text": "Model Screening\nDiscussing the process of selecting potential models for evaluation."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-evaluation",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-evaluation",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model evaluation",
+    "text": "Model evaluation\n\nVisualTable\n\n\n\n\n\nComparison of AutoML results with current approach\n\n\n\n\n\n\n\nTest metrics of the best performing model per algorithm evaluated on RMSE"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#results",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#results",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Results",
+    "text": "Results\nComparing the accuracy of results with the current method."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#important-predictors",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#important-predictors",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Important Predictors",
+    "text": "Important Predictors\nHighlighting the most significant predictors in estimating heating energy consumption."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#whats-next",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#whats-next",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "What’s Next?",
+    "text": "What’s Next?\nIncorporating insights into statistical production."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#insights-from-the-study",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#insights-from-the-study",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Insights from the Study",
+    "text": "Insights from the Study\nDiscussing the main findings from the master’s thesis."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#implications-for-energy-statistics",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#implications-for-energy-statistics",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Implications for Energy Statistics",
+    "text": "Implications for Energy Statistics\nHow can these findings shape the future of energy statistics in Basel-Landschaft and beyond?"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#future-of-machine-learning-in-energy-statistics",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#future-of-machine-learning-in-energy-statistics",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Future of Machine Learning in Energy Statistics",
+    "text": "Future of Machine Learning in Energy Statistics\nExploring the potential of newer machine learning models and techniques."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#challenges-faced",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#challenges-faced",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Challenges Faced",
+    "text": "Challenges Faced\nDiscussing any challenges or limitations encountered during the study."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#recommendations",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#recommendations",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Recommendations",
+    "text": "Recommendations\nOffering recommendations based on the study’s findings."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#conclusion",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#conclusion",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Conclusion",
+    "text": "Conclusion\nSummarizing the main points of the presentation."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#questions",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#questions",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Questions?",
+    "text": "Questions?\nOpening the floor for questions and discussion."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-the-energy-use",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-the-energy-use",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Why estimating the energy use?",
+    "text": "Why estimating the energy use?"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-the-energy-use-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-the-energy-use-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Why estimating the energy use?",
+    "text": "Why estimating the energy use?\n\n\n\nWe actually only have measured data for gas and district heating. For all the other sources of energy, we need to estimate the annual energy use."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#goals-of-the-thesis",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#goals-of-the-thesis",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Goals of the thesis",
+    "text": "Goals of the thesis\n\n\nGenerate more detailed insights on the shortcomings of the current method and outline possible strategies to overcome them.\nProvide alternative estimation methods that can be integrated in the current method.\nDeliver an example use case for the application of machine learning methods in the field of official statistics."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#research-question-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#research-question-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Research question 1",
+    "text": "Research question 1\n\nRQ1: Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?\n\n\nSub-questions with regard to RQ1:\n\n\nRQ1.1: Can we achieve a higher accuracy in estimating heat energy consumption (HEC) of residential buildings compared to the current approach?\n\n\nRQ1.2: Can we improve the predictions through feature engineering (imputation of missing values, normalization, transformation, etc.)?"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#research-question-2",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#research-question-2",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Research question 2",
+    "text": "Research question 2\n\nRQ2: What features are most important for the prediction of HEC in the final model?\n\n\nSub-questions with regard to RQ2:\n\n\nRQ2.1: What importance can be attributed to retrofit features in the final model?\n\n\nRQ2.2: What importance can be attributed to socio-economic features in the model? (if data available)"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#project-info",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#project-info",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Project info",
+    "text": "Project info\n\n\nCollaboration between the Canton of Basel-Landschaft and the Lucerne University of Applied Sciences: Master thesis at Master of Science in Applied Information and Data Science\nGoal of the project: Explore potential of machine learning approaches for cantonal energy statistics\n\n\n\nWhat i present you today is the product of collaboration between the Canton of Basel-Landschaft - where i work for the Office of Data and Statistics - and the Lucerne University of Applied Sciences (HSLU), where i was studying Data Science. In my master thesis, i decided to focus on the cantonal energy statistics that we conduct since 1990 and since 2010, we do this together with Basel-Stadt."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-energy-consumption",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-energy-consumption",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Why estimating energy consumption?",
+    "text": "Why estimating energy consumption?\nCanton BL has about 66’000 residential buildings…\n\n\n\nTo give you an idea why an estimation is needed, i would like to show you the following chart: What we see here is the distribution of energy sources of residential buildings in the canton - in total around 65’000 buildings. Ideally, we would have measured data on energy consumption for all of these buildings…"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-energy-consumption-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#why-estimating-energy-consumption-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Why estimating energy consumption?",
+    "text": "Why estimating energy consumption?\n…but only for about 40% of them, measured data is available.\n\n\n\n…but in reality, we actually only have measured data for gas and district heating. So for all the grey parts here, we have to rely on an estimation method."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#current-method",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#current-method",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Current method",
+    "text": "Current method\nEstimation based on measured gas data and register of buildings and dwellings (RBD):\n\nCalculation of heat performance indicators (HEPI) for each building category and construction period (KWh/m²)\nEstimation of buildings with unknown consumption (multiplying HEPI with heated area of building)"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#data-sources",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#data-sources",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Data sources",
+    "text": "Data sources\n\n\n\n\n\nOverview of data sources\n\n\nData\nSpatial resolution\nTemporal resolution\nSource\n\n\n\n\nBuilding characteristics\nBuilding\nYearly\nCantonal RBD\n\n\nEnergy consumption\nBuilding\nYearly\nCantonal energy statistics\n\n\nInhabitants per building\nBuilding\nQuarterly\nCantonal population statistics\n\n\nDemographic characteristics\nRaster grid (100x100 m)\nYearly\nPopulation and Households Statistics (STATPOP)\n\n\nRetrofit information\nBuilding\nDaily\nBaselbieter Energiepaket\n\n\nElevation information\nRaster grid (10x10 m)\n2021\nDigital elevation model (DEM)\n\n\nBuilding floor plan[^03-methodology-1]\nBuilding\nDaily\nCantonal cadastral survey"
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-workflow-step-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-workflow-step-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Modelling workflow: Step 1",
+    "text": "Modelling workflow: Step 1\n\n\nThe modelling workflow was guided by the research questions as defined in ?@sec-research-questions and consisted of three steps: First, all the available buildings after applying the filters defined in ?@sec-data-prep were used for modelling. Based on this dataset, we trained the models with the custom approach as well as with the AutoML approach and evaluated and compared the results on the train set based on the metrics defined in ?@sec-evaluation-metrics[^03-methodology-10]. In this step, we also explored different selections of predictor variables in order to evaluate the influence of specific predictors (e.g. retrofit). ?@fig-workflow-step-1 provides an overview of this first step of the modelling workflow."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-workflow-step-2",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-workflow-step-2",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Modelling workflow: Step 2",
+    "text": "Modelling workflow: Step 2\n\n\nThe second step of the modelling workflow then focused on the sub-questions RQ1.1 and RQ1.2 ?@sec-research-questions: Can we achieve a higher accuracy than the current approach and does the models perform better if we train on more homogeneous subsets of data? We here used the approach with the best performance in step one and divided the dataset into different subsets: By building class, by municipality, by construction period and by survey year. Again, the models were then evaluated based on the metrics defined in ?@sec-evaluation-metrics. As we here modeled subsets that have different underlying distributions of the HEC, the relative metrics of MAPE (?@eq-mape) and CV (?@eq-cv-rmse) were used for comparison. Furthermore, we calculated the aggregated error (?@eq-agg-error) on municipality level in order to compare it with the error of the current approach."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-workflow-step-3",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#modelling-workflow-step-3",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Modelling workflow: Step 3",
+    "text": "Modelling workflow: Step 3\n\n\nFinally, the last step of the modelling workflow focused on RQ2.1 and RQ2.1: What influence do the additionally integrated predictor variables have on the model? Thus, this last step focused on model understanding and explainability. To answer these questions, we used the approaches defined in ?@sec-model-explainability-techniques: A analysis of the variable importance was carried out to evaluate the predictive power of the individual predictor variables. Furthermore, the approach of Shapley Additive Explanations (SHAP) was used to gain more detailed insights on the level of individual predictions."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#research-questions",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#research-questions",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Research questions",
+    "text": "Research questions\n\n\nRQ1: Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?\n\n\n\n\nRQ2: What features are most important for the prediction of HEC in the final model?\n\n\n\nSub-questions with regard to RQ1 and RQ2, see here."
+  },
+  {
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#section",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#section",
+    "title": "Estimating the heat energy use of residential buildings",
     "section": "",
-    "text": "I want to thank a few people.\n\n\n\nThis is an example of a thesis setup to use the reed thesis document class (for LaTeX) and the R bookdown package, in general.\n\n\n\nYou can have a dedication here if you wish."
+    "text": "Animating content"
   },
   {
-    "objectID": "prelims/00-abstract.html",
-    "href": "prelims/00-abstract.html",
-    "title": "",
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#section-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#section-1",
+    "title": "Estimating the heat energy use of residential buildings",
     "section": "",
-    "text": "The preface pretty much says it all.\nSecond paragraph of abstract starts here."
+    "text": "Animating content"
   },
   {
-    "objectID": "05-appendix.html",
-    "href": "05-appendix.html",
-    "title": "",
-    "section": "",
-    "text": "library(tidyverse)\n#> ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──\n#> ✔ ggplot2 3.4.0      ✔ purrr   1.0.0 \n#> ✔ tibble  3.1.8      ✔ dplyr   1.0.10\n#> ✔ tidyr   1.2.1      ✔ stringr 1.5.0 \n#> ✔ readr   2.1.3      ✔ forcats 0.5.2 \n#> ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──\n#> ✖ dplyr::filter() masks stats::filter()\n#> ✖ dplyr::lag()    masks stats::lag()\n\nretrofit_m01 <- read_delim(\"data/sanierungen_typ_M01.csv\", delim = \",\", show_col_types = FALSE)\n\ncleaning_retrofit <- function(df){\n  df %>%\n    rename_all(~ gsub(\" \", \"_\", .))\n}\n\n\nretrofit_m01_clean <- cleaning_retrofit(retrofit_m01)"
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#goals-of-the-project",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#goals-of-the-project",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Goals of the project",
+    "text": "Goals of the project\n\n\nGenerate more detailed insights on the shortcomings of the current method and outline possible strategies to overcome them.\nProvide alternative estimation methods that can be integrated in the current method.\nDeliver an example use case for the application of machine learning methods in the field of official statistics."
   },
   {
-    "objectID": "references.html",
-    "href": "references.html",
-    "title": "",
-    "section": "",
-    "text": "References"
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#input-data",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#input-data",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Input data",
+    "text": "Input data\nAfter data cleaning and filtering, the final input dataset for modelling consisted of 48829 buildings.\n\n\n\n\n\nSurvey Year\nCount\nMean HEPI (kWh/m2/year)\nTotal HEC (GWh/year)\n\n\n\n\n2016\n16516\n100.2\n520.7\n\n\n2018\n16071\n95.2\n476.0\n\n\n2020\n16242\n89.1\n458.8"
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "",
-    "section": "",
-    "text": "Warning\n\n\n\nThis is a development version (work in progress…)."
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-variable-importance",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-variable-importance",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model explainability: Variable importance",
+    "text": "Model explainability: Variable importance"
   },
   {
-    "objectID": "index.html#acknowledgements",
-    "href": "index.html#acknowledgements",
-    "title": "",
-    "section": "Acknowledgements",
-    "text": "Acknowledgements\nI want to thank a few people."
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-local-explanations",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-local-explanations",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model explainability: Local explanations",
+    "text": "Model explainability: Local explanations\n\nSingle-family houseMulti-family house"
   },
   {
-    "objectID": "index.html#preface",
-    "href": "index.html#preface",
-    "title": "",
-    "section": "Preface",
-    "text": "Preface\nThis is an example of a thesis setup to use the reed thesis document class (for LaTeX) and the R bookdown package, in general."
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#current-method-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#current-method-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Current method",
+    "text": "Current method\n\nHEPI of single-family houses in KWh/m²*year per construction period and survey year."
   },
   {
-    "objectID": "index.html#dedication",
-    "href": "index.html#dedication",
-    "title": "",
-    "section": "Dedication",
-    "text": "Dedication\nYou can have a dedication here if you wish."
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model explainability",
+    "text": "Model explainability\nVariable importance of best model:"
   },
   {
-    "objectID": "index.html#abstract",
-    "href": "index.html#abstract",
-    "title": "",
-    "section": "Abstract",
-    "text": "Abstract\nThe preface pretty much says it all.\nSecond paragraph of abstract starts here."
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-1",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-1",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model explainability",
+    "text": "Model explainability\nLocal explanations using SHAP: Example of a single-family house"
   },
   {
-    "objectID": "04-Results.html",
-    "href": "04-Results.html",
-    "title": "",
-    "section": "",
-    "text": "As the histogram is right-skewed (a few houses with a high energy use), it makes sense to log-transform.\n\n\n\n\n\n\ncorrelations <- energy_clean %>%\n  select(where(is.numeric)) %>%\n  correlations()\n#> Warning in stats::cor(x, use = use, method = method): the standard deviation is\n#> zero\n\n\nenergy_clean_log <- energy_clean %>%\n  mutate(verbrauch_erhoben_mwh_log = log(verbrauch_erhoben_mwh))\n\n\n\n\n\ncommunity_plot <- energy_clean %>%\n  ggplot(aes(x = meters_above_sealevel, y = verbrauch_erhoben_mwh)) +\n  geom_point() +\n  facet_grid(rows = vars(ggdenr))\n\ncommunity_plot"
-  },
-  {
-    "objectID": "summary.html",
-    "href": "summary.html",
-    "title": "",
-    "section": "",
-    "text": "Summary\nIn summary, this book has no content whatsoever.\n\n1 + 1\n#> [1] 2"
-  },
-  {
-    "objectID": "02-TheoreticalBackground.html",
-    "href": "02-TheoreticalBackground.html",
-    "title": "",
-    "section": "",
-    "text": "Building energy estimation or prediction models can be defined as physical or mathematical models that help to determine the energy use of the building sector (Yu, Chang, & Dong, 2022). On a global level, the models can be divided into two sub-categories((Bourdeau, Zhai, Nefzaoui, Guo, & Chatellier, 2019; Deb & Schlueter, 2021);(Yu et al., 2022)):\n\nTop-down approaches\nBottom-up approaches\n\nIn the following, the two approaches will be presented. However the emphasis will be on bottom-up approaches, since we consider bottom-up approaches more relevant in the context of this thesis.\n\n\nTop-down approaches use aggregated data on regional or national level in order to estimate the energy use of a region or of individual buildings. (Eymann, Rohrer, & Stucki, 2014) use a top down approach to estimate energy us on cantonal level derived from the national energy statistics of Switzerland.\n\n\n\nIn earlier stages of building energy modelling, the research focused mainly on physics-based or white-box models, where the models tries to simulate the energy use of a building by the use of physical conditions and parameters. As indicate by the name of white-box models, these models are usually very good in terms of explainability (Yu et al., 2022).\nWith the increasing availability of more and better data on energy consumption and building characteristics, as well as machine learning algorithms, the so-called black-box models became more and more popular.\nIn the following, we will discuss the advantages and disadvantages of the three model types and provide examples for each of them. Further, we will relate it to our use case as presented in the problem definition\n\n\n\nAdvantages:\n\ninterpretability\nhigh accuracy\nuniversality\nno requirement for historical data\n\nDisadvantages:\n\nNeed for detailed building information\nOccupant behaviour is unknown\nrandomness of the weather is difficult integrate\n\n\n\n\nTypically, there are three groups of independent variables:\n\nSocio-economic parameters (e.g. occupant behaviour)\nWeather parameters\nBuilding parameters\n\nAmong the most popular black-box models are multiple linear regression (MLR) models, support vector machines (SVM) or artificial neural networks (ANN).\n\n\n\n\n\n\n\nBourdeau, M., Zhai, X. qiang, Nefzaoui, E., Guo, X., & Chatellier, P. (2019). Modeling and forecasting building energy consumption: A review of data-driven techniques. Sustainable Cities and Society, 48, 101533. http://doi.org/10.1016/j.scs.2019.101533\n\n\nDeb, C., & Schlueter, A. (2021). Review of data-driven energy modelling techniques for building retrofit. Renewable and Sustainable Energy Reviews, 144, 110990. http://doi.org/10.1016/j.rser.2021.110990\n\n\nEymann, L., Rohrer, J., & Stucki, M. (2014). Energieverbrauch der Schweizer Kantone : Endenergieverbrauch und Mittelabfluss durch den Energie-Import. http://doi.org/10.21256/zhaw-124\n\n\nYu, J., Chang, W.-S., & Dong, Y. (2022). Building Energy Prediction Models and Related Uncertainties: A Review. Buildings, 12(8), 1284. http://doi.org/10.3390/buildings12081284"
-  },
-  {
-    "objectID": "readme.html",
-    "href": "readme.html",
-    "title": "",
-    "section": "",
-    "text": "Version control is done with github.\n\n\nFor easy use of are and github, I use the usethis library\ninstall.packages(\"devtools\")\nlibrary(usethis)\nInitial setup:\n usethis::create_github_token()\n• Call `gitcreds::gitcreds_set()` to register this token in the local Git credential store\n  It is also a great idea to store this token in any password-management software that you use\n✔ Opening URL 'https://github.com/settings/tokens/new?scopes=repo,user,gist,workflow&description=DESCRIBE THE TOKEN\\'S USE CASE'\n> gitcreds::gitcreds_set()\n\n\n? Enter password or token: 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\n-> Adding new credentials...\n-> Removing credentials from cache...\n-> Done.\n> gh::gh_whoami()\n{\n  \"name\": \"Luca Hüsler\",\n  \"login\": \"lucahuesler\",\n  \"html_url\": \"https://github.com/lucahuesler\",\n  \"scopes\": \"gist, repo, user, workflow\",\n  \"token\": \"ghp_...udtL\"\n} \nAfter the initial setup, we can use github for our R projects.\nLocal setup:\nusethis::use_git()\nFor the remote git, we use:\nusethis::use_github()\n\n\n\n\nFor reproducibility, the renv package is used."
-  },
-  {
-    "objectID": "01-Introduction.html",
-    "href": "01-Introduction.html",
-    "title": "",
-    "section": "",
-    "text": "[#TODO]\n\nGlobal background\nNational background Switzerland\n\n\n\n\nIn 2021, the cantonal government of Basel-Landschaft signed the Climate Charter of the Northwestern Intergovernmental Conference together with the governments of the cantons of Aargau, Basel-Stadt, Jura and Solothurn. In the Charter, the five cantons agree on the net zero target by 20501. Thus, the energy supply of the participating cantons should be switched to 100% renewable energy sources by no later than 2050 (Nordwestschweizer Regierungskonferenz, 2021).\nThe current legally valid version of the cantonal energy law defines in § 2 (1-4) the following goals (Landrat des Kantons Basel-Landschaft, n.d.):\n\nThe end energy consumption (german: Endenergieverbrauch) in the canton, excluding mobility, should be reduced by 40% by 2050 compared to 2000 (6,500 GWh).\nThe share of renewable energies in total energy consumption (excluding mobility) should be increased to at least 40% by 2030.\nIn the building sector, the heating demand for new buildings should be reduced to an average of 20 kilowatt hours (kWh) per square meter of energy reference area per year by 2030.\nIn the building sector, the non-renewable heating demand for existing buildings should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.\n\nIn 2022, the cantonal council published a new version of the energy planning report, in which the above targets were reviewed for compatibility with the net zero target. The report states that goal 1 and 3 are not compatible with the net zero target (Regierungsrat des Kantons Basel-Landschaft, 2022). As a result of this finding, the cantonal government submitted a proposal on behalf of the Landrat in which the two goals are changed as follows (Regierungsrat des Kantons Basel-Landschaft, n.d.):\n\nThe end energy consumption in the canton, excluding mobility, should be reduced by 70% by 2050 compared to 2000 (6,500 GWh).\nIn the building sector, the non-renewable heating demand for existing buildings should be reduced to an average of 40 kWh per square meter of energy reference area per year by 2050.\n\n\n\n\n\n\nWith the total revision of the cantonal energy law in 2016, the new § 3 on energy planning of the canton was introduced. This § 3 obliges the cantonal government to create an energy plan on the basis of the federal requirements and frameworks and to report the results to the cantonal council. Furthermore, according to § 2 (6) of the cantonal energy law, the government council must also report periodically on the effectiveness of the (previous) measures.\nAs integral part of the energy planning, the canton delivers a energy statistics since 1990. Until 2010, the statistics was mainly based on a top-down approach. Since 2010, a bottom-up approach has been introduced.\n\n\n\nIn 2020, the gross energy consumption of the canton was about 7600 gigawatt hours, which corresponds to a reduction of 4.4% compared to 2018 (Statistisches Amt des Kantons Basel-Landschaft, 2022). The following figure @ref(fig:energieflussdiagramm) provides an overview of the cantonal energy system.\n\n#> knitr::include_graphics(path = \"figure/energieflussdiagramm_2020.png\")\n\n\n\n\n\nAs mentioned in (cantonal-energy-planning?), the Canton of Basel-Landschaft conducts a cantonal energy statistics already since 19902. Ever since, the energy consumption had to be estimated at least in parts - namely for energy sources where no measerued data has been available. In particular, this is the case for domestic hot water (DHW) and heat energy consumption (HEC) of residential buildings that are using non-grid connected energy sources such as heating oil, wood-based energy systems or heat pumps. In the latest version of the cantonal energy statistics for the year 2020, about 40% of the total annual energy consumption was based on estimations .\nSince 2010, the estimation is based on a new method that has been developed together with the canton of Basel-Stadt Statistisches Amt des Kantons Basel-Stadt (2022) . The method uses a bottom-up approach and is based on the register of buildings and dwellings (RBD) . The RBD provides information about every building in the canton, such as the building area, building category or the construction year. The building data from the RBD is then enriched with measured energy consumption data for gas-heated buidlings and further information from other data sources (e.g. the number of inhabitants or characteristics of the installed combustion plant).\nShortcomings of the current method:\n\nInfluence of retrofitting is unknown and can not be quantified\nSocio-economic factors and behaviour of inhabitants is not considered explicitly\n\n\n\n\n\nOn the basis of the considerations in Chapter Background and Chapter , we will here formulate the research questions and also define the goals of the project from a practical perspective.\n\n\n\n\n2050 indicative target. (n.d.). Retrieved from https://www.bafu.admin.ch/bafu/en/home/topics/climate/info-specialists/emission-reduction/reduction-targets/2050-target.html\n\n\nLandrat des Kantons Basel-Landschaft. (n.d.). Energiegesetz (EnG BL). Retrieved from https://bl.clex.ch/app/de/texts_of_law/490/art/2\n\n\nNordwestschweizer Regierungskonferenz. (2021). Klima-Charta der Nordwestschweizer Regierungskonferenz (p. 5). Retrieved from https://www.baselland.ch/politik-und-behorden/direktionen/bau-und-umweltschutzdirektion/umweltschutz-energie/klima-1/klima-charta-der-nordwestschweizer-regierungskonferenz\n\n\nRegierungsrat des Kantons Basel-Landschaft. (n.d.). Vorlage an den Landrat: Änderung des kantonalen Energiegesetzes und des zugehörigen Dekrets aufgrund des Energieplanungsberichts 2022 (p. 47). Retrieved from https://baselland.talus.ch/de/dokumente/geschaeft/0c4e9a4dc0c84cf783377aa2b4e46bcc-332\n\n\nRegierungsrat des Kantons Basel-Landschaft. (2022). Bericht zum Stand der Energiepolitik des Kantons Basel-Landschaft im Jahr 2022 (p. 49).\n\n\nStatistisches Amt des Kantons Basel-Landschaft. (2022, June 29). Webartikel: Energiestatistik 2020. Retrieved from https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/publikationen/energie/webartikel_vom_29-06-2022_energiestatistik_2020\n\n\nStatistisches Amt des Kantons Basel-Stadt. (2022). Methodenbericht - Energiestatistik Basel-Stadt. (p. 12). Basel. Retrieved from https://www.statistik.bs.ch/dam/jcr:51d6273d-0c4c-40f9-9941-beb834331e45/Methodikbericht-Energiestatistik.pdf"
+    "objectID": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-2",
+    "href": "swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.html#model-explainability-2",
+    "title": "Estimating the heat energy use of residential buildings",
+    "section": "Model explainability",
+    "text": "Model explainability\nLocal explanations using SHAP: Example of a multi-family house"
   }
 ]

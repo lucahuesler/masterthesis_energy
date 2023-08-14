@@ -1,0 +1,265 @@
+---
+title: "Estimating the heat energy use of residential buildings"
+subtitle: "A case study in the Canton of Basel-Landschaft"
+author: Luca Hüsler
+institute: "Amt für Daten und Statistik BL, Lucerne University of Applied Sciences"
+format: 
+   revealjs:
+     logo: ../figures/hslu-logo.png
+     css: ../logo.css
+     slide-number: false
+     show-slide-number: all
+     preview-links: auto  
+     width: 1280
+     height: 720
+     theme: default
+     df-print: paged
+     scripts: ["inject-logo.js"]
+engine: knitr
+
+# global definition of code chunk execution
+execute:
+  eval: true
+  echo: false
+  include: true
+  cache: true
+  warning: false
+---
+
+```{r}
+#| label: load-libs-data
+#| include: false
+
+if (!require(pacman)) install.packages("pacman")
+pacman::p_load(tidyverse, gt, ggridges, viridis, hrbrthemes, ggrepel, vip, shapviz, DALEXtra, gtsummary, knitr)
+
+
+energy_modelling <- read_rds("../data/energy_modelling.rds")  |> 
+  select(egid, 
+          hepi, 
+          hec, 
+          survey_year, 
+          num_residents_mean, 
+          heated_area_m2,
+         building_area_m2,
+          year_of_installation, 
+          efficiency_of_installation, 
+          energy_usage_of_installation,
+          solar_system_area_m2,
+          municipality_name,
+          municipality_code,
+          building_class, 
+          construction_year,
+          construction_period,
+          num_floors,
+          num_dwellings,
+          meters_above_sealevel, 
+          energy_production_solar_mwh, 
+          energy_consumed_hot_water_mwh,
+          retrofitted,
+         retrofit_investment_costs,
+         retrofit_project_name,
+         retrofit_year_completion,
+          hdd,
+          foreign_ratio,
+          household_1_person_ratio,
+          elderly_ratio,
+          youth_ratio,
+          residence_less_1_year_ratio,
+          hepi_pred_current_method,
+          hec_pred_current_method,
+          stand_alone)
+```
+
+# Background
+
+::: notes
+Hello everybody, i am happy for the opportunity to present you today this project. As you can see in the title already, the project is about estimating the heat energy use of residential buildings.
+
+Before we dive in, a quick note on the background: What i present you today is the product of collaboration between the Canton of Basel-Landschaft - where i work for the Office of Data and Statistics) and the Lucerne University of Applied Sciences (HSLU), where i was studying Data Science. In my master thesis, i decided to
+:::
+
+## Project info
+
+::: incremental
+-   Collaboration between the Canton of Basel-Landschaft and the Lucerne University of Applied Sciences: Master thesis at [Master of Science in Applied Information and Data Science](https://www.hslu.ch/de-ch/wirtschaft/studium/master/applied-information-and-data-science/?gclid=CjwKCAjw_uGmBhBREiwAeOfsdyhRbLB7TXOMDKBxGDJ0t3g6jjC5As4dYAY8A8pm3MnvE7z-tkDyLxoCn5YQAvD_BwE&gclsrc=aw.ds "MSc IDS")
+
+-   Goal of the project: Explore potential of machine learning approaches for [cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8_1_1)
+:::
+
+::: notes
+What i present you today is the product of collaboration between the Canton of Basel-Landschaft - where i work for the Office of Data and Statistics - and the Lucerne University of Applied Sciences (HSLU), where i was studying Data Science. In my master thesis, i decided to focus on the cantonal energy statistics that we conduct since 1990 and since 2010, we do this together with Basel-Stadt.
+:::
+
+## Why estimating energy consumption?
+
+Canton BL has about 66'000 residential buildings...
+
+<iframe src="energy_sources_buildings_bl.html" width="100%" height="700px" frameborder="0">
+
+</iframe>
+
+::: notes
+To give you an idea why an estimation is needed, i would like to show you the following chart: What we see here is the distribution of energy sources of residential buildings in the canton - in total around 65'000 buildings. Ideally, we would have measured data on energy consumption for all of these buildings...
+:::
+
+## Why estimating energy consumption?
+
+...but only for about 40% of them, measured data is available.
+
+<iframe src="energy_sources_buildings_bl_measured.html" width="100%" height="700px" frameborder="0">
+
+</iframe>
+
+::: notes
+...but in reality, we actually only have measured data for gas and district heating. So for all the grey parts here, we have to rely on an estimation method.
+:::
+
+## Current method
+
+Estimation based on measured gas data and register of buildings and dwellings (RBD):
+
+1.  Calculation of heat performance indicators (HEPI) for each building category and construction period (KWh/m²)
+2.  Estimation of buildings with unknown consumption (multiplying HEPI with heated area of building)
+
+## Current method
+
+![HEPI of single-family houses in KWh/m²\*year per construction period and survey year.](figures/current_method_hepi.png)
+
+# Research questions & Goals
+
+## Research questions
+
+::: {.fragment .fade-in}
+::: {style="color:#186A3B"}
+***RQ1:** Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?*
+:::
+:::
+
+::: {.fragment .fade-in}
+::: {style="color:#21618C"}
+***RQ2:** What features are most important for the prediction of HEC in the final model?*
+:::
+:::
+
+::: {.fragment .fade-in}
+Sub-questions with regard to RQ1 and RQ2, see [here](https://lucahuesler.quarto.pub/master-thesis/01-Introduction.html#sec-research-questions "Research questions").
+:::
+
+## Goals of the project
+
+::: incremental
+-   Generate more detailed insights on the shortcomings of the current method and outline possible strategies to overcome them.
+
+-   Provide alternative estimation methods that can be integrated in the current method.
+
+-   Deliver an example use case for the application of machine learning methods in the field of official statistics.
+:::
+
+# Methodology
+
+## Data sources
+
+```{css}
+.reveal table {
+  font-size: 28px;
+}
+
+```
+
+| **Data**                                  | **Spatial resolution**  | **Temporal resolution** | **Source**                                                                                                                                                                                                                                                                                              |
+|-----------------|-----------------|-----------------|----------------------|
+| Building characteristics                  | Building                | Yearly                  | [Cantonal RBD](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                                                                                                                      |
+| Energy consumption                        | Building                | Yearly                  | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                                                                                  |
+| Inhabitants per building                  | Building                | Quarterly               | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                                                                              |
+| Demographic characteristics               | Raster grid (100x100 m) | Yearly                  | [Population and Households Statistics (STATPOP)](https://www.bfs.admin.ch/bfs/en/home/statistics/population/surveys/statpop.assetdetail.22406439.html)                                                                                                                                                  |
+| Retrofit information                      | Building                | Daily                   | [Baselbieter Energiepaket](https://www.energiepaket-bl.ch/)                                                                                                                                                                                                                                             |
+| Elevation information                     | Raster grid (10x10 m)   | 2021                    | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm "https://api3.geo.admin.ch/services/sdiservices.html#height") |
+| Building floor plan\[\^03-methodology-1\] | Building                | Daily                   | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                                                                             |
+
+: Overview of data sources
+
+## Input data
+
+After data cleaning and filtering, the final input dataset for modelling consisted of `r nrow(energy_modelling)` buildings.
+
+```{r}
+obs_per_year <- energy_modelling |>
+  dplyr::group_by(survey_year) |>
+  dplyr::rename("Survey Year" = survey_year) |>
+  dplyr::summarise(Count = n(),
+                   "Mean HEPI (kWh/m2/year)" = mean(hepi),
+                   "Total HEC (GWh/year)" = sum(hec)/1000000) |>
+  knitr::kable(booktabs = TRUE, digits = 1)
+
+obs_per_year
+```
+
+## Modelling workflow: Step 1
+
+![](figures/worklflow_step_1.png){#fig-workflow-step-1 fig-align="center"}
+
+::: notes
+The modelling workflow was guided by the research questions as defined in @sec-research-questions and consisted of three steps: First, all the available buildings after applying the filters defined in @sec-data-prep were used for modelling. Based on this dataset, we trained the models with the custom approach as well as with the AutoML approach and evaluated and compared the results on the train set based on the metrics defined in @sec-evaluation-metrics\[\^03-methodology-10\]. In this step, we also explored different selections of predictor variables in order to evaluate the influence of specific predictors (e.g. retrofit). @fig-workflow-step-1 provides an overview of this first step of the modelling workflow.
+:::
+
+## Modelling workflow: Step 2
+
+![](figures/workflow_step_2.png){fig-align="center"}
+
+::: notes
+The second step of the modelling workflow then focused on the sub-questions RQ1.1 and RQ1.2 @sec-research-questions: Can we achieve a higher accuracy than the current approach and does the models perform better if we train on more homogeneous subsets of data? We here used the approach with the best performance in step one and divided the dataset into different subsets: By building class, by municipality, by construction period and by survey year. Again, the models were then evaluated based on the metrics defined in @sec-evaluation-metrics. As we here modeled subsets that have different underlying distributions of the HEC, the relative metrics of MAPE (@eq-mape) and CV (@eq-cv-rmse) were used for comparison. Furthermore, we calculated the aggregated error (@eq-agg-error) on municipality level in order to compare it with the error of the current approach.
+:::
+
+## Modelling workflow: Step 3
+
+![](figures/workflow_step_3.png){fig-align="center"}
+
+::: notes
+Finally, the last step of the modelling workflow focused on RQ2.1 and RQ2.1: What influence do the additionally integrated predictor variables have on the model? Thus, this last step focused on model understanding and explainability. To answer these questions, we used the approaches defined in @sec-model-explainability-techniques: A analysis of the variable importance was carried out to evaluate the predictive power of the individual predictor variables. Furthermore, the approach of Shapley Additive Explanations (SHAP) was used to gain more detailed insights on the level of individual predictions.
+:::
+
+# Results
+
+## Model evaluation
+
+::: panel-tabset
+## Visual
+
+![Comparison of AutoML results with current approach](figures/results_model_comparison.png){width=60% fig-align="center"}
+
+## Table
+
+![Test metrics of the best performing model per algorithm evaluated on RMSE](figures/test_metrics_all_data.png){width=70% fig-align="center"}
+:::
+
+## Model explainability
+
+Variable importance of best model:
+
+![](figures/vip.png){fig-align="center"}
+
+## Model explainability
+
+Local explanations using SHAP: Example of a single-family house
+
+
+![](figures/shap_sfh.png){fig-align="center"}
+
+## Model explainability
+
+Local explanations using SHAP: Example of a multi-family house
+
+
+![](figures/shap_mfh.png){fig-align="center"}
+
+# What's next?
+
+Upcoming discussion in working group:
+
+::: incremental
+
+- Integration of additional data sources: Information on retrofitting and building connectivity.
+- Differentiating between municipalities
+- Integration of ML approaches into statistical production (in particular: accuracy, explainability)
+:::

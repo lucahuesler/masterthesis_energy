@@ -1,5 +1,6 @@
 project:
   type: book
+  output-dir: docs
   
 book:
   title: "Estimating the heat energy use of residential buildings"
@@ -9,13 +10,13 @@ book:
   date: "today"
   chapters:
   - index.qmd
-  - 00-list-of-abbrevations.qmd
   - 00-management-summary.qmd
   - 01-Introduction.qmd
   - 02-TheoreticalBackground.qmd
   - 03-Methodology.qmd
   - 04-Results.qmd
   - 05-Discussion_Conclusion.qmd
+  - 00-list-of-abbrevations.qmd
   appendices: 
   - 06-appendix.qmd
   references: references.qmd

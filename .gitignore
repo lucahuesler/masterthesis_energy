@@ -7,6 +7,7 @@
 *.log
 *.rdx
 *.rdb
+*.html
 
 
 modelling_code_only.R
@@ -28,7 +29,7 @@ modelling_code_only.R
 
 
 # rendering cache and files
-/data
+/docs
 /index_files/
 /01-Introduction_files/
 /02-TheoreticalBackground_files/

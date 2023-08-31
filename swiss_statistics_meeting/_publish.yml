@@ -1,0 +1,4 @@
+- source: presentation_swiss_statistics_meeting_2023.qmd
+  quarto-pub:
+    - id: d7137012-a176-4961-977b-c1e290240921
+      url: 'https://quartopub.com/sites/lucahuesler/swiss_statistics_meeting'

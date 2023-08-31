@@ -1,10 +1,10 @@
-- source: swiss_statistics_meeting/presentation_swiss_statistics_meeting_2023.qmd
+- source: 99_presentation.qmd
   quarto-pub:
     - id: bc551a28-2d35-4306-812e-201f0c771bf1
       url: 'https://quartopub.com/sites/lucahuesler/estimating-the-heat-energy-use-of-residential-buildings'
+    - id: d4a49a91-d294-4935-8d4d-023d5551c1c2
+      url: 'https://quartopub.com/sites/lucahuesler/test'
 - source: project
   quarto-pub:
-    - id: 60994178-755f-49e8-b67b-2977f024b12e
-      url: 'https://quartopub.com/sites/lucahuesler/httpslucahueslerquartopubmaster-thesis'
     - id: c7101c6b-be25-42b1-8187-01e7feefbadf
       url: 'https://quartopub.com/sites/lucahuesler/master-thesis'

@@ -5,9 +5,9 @@ author: Luca Hüsler
 institute: "Amt für Daten und Statistik BL, Lucerne University of Applied Sciences"
 format: 
    revealjs:
-     logo: ../figures/hslu-logo.png
-     css: ../logo.css
-     slide-number: false
+     logo: figures/hslu-logo.png
+     css: logo.css
+     slide-number: true
      show-slide-number: all
      preview-links: auto  
      width: 1280
@@ -81,14 +81,16 @@ Before we dive in, a quick note on the background: What i present you today is t
 
 ## Project info
 
-::: incremental
--   Collaboration between the Canton of Basel-Landschaft and the Lucerne University of Applied Sciences: Master thesis at [Master of Science in Applied Information and Data Science](https://www.hslu.ch/de-ch/wirtschaft/studium/master/applied-information-and-data-science/?gclid=CjwKCAjw_uGmBhBREiwAeOfsdyhRbLB7TXOMDKBxGDJ0t3g6jjC5As4dYAY8A8pm3MnvE7z-tkDyLxoCn5YQAvD_BwE&gclsrc=aw.ds "MSc IDS")
+-   Collaboration between Canton BL and HSLU: Master thesis \@ [Master of Science in Applied Information and Data Science](https://www.hslu.ch/de-ch/wirtschaft/studium/master/applied-information-and-data-science/?gclid=CjwKCAjw_uGmBhBREiwAeOfsdyhRbLB7TXOMDKBxGDJ0t3g6jjC5As4dYAY8A8pm3MnvE7z-tkDyLxoCn5YQAvD_BwE&gclsrc=aw.ds "MSc IDS")
 
 -   Goal of the project: Explore potential of machine learning approaches for [cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8_1_1)
-:::
+
+![](figures/hslu-logo.png){.absolute bottom="78" left="200" width="300" height="300"}
+
+![](figures/BL_Logo_FKD_AfDuS_A_r_rgb.png){.absolute bottom="150" right="200" width="350" height="150"}
 
 ::: notes
-What i present you today is the product of collaboration between the Canton of Basel-Landschaft - where i work for the Office of Data and Statistics - and the Lucerne University of Applied Sciences (HSLU), where i was studying Data Science. In my master thesis, i decided to focus on the cantonal energy statistics that we conduct since 1990 and since 2010, we do this together with Basel-Stadt.
+What i present you today is the product of collaboration between the Canton of Basel-Landschaft - where i work for the Office of Data and Statistics - and the Lucerne University of Applied Sciences (HSLU), where i am about to finish studies in Data Science. In my master thesis, i decided to focus on the cantonal energy statistics that we conduct since 1990 and since 2010, we do this together with Basel-Stadt.
 :::
 
 ## Why estimating energy consumption?
@@ -130,11 +132,15 @@ Estimation based on measured gas data and register of buildings and dwellings (R
 
 ## Research questions
 
+ 
+
 ::: {.fragment .fade-in}
 ::: {style="color:#186A3B"}
 ***RQ1:** Which model or set of models can achieve the highest accuracy in estimating the heat energy consumption (HEC) of residential buildings?*
 :::
 :::
+
+ 
 
 ::: {.fragment .fade-in}
 ::: {style="color:#21618C"}
@@ -142,16 +148,20 @@ Estimation based on measured gas data and register of buildings and dwellings (R
 :::
 :::
 
+ 
+
 ::: {.fragment .fade-in}
 Sub-questions with regard to RQ1 and RQ2, see [here](https://lucahuesler.quarto.pub/master-thesis/01-Introduction.html#sec-research-questions "Research questions").
 :::
 
 ## Goals of the project
 
-::: incremental
--   Generate more detailed insights on the shortcomings of the current method and outline possible strategies to overcome them.
+ 
 
--   Provide alternative estimation methods that can be integrated in the current method.
+::: incremental
+-   Provide alternative estimation methods and new data sources that can be integrated in the current method.
+
+     
 
 -   Deliver an example use case for the application of machine learning methods in the field of official statistics.
 :::
@@ -167,21 +177,33 @@ Sub-questions with regard to RQ1 and RQ2, see [here](https://lucahuesler.quarto.
 
 ```
 
-| **Data**                                  | **Spatial resolution**  | **Temporal resolution** | **Source**                                                                                                                                                                                                                                                                                              |
-|-----------------|-----------------|-----------------|----------------------|
-| Building characteristics                  | Building                | Yearly                  | [Cantonal RBD](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                                                                                                                      |
-| Energy consumption                        | Building                | Yearly                  | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                                                                                  |
-| Inhabitants per building                  | Building                | Quarterly               | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                                                                              |
-| Demographic characteristics               | Raster grid (100x100 m) | Yearly                  | [Population and Households Statistics (STATPOP)](https://www.bfs.admin.ch/bfs/en/home/statistics/population/surveys/statpop.assetdetail.22406439.html)                                                                                                                                                  |
-| Retrofit information                      | Building                | Daily                   | [Baselbieter Energiepaket](https://www.energiepaket-bl.ch/)                                                                                                                                                                                                                                             |
-| Elevation information                     | Raster grid (10x10 m)   | 2021                    | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm "https://api3.geo.admin.ch/services/sdiservices.html#height") |
-| Building floor plan\[\^03-methodology-1\] | Building                | Daily                   | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                                                                             |
+| **Dataset**                     | **Spatial resolution**  | **Temporal resolution** | **Source**                                                                                                                                                                                                                                                                                              |
+|------------------|------------------|------------------|-------------------|
+| Building characteristics        | Building                | Yearly                  | [Cantonal RBD](https://www.baselland.ch/politik-und-behorden/direktionen/finanz-und-kirchendirektion/statistisches-amt/register/gebaeude-und-wohnungsregister-gwr)                                                                                                                                      |
+| Energy consumption              | Building                | Yearly                  | [Cantonal energy statistics](https://www.statistik.bl.ch/web_portal/8)                                                                                                                                                                                                                                  |
+| Inhabitants per building        | Building                | Quarterly               | [Cantonal population statistics](https://www.statistik.bl.ch/web_portal/1)                                                                                                                                                                                                                              |
+| Demographic characteristics     | Raster grid (100x100 m) | Yearly                  | [Population and Households Statistics (STATPOP)](https://www.bfs.admin.ch/bfs/en/home/statistics/population/surveys/statpop.assetdetail.22406439.html)                                                                                                                                                  |
+| Retrofit information            | Building                | Daily                   | [Baselbieter Energiepaket](https://www.energiepaket-bl.ch/)                                                                                                                                                                                                                                             |
+| Elevation information           | Raster grid (10x10 m)   | 2021                    | [Digital elevation model (DEM)](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/geoportal/geodaten/geodatenprodukte/hoehenmodelle/digitales-terrain-modell-dtm "https://api3.geo.admin.ch/services/sdiservices.html#height") |
+| Building floor plan (Grundriss) | Building                | Daily                   | [Cantonal cadastral survey](https://www.baselland.ch/politik-und-behorden/direktionen/volkswirtschafts-und-gesundheitsdirektion/amt-fur-geoinformation/amtliche-vermessung)                                                                                                                             |
 
-: Overview of data sources
+## New features
+
+Is a building retrofitted (saniert) or not?
+
+![](figures/retrofit_table.png){fig-align="center"}
+
+## New features
+
+Is a building connected to another building or not? ![](figures/stand_alone.png){fig-align="center" width="600"}
 
 ## Input data
 
-After data cleaning and filtering, the final input dataset for modelling consisted of `r nrow(energy_modelling)` buildings.
+ 
+
+After data cleaning and filtering, the final input dataset for modelling consisted of **`r nrow(energy_modelling)`** buildings.
+
+ 
 
 ```{r}
 obs_per_year <- energy_modelling |>
@@ -226,12 +248,136 @@ Finally, the last step of the modelling workflow focused on RQ2.1 and RQ2.1: Wha
 ::: panel-tabset
 ## Visual
 
-![Comparison of AutoML results with current approach](figures/results_model_comparison.png){width=60% fig-align="center"}
+![](figures/results_model_comparison.png){width="60%" fig-align="center"}
 
 ## Table
 
-![Test metrics of the best performing model per algorithm evaluated on RMSE](figures/test_metrics_all_data.png){width=70% fig-align="center"}
+![Test metrics of the best performing model per algorithm evaluated on RMSE](figures/test_metrics_all_data.png){width="70%" fig-align="center"}
 :::
+
+::: notes
+So, lets have a look at the most interesting: The results. What you see here is a comparison of the models based on different evaluation metrics: Mean absolute error, mean absolute percentage error, r squared and so on.
+
+The light blue bar is the current approach and as you can see, most of the algorithms that were testes show lower error metrics than the current approach. But at that point, we should actually also think about what is the goal of our prediction:
+
+If we just need a good estimation at cantonal level, we should have a look at the aggregated error on all test observations...
+:::
+
+## Model evaluation
+
+ 
+
+ 
+
+Aggregated percentage error on the whole test set (`n = 12'185`):
+
+::: incremental
+-   Current approach: +1.5%
+
+-   Best ML model (GBM): +0.02%
+:::
+
+::: notes
+...and as you can see, at this level we don't have to worry too much. Already with the current approach, the error is quite low. The best trained model is even better, but i'd say that if we stay at this level, it was not worth it to spend so much time on the problem...
+:::
+
+## Model evaluation
+
+ 
+
+Aggregated error on municipality level:
+
+```{r}
+#| results: hide
+
+# auto_ml resulsts all data
+list.files("../models/all_data/")
+file_list <- list.files("../models/all_data/", pattern = "*.rds", full.names = TRUE)
+aml_hec_all_data_models <- lapply(file_list, readRDS)
+
+# Combine metrics of each subset into one data frame
+aml_hec_all_data_train_metrics <- map_dfr(aml_hec_all_data_models, ~ .x$train_metrics)
+aml_hec_all_data_test_metrics <- map_dfr(aml_hec_all_data_models, ~ .x$test_metrics)
+
+
+aml_hec_test_metrics_all_data <- bind_rows(
+  lapply(aml_hec_all_data_models, function(model) {
+    test_metrics <- model$test_metrics
+    variable_selection <- model$variable_selection
+    
+    n_test <- nrow(model$test_preds)  # Count rows where Model matches the extracted model name
+    total_obs <- n_test * 4  # Assuming the 75-25 train-test split ratio
+    n_train <- round(total_obs * 0.75)
+    
+    test_metrics %>%
+      mutate(`Variable Selection` = variable_selection,
+             `ntrain/ntest` = paste0(n_train, "/", n_test))
+  })
+)
+
+# retrieve prediction df from best model
+test_preds <- aml_hec_all_data_models[[5]]$test_preds |> 
+  select(municipality_name, hec, hec_pred_current_method, predict) |>
+  mutate(error_current_method = hec - hec_pred_current_method,
+         error_best_model = hec - predict)
+
+aggregated_error_curr_method <- 1 - sum(test_preds$hec_pred_current_method)/sum(test_preds$hec)
+aggregated_error_best_model <- 1 - sum(test_preds$predict)/sum(test_preds$hec)
+
+agg_errors_municipality <- test_preds %>%
+  group_by(municipality_name) %>%
+  summarize(
+    n_observations = n(),
+    aggregated_error_curr_method = 1 - sum(hec_pred_current_method) / sum(hec),
+    aggregated_error_best_model = 1 - sum(predict) / sum(hec)
+  ) %>%
+  arrange(municipality_name)
+
+# Calculate overall aggregated error
+overall_agg_error <- data.frame(
+  municipality_name = "Overall",
+  aggregated_error_curr_method = 1 - sum(test_preds$hec_pred_current_method) / sum(test_preds$hec),
+  aggregated_error_best_model = 1 - sum(test_preds$predict) / sum(test_preds$hec)
+)
+
+# Append overall aggregated error to agg_errors
+agg_errors_municipality <- bind_rows(agg_errors_municipality, overall_agg_error)
+
+# Append columns with absolute errors
+agg_errors_municipality <- agg_errors_municipality %>%
+  mutate(abs_error_curr_method = abs(aggregated_error_curr_method),
+         abs_error_best_model = abs(aggregated_error_best_model))
+
+# Pivot the agg_errors dataframe
+agg_errors_pivot <- agg_errors_municipality %>%
+  pivot_longer(cols = c(abs_error_curr_method, abs_error_best_model),
+               names_to = "error_type",
+               values_to = "abs_error") |>
+  arrange(municipality_name, abs_error)
+
+```
+
+```{r}
+# Create the bar plot
+ordering <- agg_errors_pivot %>%
+  filter(error_type == "abs_error_best_model") %>%
+  arrange(-abs_error) %>%
+  pull(municipality_name)
+
+ggplot(agg_errors_pivot, aes(x = factor(municipality_name, levels = ordering), y = abs_error, fill = error_type)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(x = "Municipality",
+       y = "Absolute Aggregated Error",
+       fill = "Error Type", 
+       title = "Comparison of error on municipality level") +
+  scale_fill_manual(values = c("steelblue", "#800020"),
+                    labels = c("AutoML best model", "Current approach")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title = element_blank(),
+        legend.position = c(0.85, 0.9),
+        legend.background = element_rect(fill = "transparent", color = NA)) +
+  scale_y_continuous(labels = scales::percent_format(scale = 100))
+```
 
 ## Model explainability
 
@@ -241,25 +387,40 @@ Variable importance of best model:
 
 ## Model explainability
 
-Local explanations using SHAP: Example of a single-family house
+ 
 
+ 
 
-![](figures/shap_sfh.png){fig-align="center"}
+ 
+
+Local explanations using [**SHAP**](https://shap.readthedocs.io/en/latest/) **(SHapley Additive exPlanations)** : What's the contribution of each predictor for a one specific data point?
 
 ## Model explainability
 
-Local explanations using SHAP: Example of a multi-family house
+Example: Single-family house (mean prediction on test: **29'379 kWh/year**)
 
+![](figures/shap_sfh.png){fig-align="center" width="1500"}
 
-![](figures/shap_mfh.png){fig-align="center"}
+## Model explainability
 
-# What's next?
+Example: Multi-family house (mean prediction on test: **29'379 kWh/year**)
+
+![](figures/shap_mfh.png){fig-align="center" width="1500"}
+
+## What's next?
 
 Upcoming discussion in working group:
 
 ::: incremental
-
-- Integration of additional data sources: Information on retrofitting and building connectivity.
-- Differentiating between municipalities
-- Integration of ML approaches into statistical production (in particular: accuracy, explainability)
+-   Integration of additional data sources: Information on retrofitting and building connectivity.
+-   Differentiating between municipalities
+-   Integration of ML approaches into statistical production (in particular: accuracy, explainability)
 :::
+
+#             [lucahuesler.quarto.pub](https://lucahuesler.quarto.pub/master-thesis/) {style="font-size: 30px; text-align: center;"}
+
+![](figures/qrcode.png){fig-align="center" width="159"}
+
+# Questions?
+
+# Thank you!

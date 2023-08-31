@@ -10,7 +10,7 @@ book:
   date: "today"
   chapters:
   - index.qmd
-  - 00-management-summary.qmd
+  #- 00-management-summary.qmd
   - 01-Introduction.qmd
   - 02-TheoreticalBackground.qmd
   - 03-Methodology.qmd
@@ -32,7 +32,8 @@ urlcolor: "Navy"
 format:
   html:
     theme: cosmo
-    title-block-banner: cover.png
+    title-block-banner: true
+    title-block-banner-color: "#050959"
   pdf:
     toc: true
     number-sections: true

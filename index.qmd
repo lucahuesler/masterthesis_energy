@@ -1,2 +1,11 @@
-# Foreword {.unnumbered}
+# About {.unnumbered}
 
+::: callout-note
+## Note
+
+The original verison of this master's thesis has been submitted at Lucerne University of Applied Sciences in June 2023. This is an online version that can be due to change.
+:::
+
+Contact me through <a href="https://github.com/lucahuesler" target="_blank" rel="noopener noreferrer">GitHub</a> or <a href="https://www.linkedin.com/in/lucahuesler/" target="_blank" rel="noopener noreferrer">LinkedIn</a>for any questions.
+
+The code of this thesis is available in this [GitHub repository](https://github.com/lucahuesler/masterthesis_energy).
